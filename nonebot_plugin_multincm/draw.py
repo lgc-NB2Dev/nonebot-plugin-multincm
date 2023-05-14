@@ -9,6 +9,7 @@ from pil_utils.types import ColorType, HAlignType
 
 from .config import config
 from .types import SongSearchResult
+from .utils import format_alias, format_artists, format_time
 
 BACKGROUND = BuildImage.open(Path(__file__).parent / "res" / "bg.jpg")
 
@@ -186,16 +187,6 @@ def draw_table(
     return pic
 
 
-def format_alias(name: str, alias: List[str]) -> str:
-    return f'{name}（{"；".join(alias)}）' if alias else name
-
-
-def format_time(time: int) -> str:
-    s, _ = divmod(time, 1000)
-    m, s = divmod(s, 60)
-    return f"{m:0>2d}:{s:0>2d}"
-
-
 def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
     pic_padding = 50
     table_padding = 20
@@ -213,7 +204,7 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
             [
                 f"[b]{i+1}[/b]",
                 format_alias(x.name, x.alia),
-                "、".join([format_alias(y.name, y.alias) for y in x.ar]),
+                format_artists(x.ar),
                 format_time(x.dt),
                 f"{int(x.pop)}",
             ]

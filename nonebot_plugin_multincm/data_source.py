@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Any, Callable, Dict, cast
+from typing import Any, Callable, Dict, List, cast
 
 import anyio
 from nonebot import get_available_plugin_names, logger, require
@@ -17,9 +17,10 @@ from pyncm.apis.login import (
     LoginViaCellphone,
     LoginViaEmail,
 )
+from pyncm.apis.track import GetTrackAudio
 
 from .config import config
-from .types import SongSearchResult
+from .types import SongSearchResult, TrackAudio
 from .utils import awaitable
 
 DATA_PATH = Path().cwd() / "data" / "multincm"
@@ -37,11 +38,26 @@ async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     return ret
 
 
-async def search_song(name: str, page: int = 1):
+async def search_song(keyword: str, page: int = 1, **kwargs) -> SongSearchResult:
     limit = config.ncm_list_limit
     offset = limit * (page - 1)
-    res = await ncm_request(GetSearchResult, name, limit=limit, offset=offset)
+    res = await ncm_request(
+        GetSearchResult,
+        keyword=keyword,
+        limit=limit,
+        offset=offset,
+        **kwargs,
+    )
     return SongSearchResult(**res["result"])
+
+
+async def get_track_audio(
+    song_ids: list,
+    bit_rate: int = 320000,
+    **kwargs,
+) -> List[TrackAudio]:
+    res = await ncm_request(GetTrackAudio, song_ids, bitrate=bit_rate, **kwargs)
+    return [TrackAudio(**x) for x in cast(List[dict], res["data"])] if res else []
 
 
 async def login():
@@ -100,3 +116,5 @@ if "nonebot-plugin-ncm" in get_available_plugin_names():
     require("nonebot-plugin-ncm")
 else:
     asyncio.get_event_loop().run_until_complete(login())
+
+asyncio.get_event_loop().run_until_complete(get_track_audio([1459343252]))

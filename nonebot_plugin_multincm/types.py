@@ -53,3 +53,15 @@ class SongSearchResult(BaseModel):
     """搜索纠正"""
     songCount: int  # noqa: N815
     songs: List[Song]
+
+
+class TrackAudio(BaseModel):
+    id: int  # noqa: A003
+    url: str
+    br: int
+    size: int
+    md5: str
+    type: int  # noqa: A003
+    level: str
+    encodeType: str  # noqa: N815
+    time: int
