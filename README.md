@@ -38,7 +38,11 @@ _✨ NoneBot 插件简单描述 ✨_
 
 ## 📖 介绍
 
-这里是插件的详细介绍部分
+一个网易云多选点歌插件，可以翻页，可以登录网易云账号点 vip 歌曲听（插件发送的是自定义音乐卡片），没了
+
+### 歌曲列表效果图
+
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230515025601.jpg)
 
 ## 💿 安装
 
@@ -125,13 +129,7 @@ plugins = [
 
 ## 🎉 使用
 
-### 指令表
-
 发送 `点歌 [歌曲名]` 即可
-
-### 效果图
-
-![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230515025601.jpg)
 
 ## 📞 联系
 

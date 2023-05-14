@@ -14,6 +14,44 @@ from .types import SongSearchResult
 from .utils import format_alias, format_artists
 
 
+async def send_music(matcher: Matcher, state: T_State, arg: int):
+    cache: Dict[int, SongSearchResult] = state["cache"]
+
+    ori_index = arg - 1
+    page_index = ceil(ori_index / config.ncm_list_limit)
+    page_index = 1 if page_index == 0 else page_index
+    index = ori_index % config.ncm_list_limit
+
+    if (not (res := cache.get(page_index))) or (not (0 <= index < len(res.songs))):
+        await matcher.reject("序号输入有误，请重新输入")
+
+    song = res.songs[index]
+    try:
+        audio_info = await get_track_audio([song.id], song.privilege.pl)
+    except:
+        logger.exception("获取歌曲播放链接失败")
+        await matcher.finish("获取歌曲播放链接失败，请检查后台输出")
+
+    if not audio_info:
+        await matcher.finish("抱歉，没有获取到歌曲播放链接")
+
+    info = audio_info[0]
+    await matcher.finish(
+        MessageSegment(
+            "music",
+            {
+                "type": "custom",
+                "subtype": "163",
+                "url": info.url,
+                "voice": info.url,
+                "title": format_alias(song.name, song.alia),
+                "content": format_artists(song.ar),
+                "image": song.al.picUrl,
+            },
+        ),
+    )
+
+
 async def get_page(
     matcher: Matcher,
     state: T_State,
@@ -32,15 +70,19 @@ async def get_page(
         if not res.songCount:
             await matcher.finish("没搜到任何歌曲捏")
 
+    state["page"] = page
+    cache[page] = res
+    state["page_max"] = ceil(res.songCount / config.ncm_list_limit)
+
+    if page == 1 and len(res.songs) == 1:
+        await send_music(matcher, state, 1)
+
     try:
         pic = draw_search_res(res, page)
     except:
         logger.exception("绘制歌曲列表失败")
         await matcher.finish("绘制歌曲列表失败，请检查后台输出")
 
-    state["page"] = page
-    cache[page] = res
-    state["page_max"] = ceil(res.songCount / config.ncm_list_limit)
     return MessageSegment.image(pic)
 
 
@@ -69,7 +111,6 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
     arg = event.get_message().extract_plain_text().strip()
     page: int = state["page"]
     page_max: int = state["page_max"]
-    cache: Dict[int, SongSearchResult] = state["cache"]
 
     if arg in ["退出", "0"]:
         await matcher.finish("已退出选择")
@@ -85,37 +126,6 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
         await matcher.reject(await get_page(matcher, state, page + 1))
 
     if arg.isdigit():
-        ori_index = int(arg) - 1
-        page_index = ceil(ori_index / config.ncm_list_limit)
-        index = ori_index % config.ncm_list_limit
-
-        if (not (res := cache.get(page_index))) or (not (0 <= index < len(res.songs))):
-            await matcher.reject("序号输入有误，请重新输入")
-
-        song = res.songs[index]
-        try:
-            audio_info = await get_track_audio([song.id], song.privilege.pl)
-        except:
-            logger.exception("获取歌曲播放链接失败")
-            await matcher.reject("获取歌曲播放链接失败，请检查后台输出")
-
-        if not audio_info:
-            await matcher.finish("抱歉，没有获取到歌曲播放链接")
-
-        info = audio_info[0]
-        await matcher.finish(
-            MessageSegment(
-                "music",
-                {
-                    "type": "custom",
-                    "subtype": "163",
-                    "url": info.url,
-                    "voice": info.url,
-                    "title": format_alias(song.name, song.alia),
-                    "content": format_artists(song.ar),
-                    "image": song.al.picUrl,
-                },
-            ),
-        )
+        await send_music(matcher, state, int(arg))
 
     await matcher.reject("非正确指令，请重新输入")
