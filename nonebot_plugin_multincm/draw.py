@@ -192,6 +192,7 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
     table_padding = 20
     table_border_radius = 15
 
+    index_offset = (page_num - 1) * config.ncm_list_limit
     table = draw_table(
         [
             TableHead("序号", align="right"),
@@ -202,7 +203,7 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
         ],
         [
             [
-                f"[b]{i+1}[/b]",
+                f"[b]{i + index_offset + 1}[/b]",
                 format_alias(x.name, x.alia),
                 format_artists(x.ar),
                 format_time(x.dt),
