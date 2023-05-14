@@ -10,6 +10,7 @@ class ConfigModel(BaseModel):
     ncm_email: Optional[str] = None
     ncm_password: Optional[str] = None
     ncm_password_hash: Optional[str] = None
+    ncm_list_limit: int = 20
 
 
 config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())

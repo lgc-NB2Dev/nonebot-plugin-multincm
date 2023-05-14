@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import cast
+from typing import Any, Callable, Dict, cast
 
 import anyio
 from nonebot import get_available_plugin_names, logger, require
@@ -10,6 +10,7 @@ from pyncm import (
     LoadSessionFromString,
     SetCurrentSession,
 )
+from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.login import (
     GetCurrentLoginStatus,
     LoginViaAnonymousAccount,
@@ -18,6 +19,7 @@ from pyncm.apis.login import (
 )
 
 from .config import config
+from .types import SongSearchResult
 from .utils import awaitable
 
 DATA_PATH = Path().cwd() / "data" / "multincm"
@@ -25,6 +27,21 @@ if not DATA_PATH.exists():
     DATA_PATH.mkdir(parents=True)
 
 SESSION_FILE = DATA_PATH / "session.cache"
+
+
+async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
+    ret = await awaitable(api)(*args, **kwargs)
+    if ret["code"] != 200:
+        raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
+    logger.debug(f"{api.__name__} - {ret}")
+    return ret
+
+
+async def search_song(name: str, page: int = 1):
+    limit = config.ncm_list_limit
+    offset = limit * (page - 1)
+    res = await ncm_request(GetSearchResult, name, limit=limit, offset=offset)
+    return SongSearchResult(**res["result"])
 
 
 async def login():

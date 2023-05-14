@@ -156,25 +156,3 @@ def draw_table(
             )
 
     return pic
-
-
-if __name__ == "__main__":
-    table = draw_table(
-        [
-            TableHead("姓名", "left"),
-            TableHead("国籍", "middle"),
-            TableHead("职业", "middle"),
-            TableHead("简介", "left", max_width=500),
-        ],
-        [
-            ["张三", "中国", "医生", "张三是一名资深的医生，擅长各种疾病的治疗。"],
-            ["John Smith", "美国", "演员", "John Smith是一名出色的演员，曾经获得过多项奥斯卡奖。"],
-            ["Marie Dupont", "法国", "作家", "Marie Dupont是一位著名的法国作家，她的作品畅销全球。"],
-            ["Hiroshi Tanaka", "日本", "工程师", "Hiroshi Tanaka是一位优秀的工程师，他曾主导多个重要项目的开发。"],
-        ],
-    )
-    bg = (
-        BuildImage.new("RGBA", table.size, (255, 255, 255))
-        .paste(table, alpha=True)
-        .image.show()
-    )
