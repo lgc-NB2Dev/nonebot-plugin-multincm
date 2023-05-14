@@ -68,9 +68,11 @@ async def login():
     try:
         ret = cast(dict, await awaitable(GetCurrentLoginStatus)())
         assert ret["code"] == 200
-    except:
-        await anyio.Path(SESSION_FILE).unlink()
-        raise
+        assert ret["account"]
+    except Exception as e:
+        if await (pth := anyio.Path(SESSION_FILE)).exists():
+            await pth.unlink()
+        raise RuntimeError("检查登录态异常，已删除缓存登录态，请重新登录") from e
 
     session = GetCurrentSession()
     logger.info(f"登录成功，欢迎您，{session.nickname} [{session.uid}]")
