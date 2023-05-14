@@ -60,7 +60,7 @@ async def get_track_audio(
     return [TrackAudio(**x) for x in cast(List[dict], res["data"])] if res else []
 
 
-async def login():
+async def login(retry=True):
     if SESSION_FILE.exists():
         logger.info(f"使用缓存登录态 ({str(SESSION_FILE)})")
         SetCurrentSession(
@@ -72,6 +72,8 @@ async def login():
     elif (config.ncm_phone or config.ncm_email) and (
         config.ncm_password or config.ncm_password_hash
     ):
+        retry = False
+
         if config.ncm_phone:
             logger.info("使用手机号登录")
             await awaitable(LoginViaCellphone)(
@@ -95,6 +97,7 @@ async def login():
         )
 
     else:
+        retry = False
         logger.warning("账号或密码未填写，使用游客账号登录")
         await awaitable(LoginViaAnonymousAccount)()
 
@@ -105,7 +108,13 @@ async def login():
     except Exception as e:
         if await (pth := anyio.Path(SESSION_FILE)).exists():
             await pth.unlink()
-        raise RuntimeError("检查登录态异常，已删除缓存登录态，请重新登录") from e
+
+        if retry:
+            logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
+            await login(False)
+            return
+
+        raise RuntimeError("登录态异常，请重新登录") from e
 
     session = GetCurrentSession()
     logger.info(f"登录成功，欢迎您，{session.nickname} [{session.uid}]")
