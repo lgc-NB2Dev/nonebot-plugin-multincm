@@ -51,7 +51,7 @@ def draw_table(
     heads: Sequence[TableHead],
     lines: Sequence[Sequence[str]],
     fontsize: int = 30,
-    pic_padding: int = 20,
+    pic_padding: int = 2,
     item_padding: int = 8,
     border_width: int = 3,
     border_radius: int = 10,
@@ -159,7 +159,7 @@ def draw_table(
 
 
 if __name__ == "__main__":
-    draw_table(
+    table = draw_table(
         [
             TableHead("姓名", "left"),
             TableHead("国籍", "middle"),
@@ -172,4 +172,9 @@ if __name__ == "__main__":
             ["Marie Dupont", "法国", "作家", "Marie Dupont是一位著名的法国作家，她的作品畅销全球。"],
             ["Hiroshi Tanaka", "日本", "工程师", "Hiroshi Tanaka是一位优秀的工程师，他曾主导多个重要项目的开发。"],
         ],
-    ).image.show()
+    )
+    bg = (
+        BuildImage.new("RGBA", table.size, (255, 255, 255))
+        .paste(table, alpha=True)
+        .image.show()
+    )
