@@ -81,7 +81,7 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
                     "type": "custom",
                     "subtype": "163",
                     "url": info.url,
-                    "audio": info.url,
+                    "voice": info.url,
                     "title": format_alias(song.name, song.alia),
                     "content": format_artists(song.ar),
                     "image": song.al.picUrl,

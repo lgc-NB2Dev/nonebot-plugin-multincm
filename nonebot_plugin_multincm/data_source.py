@@ -116,5 +116,3 @@ if "nonebot-plugin-ncm" in get_available_plugin_names():
     require("nonebot-plugin-ncm")
 else:
     asyncio.get_event_loop().run_until_complete(login())
-
-asyncio.get_event_loop().run_until_complete(get_track_audio([1459343252]))

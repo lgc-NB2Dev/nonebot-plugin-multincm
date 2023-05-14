@@ -2,7 +2,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
-BrLevel = Literal["hires", "lossless", "exhigh", "standard"]
+BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard"]
 
 
 class Artist(BaseModel):
@@ -61,7 +61,6 @@ class TrackAudio(BaseModel):
     br: int
     size: int
     md5: str
-    type: int  # noqa: A003
     level: str
     encodeType: str  # noqa: N815
     time: int
