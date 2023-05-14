@@ -8,6 +8,9 @@ dependencies = [
     "nonebot-adapter-onebot>=2.2.0",
     "pydantic>=1.10.4",
     "pil-utils>=0.1.7",
+    "pyncm>=1.6.8.9.1",
+    "typing-extensions>=4.5.0",
+    "anyio>=3.6.2",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"

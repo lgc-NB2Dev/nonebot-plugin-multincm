@@ -431,6 +431,15 @@ version = "2.5.0"
 summary = "A pure Python trie data structure implementation."
 
 [[package]]
+name = "pyncm"
+version = "1.6.8.9.1"
+requires_python = ">=3.6"
+summary = "NeteaseCloudMusic APIs for Python 3.x 适用于 Python 3 的网易云音乐 API"
+dependencies = [
+    "requests",
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.0.9"
 requires_python = ">=3.6.8"
@@ -595,8 +604,9 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.2"
+cross_platform = true
 groups = ["default", "dev"]
-content_hash = "sha256:ff1ca89ccd8f1f1518ca24be0f3d91828ef4101c4efc83dbeb44a7bfe9b679ac"
+content_hash = "sha256:2597ad5ca3778af500765032c6306d44be6d7f2fff08b1e0c158cb9ff72e5e31"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -1358,6 +1368,10 @@ content_hash = "sha256:ff1ca89ccd8f1f1518ca24be0f3d91828ef4101c4efc83dbeb44a7bfe
 "pygtrie 2.5.0" = [
     {url = "https://files.pythonhosted.org/packages/b9/13/55deec25bf09383216fa7f1dfcdbfca40a04aa00b6d15a5cbf25af8fce5f/pygtrie-2.5.0.tar.gz", hash = "sha256:203514ad826eb403dab1d2e2ddd034e0d1534bbe4dbe0213bb0593f66beba4e2"},
     {url = "https://files.pythonhosted.org/packages/ec/cd/bd196b2cf014afb1009de8b0f05ecd54011d881944e62763f3c1b1e8ef37/pygtrie-2.5.0-py3-none-any.whl", hash = "sha256:8795cda8105493d5ae159a5bef313ff13156c5d4d72feddefacaad59f8c8ce16"},
+]
+"pyncm 1.6.8.9.1" = [
+    {url = "https://files.pythonhosted.org/packages/5a/58/b5c75589f482fab1b0b42e62dae32eb801b12733ad34e1ead65dfb16ab81/pyncm-1.6.8.9.1-py3-none-any.whl", hash = "sha256:7ab6e3d0db07b22873742aa2f07f912b355431c7166d6d403249335883c59070"},
+    {url = "https://files.pythonhosted.org/packages/d1/ef/ef3d6a1d9f4397e668340ae88f2f012c9097749e65c15d1411b0c9eaa611/pyncm-1.6.8.9.1.tar.gz", hash = "sha256:1df56f8e07c655ca41eb49b4c5a45e495c0a9a36a05ccf9ce42557f0cc1cd675"},
 ]
 "pyparsing 3.0.9" = [
     {url = "https://files.pythonhosted.org/packages/6c/10/a7d0fa5baea8fe7b50f448ab742f26f52b80bfca85ac2be9d35cdd9a3246/pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
