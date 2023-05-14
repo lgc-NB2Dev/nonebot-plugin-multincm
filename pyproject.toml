@@ -7,6 +7,7 @@ dependencies = [
     "nonebot2>=2.0.0-rc.1",
     "nonebot-adapter-onebot>=2.2.0",
     "pydantic>=1.10.4",
+    "pil-utils>=0.1.7",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"
