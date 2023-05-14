@@ -10,7 +10,7 @@
   <img src="https://raw.githubusercontent.com/A-kirami/nonebot-plugin-template/resources/NoneBotPlugin.svg" width="240" alt="NoneBotPluginText">
 </p>
 
-# nonebot-plugin-example
+# NoneBot-Plugin-MultiNCM
 
 _✨ NoneBot 插件简单描述 ✨_
 
@@ -25,33 +25,16 @@ _✨ NoneBot 插件简单描述 ✨_
 <br />
 
 <a href="./LICENSE">
-  <img src="https://img.shields.io/github/license/owner/nonebot-plugin-example.svg" alt="license">
+  <img src="https://img.shields.io/github/license/lgc-NB2Dev/nonebot-plugin-multincm.svg" alt="license">
 </a>
-<a href="https://pypi.python.org/pypi/nonebot-plugin-example">
-  <img src="https://img.shields.io/pypi/v/nonebot-plugin-example.svg" alt="pypi">
+<a href="https://pypi.python.org/pypi/nonebot-plugin-multincm">
+  <img src="https://img.shields.io/pypi/v/nonebot-plugin-multincm.svg" alt="pypi">
 </a>
-<a href="https://pypi.python.org/pypi/nonebot-plugin-example">
-  <img src="https://img.shields.io/pypi/dm/nonebot-plugin-example" alt="pypi download">
+<a href="https://pypi.python.org/pypi/nonebot-plugin-multincm">
+  <img src="https://img.shields.io/pypi/dm/nonebot-plugin-multincm" alt="pypi download">
 </a>
 
 </div>
-
-这是一个 nonebot2 插件项目的模板库, 你可以直接使用本模板创建你的 nonebot2 插件项目的仓库
-
-模板库使用方法:
-
-1. 点击仓库中的 `Use this template` 按钮, 输入仓库名与描述, 点击 `Create repository from template` 创建仓库
-2. 全局替换 `owner` 为仓库所有者 ID;  
-   全局替换 `nonebot-plugin-example` 为插件名;  
-   全局替换 `nonebot_plugin_example` 为包名;  
-   修改 python 徽标中的版本为你插件的运行所需版本;  
-   替换 WakaTime 的徽标
-3. 修改 `README.md` 中的插件名和插件描述, 并在下方填充相应的内容
-4. 使用 `pdm` 安装工作区依赖
-   ```shell
-   pdm install
-   pdm install --group dev
-   ```
 
 ## 📖 介绍
 
@@ -66,7 +49,7 @@ _✨ NoneBot 插件简单描述 ✨_
 在 nonebot2 项目的根目录下打开命令行, 输入以下指令即可安装
 
 ```bash
-nb plugin install nonebot-plugin-example
+nb plugin install nonebot-plugin-multincm
 ```
 
 </details>
@@ -79,7 +62,7 @@ nb plugin install nonebot-plugin-example
 <summary>pip</summary>
 
 ```bash
-pip install nonebot-plugin-example
+pip install nonebot-plugin-multincm
 ```
 
 </details>
@@ -87,7 +70,7 @@ pip install nonebot-plugin-example
 <summary>pdm</summary>
 
 ```bash
-pdm add nonebot-plugin-example
+pdm add nonebot-plugin-multincm
 ```
 
 </details>
@@ -95,7 +78,7 @@ pdm add nonebot-plugin-example
 <summary>poetry</summary>
 
 ```bash
-poetry add nonebot-plugin-example
+poetry add nonebot-plugin-multincm
 ```
 
 </details>
@@ -103,7 +86,7 @@ poetry add nonebot-plugin-example
 <summary>conda</summary>
 
 ```bash
-conda install nonebot-plugin-example
+conda install nonebot-plugin-multincm
 ```
 
 </details>
@@ -114,7 +97,7 @@ conda install nonebot-plugin-example
 [tool.nonebot]
 plugins = [
     # ...
-    "nonebot_plugin_example"
+    "nonebot_plugin_multincm"
 ]
 ```
 

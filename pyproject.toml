@@ -1,7 +1,7 @@
 [project]
-name = "nonebot-plugin-example"
+name = "nonebot-plugin-multincm"
 version = "0.1.0"
-description = "Template plugin project"
+description = "网易云多选点歌"
 authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
     "nonebot2>=2.0.0-rc.1",
@@ -13,7 +13,7 @@ readme = "README.md"
 license = { text = "MIT" }
 
 [project.urls]
-homepage = "https://github.com/owner/nonebot-plugin-example"
+homepage = "https://github.com/lgc-NB2Dev/nonebot-plugin-multincm"
 
 [project.optional-dependencies]
 dev = [
