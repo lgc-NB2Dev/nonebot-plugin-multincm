@@ -17,6 +17,7 @@ async def _(matcher: Matcher, arg_msg: Message = CommandArg()):
 
 @cmd_matcher.got("param", "请发送搜索内容")
 async def _(matcher: Matcher, param: str = ArgPlainText("param")):
+    param = param.strip()
     if not param:
         await matcher.finish("消息无文本，放弃点歌")
 

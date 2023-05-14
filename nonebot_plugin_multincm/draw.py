@@ -68,7 +68,7 @@ def draw_table(
     border_width: int = 3,
     border_radius: int = 15,
     font_color: ColorType = (255, 255, 255, 255),
-    border_color: ColorType = (255, 255, 255, 120),
+    border_color: ColorType = (255, 255, 255, 100),
     **kwargs,
 ) -> BuildImage:
     head_len = len(heads)
@@ -204,8 +204,8 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
     table = draw_table(
         [
             TableHead("序号", align="right"),
-            TableHead("歌名", max_width=600),
-            TableHead("歌手", max_width=400),
+            TableHead("歌名", max_width=config.ncm_max_name_len),
+            TableHead("歌手", max_width=config.ncm_max_artist_len),
             TableHead("时长", align="center"),
             TableHead("热度", align="center"),
         ],
