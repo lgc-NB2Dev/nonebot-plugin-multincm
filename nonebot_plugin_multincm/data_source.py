@@ -32,7 +32,7 @@ SESSION_FILE = DATA_PATH / "session.cache"
 
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     ret = await awaitable(api)(*args, **kwargs)
-    if ret["code"] != 200:
+    if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
     logger.debug(f"{api.__name__} - {ret}")
     return ret
