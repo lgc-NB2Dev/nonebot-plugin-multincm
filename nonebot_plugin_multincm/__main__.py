@@ -189,7 +189,11 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
     await matcher.reject("非正确指令，请重新输入")
 
 
-cmd_get_song = on_command("解析", aliases={"resolve", "parse"}, rule=reply_music_rule)
+cmd_get_song = on_command(
+    "解析",
+    aliases={"resolve", "parse", "get"},
+    rule=reply_music_rule,
+)
 
 
 @cmd_get_song.handle()
