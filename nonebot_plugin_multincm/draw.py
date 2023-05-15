@@ -274,35 +274,41 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
     if (not raw) or (not (raw_lrc := raw.lyric)):
         return None
 
-    lrcs = [
+    lyrics = [
         lrc_parser.parse(x.lyric)
         for x in cast(List[Optional[Lyric]], [raw, lrc.romalrc, lrc.tlyric])
         if x
     ]
-    lrcs = [x for x in lrcs if x]
+    lyrics = [x for x in lyrics if x]
 
     lines = []
-    if not lrcs:
+    if not lyrics:
         lines.append("[i]该歌曲没有滚动歌词[/i]")
         lines.append("")
         lines.append("--------")
         lines.append("")
         lines.append(raw_lrc)
+
     else:
-        only_one = len(lrcs) == 1
-        for li in lrc_parser.merge(*lrcs):
+        if lyrics[0][-1].time >= 5940000:
+            return None  # 纯音乐
+
+        only_one = len(lyrics) == 1
+        for li in lrc_parser.merge(*lyrics):
             if not only_one:
                 lines.append("")
             lines.append(f"[b]{li[0].lrc}[/b]")
             lines.extend([f"{x.lrc}" for x in li[1:]])
 
-    lines.append("")
-    lines.append("--------")
-    lines.append("")
-    if usr := lrc.lyricUser:
-        lines.append(f"歌词贡献者：{fmt_usr(usr)}")
-    if usr := lrc.transUser:
-        lines.append(f"翻译贡献者：{fmt_usr(usr)}")
+    if lrc.lyricUser or lrc.transUser:
+        lines.append("")
+        lines.append("--------")
+        lines.append("")
+
+        if usr := lrc.lyricUser:
+            lines.append(f"歌词贡献者：{fmt_usr(usr)}")
+        if usr := lrc.transUser:
+            lines.append(f"翻译贡献者：{fmt_usr(usr)}")
 
     return "\n".join(lines).strip()
 

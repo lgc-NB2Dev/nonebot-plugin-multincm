@@ -232,7 +232,7 @@ async def _(matcher: Matcher, state: T_State):
     await matcher.finish(MessageSegment.image(str_to_pic(lrc)))
 
 
-cmd_get_cache_link = on_command("链接", aliases={"link"}, rule=cache_music_msg_rule)
+cmd_get_cache_link = on_command("链接", aliases={"link"}, rule=reply_music_rule)
 
 
 @cmd_get_cache_link.handle()

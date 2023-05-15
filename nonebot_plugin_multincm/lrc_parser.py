@@ -12,6 +12,7 @@ class LrcLine:
     """Lyric Time (ms)"""
     lrc: str
     """Lyric Content"""
+    skip_merge: bool = False
 
 
 class LyricMatchMode(Enum):
@@ -19,7 +20,7 @@ class LyricMatchMode(Enum):
     CLOSEST = 2
 
 
-LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?"
+LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))?"
 LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.M)
 
 
@@ -45,6 +46,7 @@ def parse(lrc: str, ignore_empty: bool = False) -> List[LrcLine]:
                         + int(float(f'{i["sec"]}.{i["mili"]}') * 1000)
                     ),
                     lrc=lrc,
+                    skip_merge=bool(i["meta"]) or lrc.startswith(("作词", "作曲", "编曲")),
                 )
                 for i in times
             ],
@@ -73,7 +75,7 @@ def merge(*lyrics: List[LrcLine], threshold: int = 20) -> List[List[LrcLine]]:
 
         for sub_lrc in sub_lyrics:
             for i, line in enumerate(sub_lrc):
-                if not line.lrc:
+                if (not line.lrc) or main_line.skip_merge:
                     continue
 
                 if (main_time - threshold) <= line.time < (main_time + threshold):
