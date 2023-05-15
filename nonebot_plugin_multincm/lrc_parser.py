@@ -61,6 +61,11 @@ def parse(lrc: str, ignore_empty: bool = False) -> List[LrcLine]:
 
 def merge(*lyrics: List[LrcLine], threshold: int = 20) -> List[List[LrcLine]]:
     lyrics = tuple(x.copy() for x in lyrics)
+
+    for lrc in lyrics:
+        while not lrc[-1].lrc:
+            lrc.pop()
+
     main_lyric = lyrics[0]
     sub_lyrics = lyrics[1:]
 
