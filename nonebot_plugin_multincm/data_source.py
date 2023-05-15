@@ -17,10 +17,10 @@ from pyncm.apis.login import (
     LoginViaCellphone,
     LoginViaEmail,
 )
-from pyncm.apis.track import GetTrackAudio
+from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from .config import config
-from .types import SongSearchResult, TrackAudio
+from .types import LyricData, Privilege, Song, SongSearchResult, TrackAudio
 from .utils import awaitable
 
 DATA_PATH = Path().cwd() / "data" / "multincm"
@@ -52,12 +52,33 @@ async def search_song(keyword: str, page: int = 1, **kwargs) -> SongSearchResult
 
 
 async def get_track_audio(
-    song_ids: list,
+    song_ids: List[int],
     bit_rate: int = 320000,
     **kwargs,
 ) -> List[TrackAudio]:
     res = await ncm_request(GetTrackAudio, song_ids, bitrate=bit_rate, **kwargs)
-    return [TrackAudio(**x) for x in cast(List[dict], res["data"])] if res else []
+    return [TrackAudio(**x) for x in cast(List[dict], res["data"])]
+
+
+async def get_track_info(ids: List[int], **kwargs) -> List[Song]:
+    res = await ncm_request(GetTrackDetail, ids, **kwargs)
+    privileges = {y.id: y for y in [Privilege(**x) for x in res["privileges"]]}
+    return [
+        Song(
+            **x,
+            privilege=(
+                privileges[song_id]
+                if (song_id := x["id"]) in privileges
+                else Privilege(id=song_id, pl=128000, plLevel="standard")
+            ),
+        )
+        for x in res["songs"]
+    ]
+
+
+async def get_track_lrc(song_id: int) -> LyricData:
+    res = await ncm_request(GetTrackLyrics, song_id)
+    return LyricData(**res)
 
 
 async def login(retry=True):

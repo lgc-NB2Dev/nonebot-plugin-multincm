@@ -2,13 +2,14 @@ from dataclasses import dataclass
 from io import BytesIO
 from math import ceil
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union, cast
 
 from pil_utils import BuildImage, Text2Image
 from pil_utils.types import ColorType, HAlignType
 
+from . import lrc_parser
 from .config import config
-from .types import SongSearchResult
+from .types import Lyric, LyricData, SongSearchResult, User
 from .utils import format_alias, format_artists, format_time
 
 BACKGROUND = BuildImage.open(Path(__file__).parent / "res" / "bg.jpg")
@@ -263,3 +264,66 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
     )
 
     return bg.save_jpg()
+
+
+def format_lrc(lrc: LyricData) -> Optional[str]:
+    def fmt_usr(usr: User) -> str:
+        return f"{usr.nickname} [{usr.userid}]"
+
+    raw = lrc.lrc
+    if (not raw) or (not (raw_lrc := raw.lyric)):
+        return None
+
+    lrcs = [
+        lrc_parser.parse(x.lyric)
+        for x in cast(List[Optional[Lyric]], [raw, lrc.romalrc, lrc.tlyric])
+        if x
+    ]
+    lrcs = [x for x in lrcs if x]
+
+    lines = []
+    if not lrcs:
+        lines.append("[i]该歌曲没有滚动歌词[/i]")
+        lines.append("")
+        lines.append("--------")
+        lines.append("")
+        lines.append(raw_lrc)
+    else:
+        only_one = len(lrcs) == 1
+        for li in lrc_parser.merge(*lrcs):
+            if not only_one:
+                lines.append("")
+            lines.append(f"[b]{li[0].lrc}[/b]")
+            lines.extend([f"{x.lrc}" for x in li[1:]])
+
+    lines.append("")
+    lines.append("--------")
+    lines.append("")
+    if usr := lrc.lyricUser:
+        lines.append(f"歌词贡献者：{fmt_usr(usr)}")
+    if usr := lrc.transUser:
+        lines.append(f"翻译贡献者：{fmt_usr(usr)}")
+
+    return "\n".join(lines).strip()
+
+
+def str_to_pic(
+    txt: str,
+    padding: int = 20,
+    font_color: ColorType = (241, 246, 249),
+    bg_color: ColorType = (33, 42, 62),
+    **kwargs,
+) -> BytesIO:
+    txt2img = Text2Image.from_bbcode_text(
+        txt,
+        fontname=config.ncm_list_font or "",
+        fill=font_color,
+        **kwargs,
+    )
+    img = BuildImage.new(
+        "RGBA",
+        (txt2img.width + padding * 2, txt2img.height + padding * 2),
+        bg_color,
+    )
+    txt2img.draw_on_image(img.image, (padding, padding))
+    return img.save_jpg()

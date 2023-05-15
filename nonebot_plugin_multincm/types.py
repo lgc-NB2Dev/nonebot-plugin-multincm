@@ -2,7 +2,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
-BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard"]
+BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
 
 
 class Artist(BaseModel):
@@ -20,6 +20,7 @@ class Album(BaseModel):
 
 
 class Privilege(BaseModel):
+    id: int  # noqa: A003
     pl: int
     plLevel: BrLevel  # noqa: N815
 
@@ -64,3 +65,22 @@ class TrackAudio(BaseModel):
     level: str
     encodeType: str  # noqa: N815
     time: int
+
+
+class User(BaseModel):
+    id: int  # noqa: A003
+    userid: int
+    nickname: str
+
+
+class Lyric(BaseModel):
+    version: int
+    lyric: str
+
+
+class LyricData(BaseModel):
+    transUser: Optional[User]  # noqa: N815
+    lyricUser: Optional[User]  # noqa: N815
+    lrc: Optional[Lyric]
+    tlyric: Optional[Lyric]
+    romalrc: Optional[Lyric]
