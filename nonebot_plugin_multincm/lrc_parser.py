@@ -15,11 +15,6 @@ class LrcLine:
     skip_merge: bool = False
 
 
-class LyricMatchMode(Enum):
-    EQUAL = 1
-    CLOSEST = 2
-
-
 LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))?"
 LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.M)
 
