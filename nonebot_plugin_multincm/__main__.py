@@ -162,11 +162,11 @@ async def _(matcher: Matcher, state: T_State, arg: str = ArgPlainText("arg")):
 
 @cmd_pick_song.handle()
 async def _(matcher: Matcher, state: T_State, event: MessageEvent):
-    arg = event.get_message().extract_plain_text().strip()
+    arg = event.get_message().extract_plain_text().strip().lower()
     page: int = state["page"]
     page_max: int = state["page_max"]
 
-    if arg in ["退出", "tc", "exit", "e", "0"]:
+    if arg in ["退出", "tc", "取消", "qx", "exit", "e", "cancel", "c", "0"]:
         await matcher.finish("已退出选择")
 
     if arg in ["上一页", "syy", "previous", "p"]:

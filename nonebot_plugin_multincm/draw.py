@@ -223,11 +223,15 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
         fill=(255, 255, 255),
         fontname=config.ncm_list_font or "",
     )
+    tip_txt = Text2Image.from_bbcode_text(
+        "Tip：[b]发送序号[/b] 选择歌曲\n其他操作：[b]上一页[/b](P) | [b]下一页[/b](N) | [b]退出[/b](E)",
+        30,
+        align="center",
+        fill=(255, 255, 255),
+        fontname=config.ncm_list_font or "",
+    )
     footer_txt = Text2Image.from_bbcode_text(
-        (
-            f"第 [b]{page_num}[/b] / [b]{max_page}[/b] 页 | 共 [b]{res.songCount}[/b] 首\n"
-            "Tip：发送序号选择；发送 [b]上一页[/b] 或 [b]下一页[/b] 来翻页；发送 [b]退出[/b] 退出选择"
-        ),
+        f"第 [b]{page_num}[/b] / [b]{max_page}[/b] 页 | 共 [b]{res.songCount}[/b] 首",
         30,
         align="center",
         fill=(255, 255, 255),
@@ -235,10 +239,23 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
     )
 
     width = table.width + pic_padding * 2 + table_padding * 2
-    height = table.height + title_txt.height + footer_txt.height + table_padding * 6
+    height = (
+        table.height
+        + title_txt.height
+        + tip_txt.height
+        + footer_txt.height
+        + table_padding * 7
+    )
 
     bg = BACKGROUND.copy().convert("RGBA").resize((width, height), keep_ratio=True)
-    title_txt.draw_on_image(bg.image, ((width - title_txt.width) // 2, table_padding))
+    y_offset = table_padding
+
+    title_txt.draw_on_image(bg.image, ((width - title_txt.width) // 2, y_offset))
+    y_offset += title_txt.height + table_padding
+
+    tip_txt.draw_on_image(bg.image, ((width - tip_txt.width) // 2, y_offset))
+    y_offset += tip_txt.height + table_padding
+
     bg.paste(
         (
             BuildImage.new(
@@ -247,21 +264,15 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
                 (0, 0, 0, 80),
             ).circle_corner(table_border_radius)
         ),
-        (pic_padding, title_txt.height + table_padding * 2),
+        (pic_padding, y_offset),
         alpha=True,
     )
-    bg.paste(
-        table,
-        (
-            pic_padding + table_padding,
-            title_txt.height + table_padding * 3,
-        ),
-        alpha=True,
-    )
-    footer_txt.draw_on_image(
-        bg.image,
-        ((width - footer_txt.width) // 2, height - table_padding - footer_txt.height),
-    )
+    y_offset += table_padding
+
+    bg.paste(table, (pic_padding + table_padding, y_offset), alpha=True)
+    y_offset += table.height + table_padding * 2
+
+    footer_txt.draw_on_image(bg.image, ((width - footer_txt.width) // 2, y_offset))
 
     return bg.save_jpg()
 

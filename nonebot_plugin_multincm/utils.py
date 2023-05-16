@@ -32,4 +32,4 @@ def format_alias(name: str, alias: List[str]) -> str:
 
 
 def format_artists(artists: List[Artist]) -> str:
-    return "、".join([format_alias(x.name, x.alias) for x in artists])
+    return "、".join([x.name for x in artists])
