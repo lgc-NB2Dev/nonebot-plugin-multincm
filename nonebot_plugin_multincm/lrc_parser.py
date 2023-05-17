@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from enum import Enum
 from typing import Callable, List, Optional, TypeVar
 
 T = TypeVar("T")
@@ -27,7 +26,11 @@ def find_last(array: List[T], predicate: Callable[[T], bool]) -> Optional[T]:
     return None
 
 
-def parse(lrc: str, ignore_empty: bool = False) -> List[LrcLine]:
+def parse(
+    lrc: str,
+    ignore_empty: bool = False,
+    merge_empty: bool = True,
+) -> List[LrcLine]:
     parsed = []
     for line in re.finditer(LRC_LINE_REGEX, lrc):
         lrc = line["lrc"].strip().replace("\u3000", " ")
@@ -50,11 +53,27 @@ def parse(lrc: str, ignore_empty: bool = False) -> List[LrcLine]:
     if ignore_empty:
         parsed = [x for x in parsed if x.lrc]
 
+    elif merge_empty:
+        new_parsed = []
+
+        for line in parsed:
+            if line.lrc or (new_parsed and new_parsed[-1].lrc and (not line.lrc)):
+                new_parsed.append(line)
+
+        if new_parsed and (not new_parsed[-1].lrc):
+            new_parsed.pop()
+
+        parsed = new_parsed
+
     parsed.sort(key=lambda x: x.time)
     return parsed
 
 
-def merge(*lyrics: List[LrcLine], threshold: int = 20) -> List[List[LrcLine]]:
+def merge(
+    *lyrics: List[LrcLine],
+    threshold: int = 20,
+    replace_empty_line: Optional[str] = "--------",
+) -> List[List[LrcLine]]:
     lyrics = tuple(x.copy() for x in lyrics)
 
     for lrc in lyrics:
@@ -64,9 +83,10 @@ def merge(*lyrics: List[LrcLine], threshold: int = 20) -> List[List[LrcLine]]:
     main_lyric = lyrics[0]
     sub_lyrics = lyrics[1:]
 
-    for x in main_lyric:
-        if not x.lrc:
-            x.lrc = "--------"
+    if replace_empty_line:
+        for x in main_lyric:
+            if not x.lrc:
+                x.lrc = replace_empty_line
 
     merged: List[List[LrcLine]] = [[x] for x in main_lyric]
     for merged_line in merged:

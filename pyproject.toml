@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-multincm"
-version = "0.2.4"
+version = "0.2.5"
 description = "NCM Song Searcher"
 authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
@@ -11,6 +11,7 @@ dependencies = [
     "pyncm>=1.6.8.9.1",
     "typing-extensions>=4.5.0",
     "anyio>=3.6.2",
+    "nonebot-plugin-apscheduler>=0.2.0",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"

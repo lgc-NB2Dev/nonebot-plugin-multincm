@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 from typing import Any, Callable, Dict, List, cast
 
 import anyio
@@ -20,12 +19,9 @@ from pyncm.apis.login import (
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from .config import config
+from .const import DATA_PATH
 from .types import LyricData, Privilege, Song, SongSearchResult, TrackAudio
 from .utils import awaitable
-
-DATA_PATH = Path().cwd() / "data" / "multincm"
-if not DATA_PATH.exists():
-    DATA_PATH.mkdir(parents=True)
 
 SESSION_FILE = DATA_PATH / "session.cache"
 

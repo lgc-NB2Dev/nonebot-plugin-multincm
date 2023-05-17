@@ -1,23 +1,36 @@
+import asyncio
 import re
 from contextlib import suppress
 from math import ceil
-from typing import Any, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional, Union, cast
 
 from nonebot import logger, on_command
-from nonebot.adapters.onebot.v11 import Message, MessageEvent, MessageSegment
-from nonebot.internal.matcher import Matcher
+from nonebot.adapters.onebot.v11 import (
+    Bot,
+    Event,
+    GroupMessageEvent,
+    Message,
+    MessageEvent,
+    MessageSegment,
+)
+from nonebot.internal.matcher import Matcher, current_event
 from nonebot.params import ArgPlainText, CommandArg
-from nonebot.typing import T_State
+from nonebot.rule import Rule
+from nonebot.typing import T_RuleChecker, T_State
 
 from .config import config
 from .data_source import get_track_audio, get_track_info, get_track_lrc, search_song
 from .draw import draw_search_res, format_lrc, str_to_pic
+from .msg_cache import SongCache, chat_last_song_cache, song_msg_id_cache
 from .types import Song, SongSearchResult
 from .utils import format_alias, format_artists
 
 SONG_ID_REGEX = re.compile(r"music\.163\.com(.*)(song|url)/?\?id=(?P<id>[0-9]+)(|&)")
 
-song_msg_id_cache: Dict[int, int] = {}
+
+def get_chat_cache_key(event: MessageEvent) -> str:
+    g = event.group_id if isinstance(event, GroupMessageEvent) else 0
+    return f"{g}.{event.user_id}"
 
 
 def extract_id_from_text(text: str) -> Optional[int]:
@@ -27,25 +40,46 @@ def extract_id_from_text(text: str) -> Optional[int]:
 
 async def cache_music_msg_rule(event: MessageEvent, state: T_State) -> bool:
     if reply := event.reply:
-        song_id = song_msg_id_cache.get(reply.message_id)
-        if song_id:
-            state["song_id"] = song_id
+        song_cache = song_msg_id_cache.get(reply.message_id)
+        if song_cache:
+            state["song_cache"] = song_cache
             return True
 
     return False
 
 
 async def reply_music_rule(event: MessageEvent, state: T_State) -> bool:
-    if await cache_music_msg_rule(event, state):
-        return True
-
     if reply := event.reply:
         song_id = extract_id_from_text(str(reply.message))
         if song_id:
-            state["song_id"] = song_id
+            state["song_cache"] = SongCache(id=song_id, type="song")
             return True
 
     return False
+
+
+async def chat_last_music_rule(event: MessageEvent, state: T_State) -> bool:
+    if song_cache := chat_last_song_cache.get(get_chat_cache_key(event)):
+        state["song_cache"] = song_cache
+        return True
+
+    return False
+
+
+def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool]]:
+    async def rule(bot: Bot, event: Event, state: T_State):
+        return any(
+            await asyncio.gather(*(Rule(x)(bot, event, state) for x in rules)),
+        )
+
+    return rule
+
+
+music_msg_matcher_rule = any_rule(
+    cache_music_msg_rule,
+    reply_music_rule,
+    chat_last_music_rule,
+)
 
 
 async def send_music(matcher: Matcher, song: Song):
@@ -76,9 +110,14 @@ async def send_music(matcher: Matcher, song: Song):
             },
         ),
     )
-    print(ret)
+
+    song_cache = SongCache(id=song.id, type="song")
+    event = cast(MessageEvent, current_event.get())
+
+    chat_last_song_cache[get_chat_cache_key(event)] = song_cache
     if msg_id := ret.get("message_id"):
-        song_msg_id_cache[msg_id] = song.id
+        song_msg_id_cache[msg_id] = song_cache
+
     await matcher.finish()
 
 
@@ -192,13 +231,14 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
 cmd_get_song = on_command(
     "解析",
     aliases={"resolve", "parse", "get"},
-    rule=reply_music_rule,
+    rule=music_msg_matcher_rule,
 )
 
 
 @cmd_get_song.handle()
 async def _(matcher: Matcher, state: T_State):
-    song_id: int = state["song_id"]
+    song_cache: SongCache = state["song_cache"]
+    song_id = song_cache.id
 
     try:
         song = await get_track_info([song_id])
@@ -215,13 +255,14 @@ async def _(matcher: Matcher, state: T_State):
 cmd_get_lrc = on_command(
     "歌词",
     aliases={"lrc", "lyric", "lyrics"},
-    rule=reply_music_rule,
+    rule=music_msg_matcher_rule,
 )
 
 
 @cmd_get_lrc.handle()
 async def _(matcher: Matcher, state: T_State):
-    song_id: int = state["song_id"]
+    song_cache: SongCache = state["song_cache"]
+    song_id = song_cache.id
 
     try:
         lrc_data = await get_track_lrc(song_id)
@@ -236,10 +277,11 @@ async def _(matcher: Matcher, state: T_State):
     await matcher.finish(MessageSegment.image(str_to_pic(lrc)))
 
 
-cmd_get_cache_link = on_command("链接", aliases={"link"}, rule=reply_music_rule)
+cmd_get_cache_link = on_command("链接", aliases={"link"}, rule=music_msg_matcher_rule)
 
 
 @cmd_get_cache_link.handle()
 async def _(matcher: Matcher, state: T_State):
-    song_id: int = state["song_id"]
+    song_cache: SongCache = state["song_cache"]
+    song_id = song_cache.id
     await matcher.finish(f"https://music.163.com/song?id={song_id}")
