@@ -27,6 +27,7 @@ from .types import (
     Song,
     SongSearchResult,
     TrackAudio,
+    VoiceBaseInfo,
     VoiceSearchResult,
 )
 from .utils import awaitable
@@ -58,21 +59,21 @@ async def search_song(keyword: str, page: int = 1, **kwargs) -> SongSearchResult
     return SongSearchResult(**res["result"])
 
 
-async def search_voice(keyword: str, page: int = 1):
+async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
+    @WeapiCryptoRequest  # type: ignore
+    def SearchVoice():  # noqa: N802
+        return (
+            "/api/search/voice/get",
+            {
+                "keyword": keyword,
+                "scene": "normal",
+                "limit": config.ncm_list_limit,
+                "offset": offset or 0,
+            },
+        )
+
     offset = get_offset_by_page_num(page)
-    res = await ncm_request(
-        WeapiCryptoRequest(  # type: ignore
-            lambda: (
-                "/api/search/voice/get",
-                {
-                    "keyword": keyword,
-                    "scene": "normal",
-                    "limit": config.ncm_list_limit,
-                    "offset": offset or 0,
-                },
-            ),
-        ),
-    )
+    res = await ncm_request(SearchVoice)
     return VoiceSearchResult(**res["data"])
 
 
@@ -104,6 +105,15 @@ async def get_track_info(ids: List[int], **kwargs) -> List[Song]:
 async def get_track_lrc(song_id: int) -> LyricData:
     res = await ncm_request(GetTrackLyrics, song_id)
     return LyricData(**res)
+
+
+async def get_voice_info(program_id: int) -> VoiceBaseInfo:
+    @WeapiCryptoRequest  # type: ignore
+    def GetProgramDetail():  # noqa: N802
+        return ("/api/dj/program/detail", {"id": program_id})
+
+    res = await ncm_request(GetProgramDetail)
+    return VoiceBaseInfo(**res["program"])
 
 
 async def login(retry=True):

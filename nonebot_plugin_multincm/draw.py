@@ -2,14 +2,23 @@ from dataclasses import dataclass
 from io import BytesIO
 from math import ceil
 from pathlib import Path
-from typing import List, Optional, Sequence, Union, cast
+from typing import List, Optional, Sequence, Tuple, Union, cast
 
 from pil_utils import BuildImage, Text2Image
 from pil_utils.types import ColorType, HAlignType
 
+from nonebot_plugin_multincm.msg_cache import CALLING_MAP
+
 from . import lrc_parser
 from .config import config
-from .types import Lyric, LyricData, SongSearchResult, User
+from .types import (
+    Lyric,
+    LyricData,
+    SearchResult,
+    SongSearchResult,
+    User,
+    VoiceSearchResult,
+)
 from .utils import format_alias, format_artists, format_time
 
 BACKGROUND = BuildImage.open(Path(__file__).parent / "res" / "bg.jpg")
@@ -188,13 +197,11 @@ def draw_table(
     return pic
 
 
-def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
-    pic_padding = 50
-    table_padding = 20
-    table_border_radius = 15
-
-    index_offset = (page_num - 1) * config.ncm_list_limit
-    table = draw_table(
+def get_song_search_res_table(
+    res: SongSearchResult,
+    index_offset: int = 0,
+) -> Tuple[List[TableHead], List[List[str]]]:
+    return (
         [
             TableHead("序号", align="right"),
             TableHead("歌名", max_width=config.ncm_max_name_len),
@@ -212,26 +219,69 @@ def draw_search_res(res: SongSearchResult, page_num: int = 1) -> BytesIO:
             ]
             for i, x in enumerate(res.songs)
         ],
+    )
+
+
+def get_voice_search_res_table(
+    res: VoiceSearchResult,
+    index_offset: int = 0,
+) -> Tuple[List[TableHead], List[List[str]]]:
+    return (
+        [
+            TableHead("序号", align="right"),
+            TableHead("节目", max_width=config.ncm_max_name_len),
+            TableHead("电台", max_width=config.ncm_max_name_len),
+            TableHead("台主", max_width=config.ncm_max_artist_len),
+            TableHead("时长", align="center"),
+        ],
+        [
+            [
+                f"[b]{i + index_offset + 1}[/b]",
+                x.baseInfo.name,
+                x.baseInfo.radio.name,
+                x.baseInfo.dj.nickname,
+                format_time(x.baseInfo.duration),
+            ]
+            for i, x in enumerate(res.resources)
+        ],
+    )
+
+
+def draw_search_res(res: SearchResult, page_num: int = 1) -> BytesIO:
+    pic_padding = 50
+    table_padding = 20
+    table_border_radius = 15
+
+    is_song = isinstance(res, SongSearchResult)
+    index_offset = (page_num - 1) * config.ncm_list_limit
+    table = draw_table(
+        *(
+            get_song_search_res_table(res, index_offset)
+            if is_song
+            else get_voice_search_res_table(res, index_offset)
+        ),
         border_radius=table_border_radius,
     )
 
-    max_page = ceil(res.songCount / config.ncm_list_limit)
+    calling = CALLING_MAP["song" if is_song else "voice"]
+    max_count = res.songCount if is_song else res.totalCount
+    max_page = ceil(max_count / config.ncm_list_limit)
     title_txt = Text2Image.from_text(
-        "歌曲列表",
+        f"{calling}列表",
         80,
         weight="bold",
         fill=(255, 255, 255),
         fontname=config.ncm_list_font or "",
     )
     tip_txt = Text2Image.from_bbcode_text(
-        "Tip：[b]发送序号[/b] 选择歌曲\n其他操作：[b]上一页[/b](P) | [b]下一页[/b](N) | [b]退出[/b](E)",
+        f"Tip：[b]发送序号[/b] 选择{calling}\n其他操作：[b]上一页[/b](P) | [b]下一页[/b](N) | [b]退出[/b](E)",
         30,
         align="center",
         fill=(255, 255, 255),
         fontname=config.ncm_list_font or "",
     )
     footer_txt = Text2Image.from_bbcode_text(
-        f"第 [b]{page_num}[/b] / [b]{max_page}[/b] 页 | 共 [b]{res.songCount}[/b] 首",
+        f"第 [b]{page_num}[/b] / [b]{max_page}[/b] 页 | 共 [b]{max_count}[/b] 首",
         30,
         align="center",
         fill=(255, 255, 255),

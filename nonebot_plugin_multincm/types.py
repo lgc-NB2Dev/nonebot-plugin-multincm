@@ -1,8 +1,10 @@
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
-BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
+BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard"]
+
+SearchResult = Union["SongSearchResult", "VoiceSearchResult"]
 
 
 class Artist(BaseModel):
@@ -22,7 +24,7 @@ class Album(BaseModel):
 class Privilege(BaseModel):
     id: int  # noqa: A003
     pl: int
-    plLevel: BrLevel  # noqa: N815
+    plLevel: Optional[BrLevel]  # noqa: N815
 
 
 class Song(BaseModel):
@@ -62,8 +64,8 @@ class TrackAudio(BaseModel):
     br: int
     size: int
     md5: str
-    level: str
-    encodeType: str  # noqa: N815
+    level: Optional[str]
+    encodeType: Optional[str]  # noqa: N815
     time: int
 
 
@@ -103,9 +105,9 @@ class Radio(BaseModel):
     subCount: int  # noqa: N815
     programCount: int  # noqa: N815
     categoryId: int  # noqa: N815
-    secondCategoryId: int  # noqa: N815
-    category: int
-    secondCategory: int  # noqa: N815
+    secondCategoryId: Optional[int]  # noqa: N815
+    category: str
+    secondCategory: Optional[str]  # noqa: N815
     lastProgramId: int  # noqa: N815
 
 
@@ -130,6 +132,6 @@ class VoiceResource(BaseModel):
 
 
 class VoiceSearchResult(BaseModel):
-    resources: VoiceResource
+    resources: List[VoiceResource]
     totalCount: int  # noqa: N815
-    searchQcReminder: SearchQcReminder  # noqa: N815
+    searchQcReminder: Optional[SearchQcReminder]  # noqa: N815

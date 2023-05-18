@@ -7,13 +7,18 @@ from nonebot_plugin_apscheduler import scheduler
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
-SongType = Literal["song"]
+SongType = Literal["song", "voice"]
+
+CALLING_MAP: Dict[SongType, str] = {
+    "song": "歌曲",
+    "voice": "节目",
+}
 
 
 @dataclass
 class SongCache:
     id: int  # noqa: A003
-    type: SongType = "song"  # noqa: A003
+    type: SongType  # noqa: A003
 
 
 # “优雅”
