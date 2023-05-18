@@ -1,4 +1,3 @@
-import asyncio
 import re
 from contextlib import suppress
 from math import ceil
@@ -68,9 +67,11 @@ async def chat_last_music_rule(event: MessageEvent, state: T_State) -> bool:
 
 def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool]]:
     async def rule(bot: Bot, event: Event, state: T_State):
-        return any(
-            await asyncio.gather(*(Rule(x)(bot, event, state) for x in rules)),
-        )
+        # 要按顺序执行，所以不能用 asyncio.gather
+        for x in rules:  # noqa: SIM110
+            if await Rule(x)(bot, event, state):
+                return True
+        return False
 
     return rule
 
@@ -277,7 +278,11 @@ async def _(matcher: Matcher, state: T_State):
     await matcher.finish(MessageSegment.image(str_to_pic(lrc)))
 
 
-cmd_get_cache_link = on_command("链接", aliases={"link"}, rule=music_msg_matcher_rule)
+cmd_get_cache_link = on_command(
+    "链接",
+    aliases={"link", "url"},
+    rule=music_msg_matcher_rule,
+)
 
 
 @cmd_get_cache_link.handle()

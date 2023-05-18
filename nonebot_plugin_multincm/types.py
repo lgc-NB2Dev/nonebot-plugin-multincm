@@ -84,3 +84,52 @@ class LyricData(BaseModel):
     lrc: Optional[Lyric]
     tlyric: Optional[Lyric]
     romalrc: Optional[Lyric]
+
+
+class DJ(BaseModel):
+    userId: int  # noqa: N815
+    nickname: str
+    avatarUrl: str  # noqa: N815
+    gender: int
+    signature: str
+    backgroundUrl: str  # noqa: N815
+
+
+class Radio(BaseModel):
+    id: int  # noqa: A003
+    name: str
+    picUrl: str  # noqa: N815
+    desc: str
+    subCount: int  # noqa: N815
+    programCount: int  # noqa: N815
+    categoryId: int  # noqa: N815
+    secondCategoryId: int  # noqa: N815
+    category: int
+    secondCategory: int  # noqa: N815
+    lastProgramId: int  # noqa: N815
+
+
+class VoiceBaseInfo(BaseModel):
+    id: int  # noqa: A003
+    mainTrackId: int  # noqa: N815
+    name: str
+    coverUrl: str  # noqa: N815
+    description: str
+    dj: DJ
+    radio: Radio
+    duration: int
+    listenerCount: int  # noqa: N815
+    shareCount: int  # noqa: N815
+    likedCount: int  # noqa: N815
+    commentCount: int  # noqa: N815
+    commentThreadId: str  # noqa: N815
+
+
+class VoiceResource(BaseModel):
+    baseInfo: VoiceBaseInfo  # noqa: N815
+
+
+class VoiceSearchResult(BaseModel):
+    resources: VoiceResource
+    totalCount: int  # noqa: N815
+    searchQcReminder: SearchQcReminder  # noqa: N815

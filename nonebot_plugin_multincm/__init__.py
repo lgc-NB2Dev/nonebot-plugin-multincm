@@ -22,7 +22,7 @@ __plugin_meta__ = PluginMetadata(
         "    ▷ 别名：`lrc`、`lyric`、`lyrics`\n"
         "▶ 链接 <回复 音乐卡片>\n"
         "    ▷ 介绍：获取 Bot 发送的音乐卡片的网易云歌曲链接\n"
-        "    ▷ 别名：`link`\n"
+        "    ▷ 别名：`link`、`url`\n"
         " \n"
         "Tip: 点击 Bot 发送的音乐卡片会跳转到音乐直链，可以直接下载"
     ),

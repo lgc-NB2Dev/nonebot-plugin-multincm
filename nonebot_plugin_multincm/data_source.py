@@ -9,6 +9,7 @@ from pyncm import (
     LoadSessionFromString,
     SetCurrentSession,
 )
+from pyncm.apis import WeapiCryptoRequest
 from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.login import (
     GetCurrentLoginStatus,
@@ -20,10 +21,21 @@ from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from .config import config
 from .const import DATA_PATH
-from .types import LyricData, Privilege, Song, SongSearchResult, TrackAudio
+from .types import (
+    LyricData,
+    Privilege,
+    Song,
+    SongSearchResult,
+    TrackAudio,
+    VoiceSearchResult,
+)
 from .utils import awaitable
 
 SESSION_FILE = DATA_PATH / "session.cache"
+
+
+def get_offset_by_page_num(page: int, limit: int = config.ncm_list_limit) -> int:
+    return limit * (page - 1)
 
 
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
@@ -35,16 +47,33 @@ async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
 
 
 async def search_song(keyword: str, page: int = 1, **kwargs) -> SongSearchResult:
-    limit = config.ncm_list_limit
-    offset = limit * (page - 1)
+    offset = get_offset_by_page_num(page)
     res = await ncm_request(
         GetSearchResult,
         keyword=keyword,
-        limit=limit,
+        limit=config.ncm_list_limit,
         offset=offset,
         **kwargs,
     )
     return SongSearchResult(**res["result"])
+
+
+async def search_voice(keyword: str, page: int = 1):
+    offset = get_offset_by_page_num(page)
+    res = await ncm_request(
+        WeapiCryptoRequest(  # type: ignore
+            lambda: (
+                "/api/search/voice/get",
+                {
+                    "keyword": keyword,
+                    "scene": "normal",
+                    "limit": config.ncm_list_limit,
+                    "offset": offset or 0,
+                },
+            ),
+        ),
+    )
+    return VoiceSearchResult(**res["data"])
 
 
 async def get_track_audio(

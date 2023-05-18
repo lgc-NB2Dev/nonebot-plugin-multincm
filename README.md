@@ -142,7 +142,7 @@ plugins = [
   - 别名：`lrc`、`lyric`、`lyrics`
 - 链接 <回复 音乐卡片>
   - 介绍：获取 Bot 发送的音乐卡片的网易云歌曲链接
-  - 别名：`link`
+  - 别名：`link`、`url`
 
 ### Tip
 
