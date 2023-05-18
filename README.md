@@ -12,7 +12,7 @@
 
 # NoneBot-Plugin-MultiNCM
 
-_✨ NoneBot 插件简单描述 ✨_
+_✨ 网易云多选点歌 ✨_
 
 <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="python">
 <a href="https://pdm.fming.dev">
@@ -40,9 +40,28 @@ _✨ NoneBot 插件简单描述 ✨_
 
 一个网易云多选点歌插件，可以翻页，可以登录网易云账号点 vip 歌曲听（插件发送的是自定义音乐卡片），没了
 
-### 歌曲列表效果图
+### 效果图
+
+<details>
+<summary>歌曲列表效果图（点击展开）</summary>
 
 ![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230515025601.jpg)
+
+</details>
+
+<details>
+<summary>电台列表效果图（点击展开）</summary>
+
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230519034438.jpg)
+
+</details>
+
+<details>
+<summary>歌词效果图（点击展开）</summary>
+
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230519034757.png)
+
+</details>
 
 ## 💿 安装
 
@@ -132,21 +151,25 @@ plugins = [
 ### 指令
 
 - 点歌 [歌曲名 / 音乐 ID]
-  - 介绍：顾名思义。当输入音乐 ID 时会直接发送对应音乐
+  - 介绍：搜索歌曲。当输入音乐 ID 时会直接发送对应音乐
   - 别名：`网易云`、`wyy`
-- 解析 <回复 音乐卡片 / 链接>
-  - 介绍：获取该音乐的播放链接并使用自定义卡片发送
+- 电台 [歌曲名 / 节目 ID]
+  - 介绍：搜索电台节目。当输入电台 ID 时会直接发送对应节目
+  - 别名：`声音`、`网易电台`、`wtdt`、`wydj`
+- 解析 [回复 音乐卡片 / 链接]
+  - 介绍：获取该 音乐 / 电台节目 的播放链接并使用自定义卡片发送
   - 别名：`resolve`、`parse`、`get`
-- 歌词 <回复 音乐卡片 / 链接>
+- 歌词 [回复 音乐卡片 / 链接]
   - 介绍：获取该音乐的歌词，以图片形式发送
   - 别名：`lrc`、`lyric`、`lyrics`
-- 链接 <回复 音乐卡片>
-  - 介绍：获取 Bot 发送的音乐卡片的网易云歌曲链接
+- 链接 [回复 音乐卡片]
+  - 介绍：获取 Bot 发送的音乐卡片的网易云链接
   - 别名：`link`、`url`
 
 ### Tip
 
 - 点击 Bot 发送的音乐卡片会跳转到音乐直链，可以直接下载
+- 使用需要回复音乐卡片的指令时，如果没有回复，会自动使用你触发发送的最近一个音乐卡片的信息
 
 ## 📞 联系
 
@@ -156,6 +179,14 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 邮箱：<lgc2333@126.com>
 
 ## 💡 鸣谢
+
+### [mos9527/pyncm](https://github.com/mos9527/pyncm)
+
+项目使用的网易云 API 调用库
+
+### [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
+
+项目电台相关 API 来源
 
 ### [MeetWq/pil-utils](https://github.com/MeetWq/pil-utils)
 
@@ -174,6 +205,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
   </details>
 
 ## 📝 更新日志
+
+### 0.3.0
+
+- 支持电台节目的解析与点播
 
 ### 0.2.5
 
