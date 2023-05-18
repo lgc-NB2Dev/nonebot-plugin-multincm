@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Union,
@@ -35,6 +36,7 @@ from .data_source import (
     get_track_lrc,
     get_voice_info,
     search_song,
+    search_voice,
 )
 from .draw import draw_search_res, format_lrc, str_to_pic
 from .msg_cache import (
@@ -44,7 +46,14 @@ from .msg_cache import (
     chat_last_song_cache,
     song_msg_id_cache,
 )
-from .types import Song, SongSearchResult, VoiceBaseInfo, VoiceSearchResult
+from .types import (
+    SearchResult,
+    Song,
+    SongInfo,
+    SongSearchResult,
+    VoiceBaseInfo,
+    VoiceResource,
+)
 from .utils import format_alias, format_artists
 
 LINK_TYPE_MAP: Dict[SongType, Tuple[str, ...]] = {
@@ -57,7 +66,7 @@ link_types: List[str] = []
 link_type_reg = "|".join(link_types)
 
 SONG_ID_REGEX = re.compile(
-    rf"music\.163\.com(.*)(?P<type>{link_type_reg})/?\?id=(?P<id>[0-9]+)(|&)",
+    rf"music\.163\.com(.*?)(?P<type>{link_type_reg})/?\?id=(?P<id>[0-9]+)(|&)",
 )
 
 
@@ -125,7 +134,7 @@ music_msg_matcher_rule = any_rule(
 )
 
 
-async def send_music(matcher: Matcher, song: Union[Song, VoiceBaseInfo]):
+async def send_music(matcher: Matcher, song: SongInfo):
     is_song = isinstance(song, Song)
     calling = CALLING_MAP["song" if is_song else "voice"]
     song_id = song.id if is_song else song.mainTrackId
@@ -154,7 +163,7 @@ async def send_music(matcher: Matcher, song: Union[Song, VoiceBaseInfo]):
                 "url": info.url,
                 "voice": info.url,
                 "title": format_alias(song.name, song.alia) if is_song else song.name,
-                "content": format_artists(song.ar) if is_song else song.dj.nickname,
+                "content": format_artists(song.ar) if is_song else song.radio.name,
                 "image": song.al.picUrl if is_song else song.coverUrl,
             },
         ),
@@ -170,32 +179,27 @@ async def send_music(matcher: Matcher, song: Union[Song, VoiceBaseInfo]):
     await matcher.finish()
 
 
-@overload
 async def get_cache_by_index(
-    cache: Dict[int, SongSearchResult],
+    cache: Dict[int, SearchResult],
     arg: int,
-) -> Optional[Song]:
-    ...
-
-
-@overload
-async def get_cache_by_index(
-    cache: Dict[int, VoiceSearchResult],
-    arg: int,
-) -> Optional[VoiceBaseInfo]:
-    ...
-
-
-async def get_cache_by_index(cache, arg):
+) -> Optional[SongInfo]:
     ori_index = arg - 1
     page_index = ceil(ori_index / config.ncm_list_limit)
     page_index = 1 if page_index == 0 else page_index
     index = ori_index % config.ncm_list_limit
 
-    if (not (res := cache.get(page_index))) or (not (0 <= index < len(res.songs))):
+    res = cache.get(page_index)
+    if not (res):
         return None
 
-    return res.songs[index]
+    results = res.songs if isinstance(res, SongSearchResult) else res.resources
+    if not (0 <= index < len(results)):
+        return None
+
+    got = results[index]
+    if isinstance(got, VoiceResource):
+        return got.baseInfo
+    return got
 
 
 async def get_page(
@@ -204,56 +208,98 @@ async def get_page(
     page: int = 1,
 ) -> MessageSegment:
     param: str = state["param"]
-    cache: Dict[int, SongSearchResult] = state["cache"]
+    cache: Dict[int, SearchResult] = state["cache"]
+    song_type: SongType = state["type"]
+    calling = CALLING_MAP[song_type]
 
     if not (res := cache.get(page)):
         try:
-            res = await search_song(param, page=page)
+            func = search_song if song_type == "song" else search_voice
+            res = await func(param, page=page)
         except:
             logger.exception("搜索歌曲失败")
             await matcher.finish("搜索歌曲失败，请检查后台输出")
 
-        if not res.songCount:
+        if not (res.songCount if isinstance(res, SongSearchResult) else res.totalCount):
             await matcher.finish("没搜到任何歌曲捏")
+
+    is_song = isinstance(res, SongSearchResult)
+    total_count = res.songCount if is_song else res.totalCount
 
     state["page"] = page
     cache[page] = res
-    state["page_max"] = ceil(res.songCount / config.ncm_list_limit)
+    state["page_max"] = ceil(total_count / config.ncm_list_limit)
 
-    if page == 1 and len(res.songs) == 1:
+    results = res.songs if is_song else res.resources
+    if page == 1 and len(results) == 1:
         await get_cache_by_index(cache, 1)
 
     try:
         pic = draw_search_res(res, page)
     except:
-        logger.exception("绘制歌曲列表失败")
-        await matcher.finish("绘制歌曲列表失败，请检查后台输出")
+        logger.exception(f"绘制{calling}列表失败")
+        await matcher.finish(f"绘制{calling}列表失败，请检查后台输出")
 
     return MessageSegment.image(pic)
 
 
-cmd_pick_song = on_command("点歌", aliases={"网易云", "wyy"}, priority=2)
+@overload
+async def get_song_info(song_id: int, song_type: Literal["song"]) -> Optional[Song]:
+    ...
+
+
+@overload
+async def get_song_info(
+    song_id: int,
+    song_type: Literal["voice"],
+) -> Optional[VoiceBaseInfo]:
+    ...
+
+
+async def get_song_info(song_id, song_type):
+    if song_type == "voice":
+        return await get_voice_info(song_id)
+
+    song = await get_track_info([song_id])
+    return song[0] if song else None
+
+
+cmd_pick_song = on_command(
+    "点歌",
+    aliases={"网易云", "wyy"},
+    state={"type": "song"},
+)
+cmd_pick_voice = on_command(
+    "电台",
+    aliases={"声音", "网易电台", "wydt", "wydj"},
+    state={"type": "voice"},
+)
 
 
 @cmd_pick_song.handle()
+@cmd_pick_voice.handle()
 async def _(matcher: Matcher, arg_msg: Message = CommandArg()):
     if arg_msg.extract_plain_text().strip():
         matcher.set_arg("arg", arg_msg)
 
 
 @cmd_pick_song.got("arg", "请发送搜索内容")
+@cmd_pick_voice.got("arg", "请发送搜索内容")
 async def _(matcher: Matcher, state: T_State, arg: str = ArgPlainText("arg")):
+    song_type: SongType = state["type"]
+    calling = CALLING_MAP[song_type]
+
     param = arg.strip()
     if not param:
-        await matcher.finish("消息无文本，放弃点歌")
+        await matcher.finish("消息无文本，放弃点播")
 
     if param.isdigit():
-        song = []
+        song = None
         with suppress(Exception):
-            song = await get_track_info([int(param)])
+            song = await get_song_info(int(param), song_type)
         if song:
-            await matcher.send("检测到输入了音乐 ID，将直接获取并发送对应歌曲")
-            await send_music(matcher, song[0])
+            await matcher.send(f"检测到输入了{calling} ID，将直接获取并发送对应{calling}")
+            await send_music(matcher, song)
 
     state["param"] = param
     state["page"] = 1
@@ -262,6 +308,7 @@ async def _(matcher: Matcher, state: T_State, arg: str = ArgPlainText("arg")):
 
 
 @cmd_pick_song.handle()
+@cmd_pick_voice.handle()
 async def _(matcher: Matcher, state: T_State, event: MessageEvent):
     arg = event.get_message().extract_plain_text().strip().lower()
     page: int = state["page"]
@@ -281,7 +328,7 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
         await matcher.reject(await get_page(matcher, state, page + 1))
 
     if arg.isdigit():
-        cache = state["cache"]
+        cache: Dict[int, SearchResult] = state["cache"]
         song = await get_cache_by_index(cache, int(arg))
         if not song:
             await matcher.reject("序号输入有误，请重新输入")

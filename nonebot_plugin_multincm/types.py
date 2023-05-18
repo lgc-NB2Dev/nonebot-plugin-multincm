@@ -5,6 +5,7 @@ from pydantic import BaseModel
 BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard"]
 
 SearchResult = Union["SongSearchResult", "VoiceSearchResult"]
+SongInfo = Union["Song", "VoiceBaseInfo"]
 
 
 class Artist(BaseModel):
