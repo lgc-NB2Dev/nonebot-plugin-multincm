@@ -226,6 +226,9 @@ def get_voice_search_res_table(
     res: VoiceSearchResult,
     index_offset: int = 0,
 ) -> Tuple[List[TableHead], List[List[str]]]:
+    if not res.resources:
+        raise ValueError
+
     return (
         [
             TableHead("序号", align="right"),

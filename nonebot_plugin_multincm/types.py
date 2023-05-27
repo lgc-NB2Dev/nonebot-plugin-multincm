@@ -133,6 +133,6 @@ class VoiceResource(BaseModel):
 
 
 class VoiceSearchResult(BaseModel):
-    resources: List[VoiceResource]
+    resources: Optional[List[VoiceResource]]
     totalCount: int  # noqa: N815
     searchQcReminder: Optional[SearchQcReminder]  # noqa: N815

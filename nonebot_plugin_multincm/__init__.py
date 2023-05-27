@@ -5,7 +5,7 @@ require("nonebot_plugin_apscheduler")
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel  # noqa: E402
 
-__version__ = "0.3.0.post1"
+__version__ = "0.3.1"
 __plugin_meta__ = PluginMetadata(
     "MultiNCM",
     "网易云多选点歌",
@@ -16,7 +16,7 @@ __plugin_meta__ = PluginMetadata(
         "    ▷ 别名：`网易云`、`wyy`\n"
         "▶ 电台 [歌曲名 / 节目 ID]\n"
         "    ▷ 介绍：搜索电台节目。当输入电台 ID 时会直接发送对应节目\n"
-        "    ▷ 别名：`声音`、`网易电台`、`wydt`、`wydj`\n"
+        "    ▷ 别名：`声音`、`网易电台`、`wtdt`、`wydj`\n"
         "▶ 解析 [回复 音乐卡片 / 链接]\n"
         "    ▷ 介绍：获取该音乐的播放链接并使用自定义卡片发送\n"
         "    ▷ 别名：`resolve`、`parse`、`get`\n"

@@ -193,7 +193,7 @@ async def get_cache_by_index(
         return None
 
     results = res.songs if isinstance(res, SongSearchResult) else res.resources
-    if not (0 <= index < len(results)):
+    if (not results) or (not (0 <= index < len(results))):
         return None
 
     got = results[index]
@@ -217,20 +217,19 @@ async def get_page(
             func = search_song if song_type == "song" else search_voice
             res = await func(param, page=page)
         except:
-            logger.exception("搜索歌曲失败")
-            await matcher.finish("搜索歌曲失败，请检查后台输出")
-
-        if not (res.songCount if isinstance(res, SongSearchResult) else res.totalCount):
-            await matcher.finish("没搜到任何歌曲捏")
+            logger.exception(f"搜索{calling}失败")
+            await matcher.finish(f"搜索{calling}失败，请检查后台输出")
 
     is_song = isinstance(res, SongSearchResult)
     total_count = res.songCount if is_song else res.totalCount
+    results = res.songs if is_song else res.resources
+    if not results:
+        await matcher.finish(f"没搜到任何{calling}捏")
 
     state["page"] = page
     cache[page] = res
     state["page_max"] = ceil(total_count / config.ncm_list_limit)
 
-    results = res.songs if is_song else res.resources
     if page == 1 and len(results) == 1:
         await get_cache_by_index(cache, 1)
 
