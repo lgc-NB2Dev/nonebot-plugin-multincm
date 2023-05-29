@@ -4,6 +4,8 @@ from typing import Dict, Generic, Iterable, Literal, Optional, Tuple, TypeVar, o
 
 from nonebot_plugin_apscheduler import scheduler
 
+from .config import config
+
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
@@ -24,7 +26,7 @@ class SongCache:
 # “优雅”
 class CacheManager(Generic[KT, VT], Dict[KT, Tuple[float, VT]]):
     def __init__(self, *args, **kwargs):
-        self._job = scheduler.add_job(self.clear_expired, "interval", hours=1)
+        self._job = scheduler.add_job(self.clear_expired, "interval", minutes=1)
         super().__init__(*args, **kwargs)
 
     def __del__(self):
@@ -76,7 +78,7 @@ class CacheManager(Generic[KT, VT], Dict[KT, Tuple[float, VT]]):
     def clear_expired(self):
         now_t = time.time()
         for k, (create_t, _) in self.copy().items():
-            if now_t - create_t >= 3600:
+            if now_t - create_t >= config.ncm_msg_cache_time:
                 del self[k]
 
 

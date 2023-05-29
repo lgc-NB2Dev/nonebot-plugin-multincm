@@ -2,7 +2,7 @@ from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
-BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard"]
+BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
 
 SearchResult = Union["SongSearchResult", "VoiceSearchResult"]
 SongInfo = Union["Song", "VoiceBaseInfo"]
@@ -25,7 +25,7 @@ class Album(BaseModel):
 class Privilege(BaseModel):
     id: int  # noqa: A003
     pl: int
-    plLevel: Optional[BrLevel]  # noqa: N815
+    # plLevel: BrLevel  # noqa: N815
 
 
 class Song(BaseModel):

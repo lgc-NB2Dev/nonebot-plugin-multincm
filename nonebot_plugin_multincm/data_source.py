@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any, Callable, Dict, List, cast
 
 import anyio
@@ -95,7 +94,7 @@ async def get_track_info(ids: List[int], **kwargs) -> List[Song]:
             privilege=(
                 privileges[song_id]
                 if (song_id := x["id"]) in privileges
-                else Privilege(id=song_id, pl=128000, plLevel="standard")
+                else Privilege(id=song_id, pl=128000)  # , plLevel="standard")
             ),
         )
         for x in res["songs"]
@@ -118,7 +117,7 @@ async def get_voice_info(program_id: int) -> VoiceBaseInfo:
 
 async def login(retry=True):
     if SESSION_FILE.exists():
-        logger.info(f"使用缓存登录态 ({str(SESSION_FILE)})")
+        logger.info(f"使用缓存登录态 ({SESSION_FILE})")
         SetCurrentSession(
             LoadSessionFromString(
                 (await anyio.Path(SESSION_FILE).read_text(encoding="u8")),
@@ -179,5 +178,12 @@ async def login(retry=True):
 if "nonebot-plugin-ncm" in get_available_plugin_names():
     logger.info("nonebot-plugin-ncm 已安装，本插件将依赖其全局 Session")
     require("nonebot-plugin-ncm")
+
 else:
-    asyncio.get_event_loop().run_until_complete(login())
+    from nonebot import get_driver
+
+    driver = get_driver()
+
+    @driver.on_startup
+    async def _():
+        await login()

@@ -5,7 +5,7 @@ require("nonebot_plugin_apscheduler")
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel  # noqa: E402
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __plugin_meta__ = PluginMetadata(
     "MultiNCM",
     "网易云多选点歌",

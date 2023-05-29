@@ -14,6 +14,8 @@ class ConfigModel(BaseModel):
     ncm_list_font: Optional[str] = None
     ncm_max_name_len: int = 600
     ncm_max_artist_len: int = 400
+    ncm_msg_cache_time: int = 3600
+    ncm_auto_resolve: bool = False
 
 
 config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())

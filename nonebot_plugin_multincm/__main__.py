@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from nonebot import logger, on_command
+from nonebot import logger, on_command, on_regex
 from nonebot.adapters.onebot.v11 import (
     Bot,
     Event,
@@ -65,8 +65,8 @@ link_types: List[str] = []
 [link_types.extend(x) for x in LINK_TYPE_MAP.values()]
 link_type_reg = "|".join(link_types)
 
-SONG_ID_REGEX = re.compile(
-    rf"music\.163\.com(.*?)(?P<type>{link_type_reg})/?\?id=(?P<id>[0-9]+)(|&)",
+SONG_ID_REGEX = (
+    rf"music\.163\.com(.*?)(?P<type>{link_type_reg})/?\?id=(?P<id>[0-9]+)(|&)"
 )
 
 
@@ -93,17 +93,19 @@ def get_type_from_url_type(type_name: str) -> SongType:
     raise ValueError(f"invalid type {type_name}")
 
 
-async def reply_music_rule(event: MessageEvent, state: T_State) -> bool:
-    if reply := event.reply:
-        res = re.search(SONG_ID_REGEX, str(reply.message))
-        if res:
-            type_name = None
-            with suppress(ValueError):
-                type_name = get_type_from_url_type(res["type"])
+async def msg_or_reply_music_rule(event: MessageEvent, state: T_State) -> bool:
+    check_reply: bool = state.get("check_reply", True)
+    message = event.reply.message if (check_reply and event.reply) else event.message
 
-            if type_name:
-                state["song_cache"] = SongCache(id=int(res["id"]), type=type_name)
-                return True
+    res = re.search(SONG_ID_REGEX, str(message))
+    if res:
+        type_name = None
+        with suppress(ValueError):
+            type_name = get_type_from_url_type(res["type"])
+
+        if type_name:
+            state["song_cache"] = SongCache(id=int(res["id"]), type=type_name)
+            return True
 
     return False
 
@@ -114,6 +116,10 @@ async def chat_last_music_rule(event: MessageEvent, state: T_State) -> bool:
         return True
 
     return False
+
+
+async def auto_resolve_rule():
+    return config.ncm_auto_resolve
 
 
 def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool]]:
@@ -129,7 +135,7 @@ def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool
 
 music_msg_matcher_rule = any_rule(
     cache_music_msg_rule,
-    reply_music_rule,
+    msg_or_reply_music_rule,
     chat_last_music_rule,
 )
 
@@ -341,12 +347,22 @@ cmd_get_song = on_command(
     aliases={"resolve", "parse", "get"},
     rule=music_msg_matcher_rule,
 )
+reg_song_url = on_regex(
+    SONG_ID_REGEX,
+    rule=Rule(auto_resolve_rule) & msg_or_reply_music_rule,
+    state={"check_reply": False, "tip_user": True},
+)
 
 
 @cmd_get_song.handle()
+@reg_song_url.handle()
 async def _(matcher: Matcher, state: T_State):
     song_cache: SongCache = state["song_cache"]
     calling = CALLING_MAP[song_cache.type]
+
+    tip_user = state.get("tip_user", False)
+    if tip_user:
+        await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析播放链接")
 
     try:
         if song_cache.type == "voice":
