@@ -16,6 +16,7 @@ class ConfigModel(BaseModel):
     ncm_max_artist_len: int = 400
     ncm_msg_cache_time: int = 3600
     ncm_auto_resolve: bool = False
+    ncm_illegal_cmd_finish: bool = False
 
 
 config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())

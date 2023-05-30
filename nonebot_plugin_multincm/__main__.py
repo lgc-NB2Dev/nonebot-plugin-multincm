@@ -339,7 +339,10 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
             await matcher.reject("序号输入有误，请重新输入")
         await send_music(matcher, song)
 
-    await matcher.reject("非正确指令，请重新输入")
+    if config.ncm_illegal_cmd_finish:
+        await matcher.finish("非正确指令，已退出点歌")
+
+    await matcher.reject("非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式")
 
 
 cmd_get_song = on_command(
