@@ -217,6 +217,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 0.3.4
+
+- 修复分割线下会显示歌词翻译的问题
+
 ### 0.3.3
 
 - 新增配置项 `NCM_ILLEGAL_CMD_FINISH`

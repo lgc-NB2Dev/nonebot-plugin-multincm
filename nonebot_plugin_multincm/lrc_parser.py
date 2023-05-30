@@ -1,8 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Callable, List, Optional, TypeVar
-
-T = TypeVar("T")
+from typing import List, Optional
 
 
 @dataclass
@@ -16,14 +14,6 @@ class LrcLine:
 
 LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))?"
 LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.M)
-
-
-def find_last(array: List[T], predicate: Callable[[T], bool]) -> Optional[T]:
-    for i in range(len(array) - 1, -1, -1):
-        it = array[i]
-        if predicate(it):
-            return it
-    return None
 
 
 def parse(
@@ -69,6 +59,12 @@ def parse(
     return parsed
 
 
+def strip_lrc_lines(lines: List[LrcLine]) -> List[LrcLine]:
+    for lrc in lines:
+        lrc.lrc = lrc.lrc.strip()
+    return lines
+
+
 def merge(
     *lyrics: List[LrcLine],
     threshold: int = 20,
@@ -80,13 +76,14 @@ def merge(
         while not lrc[-1].lrc:
             lrc.pop()
 
-    main_lyric = lyrics[0]
-    sub_lyrics = lyrics[1:]
+    main_lyric = strip_lrc_lines(lyrics[0])
+    sub_lyrics = [strip_lrc_lines(x) for x in lyrics[1:]]
 
     if replace_empty_line:
         for x in main_lyric:
             if not x.lrc:
                 x.lrc = replace_empty_line
+                x.skip_merge = True
 
     merged: List[List[LrcLine]] = [[x] for x in main_lyric]
     for merged_line in merged:
