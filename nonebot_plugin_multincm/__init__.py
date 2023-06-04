@@ -5,11 +5,11 @@ require("nonebot_plugin_apscheduler")
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel  # noqa: E402
 
-__version__ = "0.3.4"
+__version__ = "0.3.5"
 __plugin_meta__ = PluginMetadata(
-    "MultiNCM",
-    "网易云多选点歌",
-    (
+    name="MultiNCM",
+    description="网易云多选点歌",
+    usage=(
         "指令列表：\n"
         "▶ 点歌 [歌曲名 / 音乐 ID]\n"
         "    ▷ 介绍：搜索歌曲。当输入音乐 ID 时会直接发送对应音乐\n"
@@ -31,6 +31,9 @@ __plugin_meta__ = PluginMetadata(
         "▶ 点击 Bot 发送的音乐卡片会跳转到音乐直链，可以直接下载\n"
         "▶ 使用需要回复音乐卡片的指令时，如果没有回复，会自动使用你触发发送的最近一个音乐卡片的信息"
     ),
-    ConfigModel,
-    {"License": "MIT", "Author": "student_2333"},
+    homepage="https://github.com/lgc-NB2Dev/nonebot-plugin-multincm",
+    type="application",
+    config=ConfigModel,
+    supported_adapters=["~onebot.v11"],
+    extra={"License": "MIT", "Author": "student_2333"},
 )
