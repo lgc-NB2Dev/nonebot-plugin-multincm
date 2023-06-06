@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-multincm"
-version = "0.3.5"
+version = "0.3.6"
 description = "NCM Song Searcher"
 authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
@@ -12,9 +12,6 @@ dependencies = [
     "typing-extensions>=4.5.0",
     "anyio>=3.6.2",
     "nonebot-plugin-apscheduler>=0.2.0",
-    "jinja2>=3.1.2",
-    "nonebot-plugin-htmlrender>=0.2.0.3",
-    "bbcode>=1.1.0",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"
@@ -23,6 +20,12 @@ license = { text = "MIT" }
 [project.urls]
 homepage = "https://github.com/lgc-NB2Dev/nonebot-plugin-multincm"
 
+[project.optional-dependencies]
+playwright = [
+    "nonebot-plugin-htmlrender>=0.2.0.3",
+    "jinja2>=3.1.2",
+    "bbcode>=1.1.0",
+]
 [tool.pdm.build]
 includes = []
 

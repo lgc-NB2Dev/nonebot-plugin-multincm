@@ -408,7 +408,7 @@ async def _(matcher: Matcher, state: T_State):
     if not lrc:
         await matcher.finish("该歌曲没有歌词")
 
-    await matcher.finish(MessageSegment.image(str_to_pic(lrc)))
+    await matcher.finish(MessageSegment.image(await str_to_pic(lrc)))
 
 
 cmd_get_cache_link = on_command(

@@ -2,16 +2,14 @@
   <head>
     <meta charset="utf-8" />
 
-    {% if font_path %}
     <style>
+      {% if font_path %}
       @font-face {
         font-family: 'Custom';
         src: url('{{ font_path }}');
       }
-    </style>
-    {% endif %}
+      {% endif %}
 
-    <style>
       .main {
         margin: 0;
         padding: 25px;
@@ -75,6 +73,14 @@
       .footer {
         margin-bottom: 0;
       }
+
+      {% for i, h in enumerate(heads) %}
+      .t-{{ i }} {
+        text-align: {{ h.align }};
+        {% if h.min_width %}min-width: {{ h.min_width }}px;{% endif %}
+        {% if h.max_width %}max-width: {{ h.max_width }}px;{% endif %}
+      }
+      {% endfor %}
     </style>
   </head>
 
@@ -116,31 +122,4 @@
       </p>
     </div>
   </body>
-
-  {% for i, h in enumerate(heads) %}
-  <script>
-    document.styleSheets[0].addRule('.t-{{ i }}', 'text-align: {{ h.align }};');
-  </script>
-
-  <!---->
-  {% if h.min_width %}
-  <script>
-    document.styleSheets[0].addRule(
-      '.t-{{ i }}',
-      'min-width: {{ h.min_width }}px;'
-    );
-  </script>
-  {% endif %}
-
-  <!---->
-  {% if h.max_width %}
-  <script>
-    document.styleSheets[0].addRule(
-      '.t-{{ i }}',
-      'max-width: {{ h.max_width }}px;'
-    );
-  </script>
-  {% endif %}
-  <!---->
-  {% endfor %}
 </html>

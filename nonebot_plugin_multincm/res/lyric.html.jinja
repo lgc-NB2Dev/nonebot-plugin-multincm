@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+
+    <style>
+      {% if font_path %}
+      @font-face {
+        font-family: 'Custom';
+        src: url('{{ font_path }}');
+      }
+      {% endif %}
+
+      .main {
+        width: fit-content;
+        margin: 0;
+        padding: {{ padding }}px;
+        background-color: {{ bg_color }};
+        color: {{ font_color }};
+        text-align: {{ text_align }};
+        font-size: {{ font_size }}px;
+        font-family: Custom, sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p class="main">{{ lrc }}</p>
+  </body>
+</html>

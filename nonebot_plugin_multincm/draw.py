@@ -1,13 +1,9 @@
 from dataclasses import dataclass
-from io import BytesIO
 from math import ceil
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union, cast
 
-import bbcode
-from jinja2 import Template
 from nonebot import logger
-from nonebot_plugin_htmlrender import get_new_page
 from pil_utils import BuildImage, Text2Image
 from pil_utils.fonts import Font
 from pil_utils.types import ColorType, HAlignType
@@ -25,14 +21,24 @@ from .types import (
 )
 from .utils import format_alias, format_artists, format_time
 
-BACKGROUND = BuildImage.open(Path(__file__).parent / "res" / "bg.jpg")
-SONG_LIST_TEMPLATE = Template(
-    (Path(__file__).parent / "res" / "song_list.html.jinja").read_text(encoding="u8"),
-    enable_async=True,
-)
+RES_DIR = Path(__file__).parent / "res"
+BACKGROUND = BuildImage.open(RES_DIR / "bg.jpg")
 
-BBCODE_PARSER = bbcode.Parser()
-BBCODE_PARSER.install_default_formatters()
+if config.ncm_use_playwright:
+    import bbcode
+    from jinja2 import Template
+    from nonebot_plugin_htmlrender import get_new_page
+
+    SONG_LIST_TEMPLATE = Template(
+        (RES_DIR / "song_list.html.jinja").read_text(encoding="u8"),
+        enable_async=True,
+    )
+    LYRIC_TEMPLATE = Template(
+        (RES_DIR / "lyric.html.jinja").read_text(encoding="u8"),
+        enable_async=True,
+    )
+    BBCODE_PARSER = bbcode.Parser()
+    BBCODE_PARSER.install_default_formatters()
 
 
 @dataclass()
@@ -337,6 +343,29 @@ def draw_search_res_pil(
     return bg.save_jpg().getvalue()
 
 
+def get_font_path_uri() -> Optional[str]:
+    font_path = config.ncm_list_font
+    if font_path:
+        if (path := Path(font_path)).exists():
+            return path.resolve().as_uri()
+        return Font.find(font_path).path.as_uri()
+    return None
+
+
+async def render_template(
+    template: "Template",
+    **kwargs,
+) -> bytes:
+    html_txt = await template.render_async(**kwargs)
+    logger.debug(html_txt)
+    async with get_new_page() as page:
+        await page.goto((Path(__file__).parent / "res").as_uri())
+        await page.set_content(html_txt, wait_until="networkidle")
+        main_elem = await page.query_selector(".main")
+        assert main_elem
+        return await main_elem.screenshot(type="jpeg")
+
+
 async def draw_search_res_playwright(
     calling: str,
     current_page: int,
@@ -349,31 +378,17 @@ async def draw_search_res_playwright(
         x.name = BBCODE_PARSER.format(x.name)
     lines = [[BBCODE_PARSER.format(y) for y in x] for x in lines]
 
-    font_path = config.ncm_list_font
-    if font_path:
-        if (path := Path(font_path)).exists():
-            font_path = path.resolve().as_uri()
-        else:
-            font_path = Font.find(font_path).path.as_uri()
-
-    html_txt = await SONG_LIST_TEMPLATE.render_async(
+    return await render_template(
+        SONG_LIST_TEMPLATE,
         calling=calling,
         current_page=current_page,
         max_page=max_page,
         max_count=max_count,
         heads=heads,
         lines=lines,
-        font_path=font_path,
+        font_path=get_font_path_uri(),
         enumerate=enumerate,
     )
-    logger.debug(html_txt)
-
-    async with get_new_page() as page:
-        await page.goto((Path(__file__).parent / "res").as_uri())
-        await page.set_content(html_txt, wait_until="networkidle")
-        main_elem = await page.query_selector(".main")
-        assert main_elem
-        return await main_elem.screenshot(type="jpeg")
 
 
 async def draw_search_res(res: SearchResult, page_num: int = 1) -> bytes:
@@ -417,12 +432,13 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
         if x
     ]
     lyrics = [x for x in lyrics if x]
+    empty_line = config.ncm_lrc_empty_line
 
     lines = []
     if not lyrics:
         lines.append("[i]该歌曲没有滚动歌词[/i]")
         lines.append("")
-        lines.append("--------")
+        lines.append(empty_line)
         lines.append("")
         lines.append(raw_lrc)
 
@@ -431,7 +447,7 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
             return None  # 纯音乐
 
         only_one = len(lyrics) == 1
-        for li in lrc_parser.merge(*lyrics):
+        for li in lrc_parser.merge(*lyrics, replace_empty_line=empty_line):
             if not only_one:
                 lines.append("")
             lines.append(f"[b]{li[0].lrc}[/b]")
@@ -439,7 +455,7 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
 
     if lrc.lyricUser or lrc.transUser:
         lines.append("")
-        lines.append("--------")
+        lines.append(empty_line)
         lines.append("")
 
         if usr := lrc.lyricUser:
@@ -450,18 +466,20 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
     return "\n".join(lines).strip()
 
 
-def str_to_pic(
+def str_to_pic_pil(
     txt: str,
     padding: int = 20,
     font_color: ColorType = (241, 246, 249),
     bg_color: ColorType = (33, 42, 62),
-    **kwargs,
-) -> BytesIO:
+    font_size: int = 30,
+    text_align: HAlignType = "left",
+) -> bytes:
     txt2img = Text2Image.from_bbcode_text(
         txt,
         fontname=config.ncm_list_font or "",
         fill=font_color,
-        **kwargs,
+        fontsize=font_size,
+        align=text_align,
     )
     img = BuildImage.new(
         "RGBA",
@@ -469,4 +487,42 @@ def str_to_pic(
         bg_color,
     )
     txt2img.draw_on_image(img.image, (padding, padding))
-    return img.save_jpg()
+    return img.save_jpg().getvalue()
+
+
+async def str_to_pic_playwright(
+    txt: str,
+    padding: int = 20,
+    font_color: ColorType = (241, 246, 249),
+    bg_color: ColorType = (33, 42, 62),
+    font_size: int = 30,
+    text_align: HAlignType = "left",
+) -> bytes:
+    def color_type_to_css(clr: ColorType) -> str:
+        if isinstance(clr, tuple):
+            css_func = f"{'rgb' if len(clr) == 3 else 'rgba'}"
+            color_str = f"{', '.join(map(str, clr))}"
+            return f"{css_func}({color_str})"
+        return clr
+
+    return await render_template(
+        LYRIC_TEMPLATE,
+        font_path=get_font_path_uri(),
+        lrc=BBCODE_PARSER.format(txt),
+        padding=padding,
+        font_color=color_type_to_css(font_color),
+        bg_color=color_type_to_css(bg_color),
+        font_size=font_size,
+        text_align=text_align,
+    )
+
+
+async def str_to_pic(
+    txt: str,
+    padding: int = 20,
+    font_color: ColorType = (241, 246, 249),
+    bg_color: ColorType = (33, 42, 62),
+) -> bytes:
+    if config.ncm_use_playwright:
+        return await str_to_pic_playwright(txt, padding, font_color, bg_color)
+    return str_to_pic_pil(txt, padding, font_color, bg_color)

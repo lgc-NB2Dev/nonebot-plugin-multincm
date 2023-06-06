@@ -18,6 +18,7 @@ class ConfigModel(BaseModel):
     ncm_auto_resolve: bool = False
     ncm_illegal_cmd_finish: bool = False
     ncm_use_playwright: bool = False
+    ncm_lrc_empty_line: Optional[str] = "--------"
 
 
 config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())
