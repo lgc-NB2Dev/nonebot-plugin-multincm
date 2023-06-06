@@ -240,7 +240,7 @@ async def get_page(
         await get_cache_by_index(cache, 1)
 
     try:
-        pic = draw_search_res(res, page)
+        pic = await draw_search_res(res, page)
     except:
         logger.exception(f"绘制{calling}列表失败")
         await matcher.finish(f"绘制{calling}列表失败，请检查后台输出")

@@ -4,13 +4,17 @@ from math import ceil
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union, cast
 
+import bbcode
+from jinja2 import Template
+from nonebot import logger
+from nonebot_plugin_htmlrender import get_new_page
 from pil_utils import BuildImage, Text2Image
+from pil_utils.fonts import Font
 from pil_utils.types import ColorType, HAlignType
-
-from nonebot_plugin_multincm.msg_cache import CALLING_MAP
 
 from . import lrc_parser
 from .config import config
+from .msg_cache import CALLING_MAP
 from .types import (
     Lyric,
     LyricData,
@@ -22,6 +26,13 @@ from .types import (
 from .utils import format_alias, format_artists, format_time
 
 BACKGROUND = BuildImage.open(Path(__file__).parent / "res" / "bg.jpg")
+SONG_LIST_TEMPLATE = Template(
+    (Path(__file__).parent / "res" / "song_list.html.jinja").read_text(encoding="u8"),
+    enable_async=True,
+)
+
+BBCODE_PARSER = bbcode.Parser()
+BBCODE_PARSER.install_default_formatters()
 
 
 @dataclass()
@@ -72,16 +83,17 @@ def calculate_pos_offset(align: HAlignType, max_len: int, item_len: int) -> int:
 def draw_table(
     heads: Sequence[Union[TableHead, str]],
     lines: Sequence[Sequence[str]],
-    fontsize: int = 30,
-    pic_padding: int = 2,
-    item_padding_w: int = 10,
-    item_padding_h: int = 15,
-    border_width: int = 3,
     border_radius: int = 15,
-    font_color: ColorType = (255, 255, 255, 255),
-    border_color: ColorType = (255, 255, 255, 100),
     **kwargs,
 ) -> BuildImage:
+    font_size = 30
+    pic_padding = 2
+    item_padding_w = 10
+    item_padding_h = 15
+    border_width = 3
+    font_color = (255, 255, 255, 255)
+    border_color = (255, 255, 255, 100)
+
     head_len = len(heads)
     for li in lines:
         if len(li) != head_len:
@@ -95,7 +107,7 @@ def draw_table(
             generate_line_text(
                 head,
                 f"[b]{head.name}[/b]",
-                fontsize=fontsize,
+                fontsize=font_size,
                 fill=font_color,
                 **kwargs,
             )
@@ -108,7 +120,7 @@ def draw_table(
                 generate_line_text(
                     heads[i],
                     x,
-                    fontsize=fontsize,
+                    fontsize=font_size,
                     fill=font_color,
                     **kwargs,
                 )
@@ -250,25 +262,20 @@ def get_voice_search_res_table(
     )
 
 
-def draw_search_res(res: SearchResult, page_num: int = 1) -> BytesIO:
+def draw_search_res_pil(
+    calling: str,
+    current_page: int,
+    max_page: int,
+    max_count: int,
+    heads: Sequence[TableHead],
+    lines: Sequence[Sequence[str]],
+) -> bytes:
     pic_padding = 50
     table_padding = 20
     table_border_radius = 15
 
-    is_song = isinstance(res, SongSearchResult)
-    index_offset = (page_num - 1) * config.ncm_list_limit
-    table = draw_table(
-        *(
-            get_song_search_res_table(res, index_offset)
-            if is_song
-            else get_voice_search_res_table(res, index_offset)
-        ),
-        border_radius=table_border_radius,
-    )
+    table = draw_table(heads, lines, border_radius=table_border_radius)
 
-    calling = CALLING_MAP["song" if is_song else "voice"]
-    max_count = res.songCount if is_song else res.totalCount
-    max_page = ceil(max_count / config.ncm_list_limit)
     title_txt = Text2Image.from_text(
         f"{calling}列表",
         80,
@@ -284,7 +291,7 @@ def draw_search_res(res: SearchResult, page_num: int = 1) -> BytesIO:
         fontname=config.ncm_list_font or "",
     )
     footer_txt = Text2Image.from_bbcode_text(
-        f"第 [b]{page_num}[/b] / [b]{max_page}[/b] 页 | 共 [b]{max_count}[/b] 首",
+        f"第 [b]{current_page}[/b] / [b]{max_page}[/b] 页 | 共 [b]{max_count}[/b] 首",
         30,
         align="center",
         fill=(255, 255, 255),
@@ -327,7 +334,73 @@ def draw_search_res(res: SearchResult, page_num: int = 1) -> BytesIO:
 
     footer_txt.draw_on_image(bg.image, ((width - footer_txt.width) // 2, y_offset))
 
-    return bg.save_jpg()
+    return bg.save_jpg().getvalue()
+
+
+async def draw_search_res_playwright(
+    calling: str,
+    current_page: int,
+    max_page: int,
+    max_count: int,
+    heads: Sequence[TableHead],
+    lines: Sequence[Sequence[str]],
+) -> bytes:
+    for x in heads:
+        x.name = BBCODE_PARSER.format(x.name)
+    lines = [[BBCODE_PARSER.format(y) for y in x] for x in lines]
+
+    font_path = config.ncm_list_font
+    if font_path:
+        if (path := Path(font_path)).exists():
+            font_path = path.resolve().as_uri()
+        else:
+            font_path = Font.find(font_path).path.as_uri()
+
+    html_txt = await SONG_LIST_TEMPLATE.render_async(
+        calling=calling,
+        current_page=current_page,
+        max_page=max_page,
+        max_count=max_count,
+        heads=heads,
+        lines=lines,
+        font_path=font_path,
+        enumerate=enumerate,
+    )
+    logger.debug(html_txt)
+
+    async with get_new_page() as page:
+        await page.goto((Path(__file__).parent / "res").as_uri())
+        await page.set_content(html_txt, wait_until="networkidle")
+        main_elem = await page.query_selector(".main")
+        assert main_elem
+        return await main_elem.screenshot(type="jpeg")
+
+
+async def draw_search_res(res: SearchResult, page_num: int = 1) -> bytes:
+    is_song = isinstance(res, SongSearchResult)
+    calling = CALLING_MAP["song" if is_song else "voice"]
+
+    index_offset = (page_num - 1) * config.ncm_list_limit
+    head, lines = (
+        get_song_search_res_table(res, index_offset)
+        if is_song
+        else get_voice_search_res_table(res, index_offset)
+    )
+
+    max_count = res.songCount if is_song else res.totalCount
+    max_page = ceil(max_count / config.ncm_list_limit)
+
+    if config.ncm_use_playwright:
+        return await draw_search_res_playwright(
+            calling,
+            page_num,
+            max_page,
+            max_count,
+            head,
+            lines,
+        )
+
+    return draw_search_res_pil(calling, page_num, max_page, max_count, head, lines)
 
 
 def format_lrc(lrc: LyricData) -> Optional[str]:

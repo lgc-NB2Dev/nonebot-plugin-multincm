@@ -17,6 +17,7 @@ class ConfigModel(BaseModel):
     ncm_msg_cache_time: int = 3600
     ncm_auto_resolve: bool = False
     ncm_illegal_cmd_finish: bool = False
+    ncm_use_playwright: bool = False
 
 
 config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())
