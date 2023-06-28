@@ -221,6 +221,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 0.3.8
+
+- 修改及统一表格背景色
+
 ### 0.3.7
 
 - 添加配置项 `NCM_DELETE_LIST_MSG` 和 `NCM_DELETE_LIST_MSG_DELAY`（[#5](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/5)）

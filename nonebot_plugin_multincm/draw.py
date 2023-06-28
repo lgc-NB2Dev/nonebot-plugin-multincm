@@ -327,7 +327,7 @@ def draw_search_res_pil(
             BuildImage.new(
                 "RGBA",
                 (table.width + table_padding * 2, table.height + table_padding * 2),
-                (0, 0, 0, 80),
+                (255, 255, 255, 50),
             ).circle_corner(table_border_radius)
         ),
         (pic_padding, y_offset),
@@ -340,7 +340,7 @@ def draw_search_res_pil(
 
     footer_txt.draw_on_image(bg.image, ((width - footer_txt.width) // 2, y_offset))
 
-    return bg.save_jpg().getvalue()
+    return bg.save_jpg((0, 0, 0)).getvalue()
 
 
 def get_font_path_uri() -> Optional[str]:

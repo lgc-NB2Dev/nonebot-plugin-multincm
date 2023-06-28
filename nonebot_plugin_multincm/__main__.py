@@ -10,6 +10,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    NoReturn,
     Optional,
     Tuple,
     Union,
@@ -155,10 +156,7 @@ music_msg_matcher_rule = any_rule(
 )
 
 
-async def delete_list_msg(
-    msg_id: List[int],
-    bot: Bot,
-):
+async def delete_list_msg(msg_id: List[int], bot: Bot):
     if not (config.ncm_delete_list_msg and msg_id):
         return
 
@@ -170,17 +168,21 @@ async def delete_list_msg(
             logger.warning(f"撤回消息 {msg_id} 失败: {e!r}")
 
 
-def create_delete_msg_task():
+async def finish_with_delete_msg(
+    msg: Optional[Union[str, MessageSegment, Message]] = None,
+) -> NoReturn:
     bot = cast(Bot, current_bot.get())
+    matcher = current_matcher.get()
     msg_id = current_matcher.get().state.get(LIST_MSG_ID_KEY)
-    if not msg_id:
-        return
-    asyncio.create_task(delete_list_msg(msg_id, bot))
+
+    if msg_id:
+        asyncio.create_task(delete_list_msg(msg_id, bot))
+
+    await matcher.finish(msg)
 
 
-async def send_music(song: SongInfo, matcher: Optional[Matcher] = None):
-    if not matcher:
-        matcher = current_matcher.get()
+async def send_music(song: SongInfo):
+    matcher = current_matcher.get()
 
     is_song = isinstance(song, Song)
     calling = CALLING_MAP["song" if is_song else "voice"]
@@ -195,10 +197,10 @@ async def send_music(song: SongInfo, matcher: Optional[Matcher] = None):
         audio_info = await get_track_audio([song_id], bitrate)
     except:
         logger.exception(f"获取{calling}播放链接失败")
-        await matcher.finish(f"获取{calling}播放链接失败，请检查后台输出")
+        await finish_with_delete_msg(f"获取{calling}播放链接失败，请检查后台输出")
 
     if not audio_info:
-        await matcher.finish(f"抱歉，没有获取到{calling}播放链接")
+        await finish_with_delete_msg(f"抱歉，没有获取到{calling}播放链接")
 
     info = audio_info[0]
     seg = MessageSegment(
@@ -216,8 +218,9 @@ async def send_music(song: SongInfo, matcher: Optional[Matcher] = None):
 
     try:
         ret: Dict[str, Any] = await matcher.send(seg)
-    finally:
-        create_delete_msg_task()
+    except Exception:
+        logger.exception(f"发送{calling}列表失败")
+        await finish_with_delete_msg(f"发送{calling}列表失败")
 
     song_cache = SongCache(id=song.id, type="song" if is_song else "voice")
     event = cast(MessageEvent, current_event.get())
@@ -226,7 +229,7 @@ async def send_music(song: SongInfo, matcher: Optional[Matcher] = None):
     if msg_id := ret.get("message_id"):
         song_msg_id_cache[msg_id] = song_cache
 
-    await matcher.finish()
+    await finish_with_delete_msg()
 
 
 async def get_cache_by_index(
@@ -252,15 +255,9 @@ async def get_cache_by_index(
     return got
 
 
-async def get_page(
-    page: int = 1,
-    state: Optional[T_State] = None,
-    matcher: Optional[Matcher] = None,
-) -> MessageSegment:
-    if not matcher:
-        matcher = current_matcher.get()
-    if not state:
-        state = matcher.state
+async def get_page(page: int = 1) -> MessageSegment:
+    matcher = current_matcher.get()
+    state = matcher.state
 
     param: str = state[SEARCH_PARAM_KEY]
     cache: Dict[int, SearchResult] = state[SEARCH_CACHE_KEY]
@@ -273,13 +270,13 @@ async def get_page(
             res = await func(param, page=page)
         except:
             logger.exception(f"搜索{calling}失败")
-            await matcher.finish(f"搜索{calling}失败，请检查后台输出")
+            await finish_with_delete_msg(f"搜索{calling}失败，请检查后台输出")
 
     is_song = isinstance(res, SongSearchResult)
     total_count = res.songCount if is_song else res.totalCount
     results = res.songs if is_song else res.resources
     if not results:
-        await matcher.finish(f"没搜到任何{calling}捏")
+        await finish_with_delete_msg(f"没搜到任何{calling}捏")
 
     state[CURRENT_PAGE_KEY] = page
     cache[page] = res
@@ -292,24 +289,16 @@ async def get_page(
         pic = await draw_search_res(res, page)
     except:
         logger.exception(f"绘制{calling}列表失败")
-        await matcher.finish(f"绘制{calling}列表失败，请检查后台输出")
+        await finish_with_delete_msg(f"绘制{calling}列表失败，请检查后台输出")
 
     return MessageSegment.image(pic)
 
 
-async def send_page(
-    page: int = 1,
-    reject: bool = False,
-    pause: bool = False,
-    state: Optional[T_State] = None,
-    matcher: Optional[Matcher] = None,
-):
-    if not matcher:
-        matcher = current_matcher.get()
-    if not state:
-        state = matcher.state
+async def send_page(page: int = 1, reject: bool = False, pause: bool = False):
+    matcher = current_matcher.get()
+    state = matcher.state
 
-    resp = await matcher.send(await get_page(page, state, matcher))
+    resp = await matcher.send(await get_page(page))
     msg_id = resp.get("message_id")
 
     if LIST_MSG_ID_KEY not in state:
@@ -396,8 +385,7 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
     page_max: int = state[MAX_PAGE_KEY]
 
     if arg in EXIT_COMMAND:
-        create_delete_msg_task()
-        await matcher.finish("已退出选择")
+        await finish_with_delete_msg("已退出选择")
 
     if arg in PREVIOUS_COMMAND:
         if page <= 1:
@@ -417,7 +405,7 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
         await send_music(song)
 
     if config.ncm_illegal_cmd_finish:
-        await matcher.finish("非正确指令，已退出点歌")
+        await finish_with_delete_msg("非正确指令，已退出点歌")
 
     await matcher.reject("非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式")
 
