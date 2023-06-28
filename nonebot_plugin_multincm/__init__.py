@@ -6,7 +6,7 @@ require("nonebot_plugin_htmlrender")
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel  # noqa: E402
 
-__version__ = "0.3.6"
+__version__ = "0.3.7"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",

@@ -136,22 +136,24 @@ plugins = [
 
 在 nonebot2 项目的 `.env` 文件中添加下表中的必填配置
 
-|          配置项          | 必填 |   默认值   |                               说明                                |
-| :----------------------: | :--: | :--------: | :---------------------------------------------------------------: |
-|       `NCM_CTCODE`       |  否  |    `86`    |                    手机号登录用，登录手机区号                     |
-|       `NCM_PHONE`        |  否  |     无     |                     手机号登录用，登录手机号                      |
-|       `NCM_EMAIL`        |  否  |     无     |                       邮箱登录用，登录邮箱                        |
-|      `NCM_PASSWORD`      |  否  |     无     |                帐号明文密码，邮箱登录时为邮箱密码                 |
-|   `NCM_PASSWORD_HASH`    |  否  |     无     |              帐号密码 MD5 哈希，邮箱登录时为邮箱密码              |
-|     `NCM_LIST_LIMIT`     |  否  |    `20`    |                      歌曲列表每页的最大数量                       |
-|     `NCM_LIST_FONT`      |  否  |     无     |                      渲染歌曲列表使用的字体                       |
-|    `NCM_MAX_NAME_LEN`    |  否  |   `600`    |              歌曲列表中歌名列的最大文本宽度（像素）               |
-|   `NCM_MAX_ARTIST_LEN`   |  否  |   `400`    |              歌曲列表中歌手列的最大文本宽度（像素）               |
-|   `NCM_MSG_CACHE_TIME`   |  否  |   `3600`   | 缓存 Bot 已发送音乐卡片的音乐 ID 及 用户最近一次操作 的时长（秒） |
-|    `NCM_AUTO_RESOLVE`    |  否  |  `False`   |         当用户发送音乐链接时，是否自动解析并发送音乐卡片          |
-| `NCM_ILLEGAL_CMD_FINISH` |  否  |  `False`   |          当用户在点歌时输入了非法指令，是否直接退出点歌           |
-|   `NCM_USE_PLAYWRIGHT`   |  否  |  `False`   |           是否使用 `playwright` 绘制歌曲列表与歌词图片            |
-|   `NCM_LRC_EMPTY_LINE`   |  否  | `--------` |                        填充歌词空行的字符                         |
+|           配置项            | 必填 |    默认值    |                               说明                                |
+| :-------------------------: | :--: | :----------: | :---------------------------------------------------------------: |
+|        `NCM_CTCODE`         |  否  |     `86`     |                    手机号登录用，登录手机区号                     |
+|         `NCM_PHONE`         |  否  |      无      |                     手机号登录用，登录手机号                      |
+|         `NCM_EMAIL`         |  否  |      无      |                       邮箱登录用，登录邮箱                        |
+|       `NCM_PASSWORD`        |  否  |      无      |                帐号明文密码，邮箱登录时为邮箱密码                 |
+|     `NCM_PASSWORD_HASH`     |  否  |      无      |              帐号密码 MD5 哈希，邮箱登录时为邮箱密码              |
+|      `NCM_LIST_LIMIT`       |  否  |     `20`     |                      歌曲列表每页的最大数量                       |
+|       `NCM_LIST_FONT`       |  否  |      无      |                      渲染歌曲列表使用的字体                       |
+|     `NCM_MAX_NAME_LEN`      |  否  |    `600`     |              歌曲列表中歌名列的最大文本宽度（像素）               |
+|    `NCM_MAX_ARTIST_LEN`     |  否  |    `400`     |              歌曲列表中歌手列的最大文本宽度（像素）               |
+|    `NCM_MSG_CACHE_TIME`     |  否  |    `3600`    | 缓存 Bot 已发送音乐卡片的音乐 ID 及 用户最近一次操作 的时长（秒） |
+|     `NCM_AUTO_RESOLVE`      |  否  |   `False`    |         当用户发送音乐链接时，是否自动解析并发送音乐卡片          |
+|  `NCM_ILLEGAL_CMD_FINISH`   |  否  |   `False`    |          当用户在点歌时输入了非法指令，是否直接退出点歌           |
+|    `NCM_USE_PLAYWRIGHT`     |  否  |   `False`    |           是否使用 `playwright` 绘制歌曲列表与歌词图片            |
+|    `NCM_LRC_EMPTY_LINE`     |  否  |  `--------`  |                        填充歌词空行的字符                         |
+|    `NCM_DELETE_LIST_MSG`    |  否  |    `True`    |               是否在退出点歌模式后自动撤回歌曲列表                |
+| `NCM_DELETE_LIST_MSG_DELAY` |  否  | `[0.5, 2.0]` |              自动撤回歌曲列表消息间隔时间（单位秒）               |
 
 ## 🎉 使用
 
@@ -218,6 +220,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
   </details>
 
 ## 📝 更新日志
+
+### 0.3.7
+
+- 添加配置项 `NCM_DELETE_LIST_MSG` 和 `NCM_DELETE_LIST_MSG_DELAY`（[#5](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/5)）
 
 ### 0.3.6
 
