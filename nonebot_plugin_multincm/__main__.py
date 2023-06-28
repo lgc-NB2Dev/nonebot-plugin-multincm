@@ -72,6 +72,10 @@ CURRENT_PAGE_KEY = "page"
 MAX_PAGE_KEY = "page_max"
 TIP_USER_KEY = "tip_user"
 
+EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
+PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
+NEXT_COMMAND = ("下一页", "xyy", "next", "n")
+
 LINK_TYPE_MAP: Dict[SongType, Tuple[str, ...]] = {
     "song": ("song", "url"),
     "voice": ("dj", "program"),
@@ -391,16 +395,16 @@ async def _(matcher: Matcher, state: T_State, event: MessageEvent):
     page: int = state[CURRENT_PAGE_KEY]
     page_max: int = state[MAX_PAGE_KEY]
 
-    if arg in ["退出", "tc", "取消", "qx", "exit", "e", "cancel", "c", "0"]:
+    if arg in EXIT_COMMAND:
         create_delete_msg_task()
         await matcher.finish("已退出选择")
 
-    if arg in ["上一页", "syy", "previous", "p"]:
+    if arg in PREVIOUS_COMMAND:
         if page <= 1:
             await matcher.reject("已经是第一页了")
         await send_page(page - 1, reject=True)
 
-    if arg in ["下一页", "xyy", "next", "n"]:
+    if arg in NEXT_COMMAND:
         if page >= page_max:
             await matcher.reject("已经是最后一页了")
         await send_page(page + 1, reject=True)
