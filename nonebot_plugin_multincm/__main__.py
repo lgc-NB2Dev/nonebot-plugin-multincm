@@ -45,7 +45,7 @@ from .data_source import (
     search_song,
     search_voice,
 )
-from .draw import draw_search_res, format_lrc, str_to_pic
+from .draw import draw_search_res, str_to_pic
 from .msg_cache import (
     CALLING_MAP,
     SongCache,
@@ -61,7 +61,7 @@ from .types import (
     VoiceBaseInfo,
     VoiceResource,
 )
-from .utils import format_alias, format_artists
+from .utils import format_alias, format_artists, format_lrc
 
 LIST_MSG_ID_KEY = "list_msg_id"
 SONG_CACHE_KEY = "song_cache"
@@ -195,7 +195,7 @@ async def send_music(song: SongInfo):
 
     try:
         audio_info = await get_track_audio([song_id], bitrate)
-    except:
+    except Exception:
         logger.exception(f"获取{calling}播放链接失败")
         await finish_with_delete_msg(f"获取{calling}播放链接失败，请检查后台输出")
 
@@ -268,7 +268,7 @@ async def get_page(page: int = 1) -> MessageSegment:
         func = search_song if song_type == "song" else search_voice
         try:
             res = await func(param, page=page)
-        except:
+        except Exception:
             logger.exception(f"搜索{calling}失败")
             await finish_with_delete_msg(f"搜索{calling}失败，请检查后台输出")
 
@@ -287,7 +287,7 @@ async def get_page(page: int = 1) -> MessageSegment:
 
     try:
         pic = await draw_search_res(res, page)
-    except:
+    except Exception:
         logger.exception(f"绘制{calling}列表失败")
         await finish_with_delete_msg(f"绘制{calling}列表失败，请检查后台输出")
 
@@ -438,7 +438,7 @@ async def _(matcher: Matcher, state: T_State):
         else:
             song = await get_track_info([song_cache.id])
             song = song[0] if song else None
-    except:
+    except Exception:
         logger.exception(f"获取{calling}信息失败")
         await matcher.finish(f"获取{calling}信息失败，请检查后台输出")
 
@@ -465,7 +465,7 @@ async def _(matcher: Matcher, state: T_State):
     song_id = song_cache.id
     try:
         lrc_data = await get_track_lrc(song_id)
-    except:
+    except Exception:
         logger.exception("获取歌曲歌词失败")
         await matcher.finish("获取歌曲歌词失败，请检查后台输出")
 

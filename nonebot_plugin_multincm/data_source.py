@@ -166,7 +166,7 @@ async def login(retry=True):
 
         if retry:
             logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
-            await login(False)
+            await login(retry=False)
             return
 
         raise RuntimeError("登录态异常，请重新登录") from e

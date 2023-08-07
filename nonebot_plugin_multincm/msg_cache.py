@@ -36,7 +36,11 @@ class CacheManager(Generic[KT, VT], Dict[KT, Tuple[float, VT]]):
         return super().__getitem__(__key)[1]
 
     @overload
-    def get(self, __key: KT, __default: Literal[None] = None) -> Optional[VT]:
+    def get(
+        self,
+        __key: KT,
+        __default: Literal[None] = None,  # noqa: RUF013
+    ) -> Optional[VT]:
         ...
 
     @overload
@@ -62,7 +66,11 @@ class CacheManager(Generic[KT, VT], Dict[KT, Tuple[float, VT]]):
             yield k, v[1]
 
     @overload
-    def pop(self, __key: KT, __default: Literal[None] = None) -> Optional[VT]:
+    def pop(
+        self,
+        __key: KT,
+        __default: Literal[None] = None,  # noqa: RUF013
+    ) -> Optional[VT]:
         ...
 
     @overload

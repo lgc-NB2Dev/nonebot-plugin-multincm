@@ -147,7 +147,7 @@ plugins = [
 |       `NCM_LIST_FONT`       |  否  |      无      |                      渲染歌曲列表使用的字体                       |
 |     `NCM_MAX_NAME_LEN`      |  否  |    `600`     |              歌曲列表中歌名列的最大文本宽度（像素）               |
 |    `NCM_MAX_ARTIST_LEN`     |  否  |    `400`     |              歌曲列表中歌手列的最大文本宽度（像素）               |
-|    `NCM_MSG_CACHE_TIME`     |  否  |    `3600`    | 缓存 Bot 已发送音乐卡片的音乐 ID 及 用户最近一次操作 的时长（秒） |
+|    `NCM_MSG_CACHE_TIME`     |  否  |   `43200`    | 缓存 Bot 已发送音乐卡片的音乐 ID 及 用户最近一次操作 的时长（秒） |
 |     `NCM_AUTO_RESOLVE`      |  否  |   `False`    |         当用户发送音乐链接时，是否自动解析并发送音乐卡片          |
 |  `NCM_ILLEGAL_CMD_FINISH`   |  否  |   `False`    |          当用户在点歌时输入了非法指令，是否直接退出点歌           |
 |    `NCM_USE_PLAYWRIGHT`     |  否  |   `False`    |           是否使用 `playwright` 绘制歌曲列表与歌词图片            |
@@ -220,6 +220,11 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
   </details>
 
 ## 📝 更新日志
+
+### 0.3.9
+
+- 让 `htmlrender` 成为真正的可选依赖
+- 把配置项 `NCM_MSG_CACHE_TIME` 的默认值改为 `43200`（12 小时）
 
 ### 0.3.8
 
