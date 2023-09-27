@@ -218,9 +218,9 @@ async def send_music(song: SongInfo):
 
     try:
         ret: Dict[str, Any] = await matcher.send(seg)
-    except Exception:
-        logger.exception(f"发送{calling}列表失败")
-        await finish_with_delete_msg(f"发送{calling}列表失败")
+    except Exception as e:
+        logger.warning(f"发送{calling}卡片失败：{e!r}")
+        # await finish_with_delete_msg(f"发送{calling}卡片失败")
 
     song_cache = SongCache(id=song.id, type="song" if is_song else "voice")
     event = cast(MessageEvent, current_event.get())
