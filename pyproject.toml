@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-multincm"
-version = "0.3.9"
+version = "0.3.9.post1"
 description = "NCM Song Searcher"
 authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
