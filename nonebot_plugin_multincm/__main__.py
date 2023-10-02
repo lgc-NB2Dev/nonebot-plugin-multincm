@@ -213,6 +213,7 @@ async def send_music(song: SongInfo):
             "title": format_alias(song.name, song.alia) if is_song else song.name,
             "content": format_artists(song.ar) if is_song else song.radio.name,
             "image": song.al.picUrl if is_song else song.coverUrl,
+            "jumpUrl": f"https://music.163.com/{'song' if is_song else 'dj'}?id={song_id}"
         },
     )
 
