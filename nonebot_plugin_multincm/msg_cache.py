@@ -1,26 +1,32 @@
 import time
-from dataclasses import dataclass
-from typing import Dict, Generic, Iterable, Literal, Optional, Tuple, TypeVar, overload
+from typing import (
+    Dict,
+    Generic,
+    Iterable,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    overload,
+)
 
 from nonebot_plugin_apscheduler import scheduler
 
 from .config import config
+from .providers import BaseSong
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
-SongType = Literal["song", "voice"]
 
-CALLING_MAP: Dict[SongType, str] = {
-    "song": "歌曲",
-    "voice": "节目",
-}
+class SongCache(NamedTuple):
+    song_class: Type[BaseSong]
+    song_id: int
 
-
-@dataclass
-class SongCache:
-    id: int  # noqa: A003
-    type: SongType  # noqa: A003
+    async def get(self) -> BaseSong:
+        return await self.song_class.from_id(self.song_id)
 
 
 # “优雅”

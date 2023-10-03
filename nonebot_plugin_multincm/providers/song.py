@@ -24,6 +24,9 @@ class Song(BaseSong[SongModel]):
     calling = CALLING
     link_types = LINK_TYPES
 
+    async def get_id(self) -> int:
+        return self.info.id
+
     @classmethod
     async def from_id(cls, song_id: int) -> "Song":
         info = (await get_track_info([song_id]))[0]

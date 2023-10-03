@@ -13,6 +13,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Self
 
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
@@ -20,8 +21,8 @@ from ..config import config
 from ..draw import SearchResp
 from ..types import SearchRespModelType, SongInfoModelType
 
-_TRawSearchResp = TypeVar("_TRawSearchResp", bound=SearchRespModelType)
 _TSongInfoModel = TypeVar("_TSongInfoModel", bound=SongInfoModelType)
+_TRawSearchResp = TypeVar("_TRawSearchResp", bound=SearchRespModelType)
 _T_RawRespContent = TypeVar("_T_RawRespContent")
 
 _TBaseSong = TypeVar("_TBaseSong", bound="BaseSong")
@@ -36,6 +37,15 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
 
     def __init__(self, info: _TSongInfoModel, *_, **__) -> None:
         self.info = info
+
+    @abstractmethod
+    async def get_id(self) -> int:
+        ...
+
+    @classmethod
+    @abstractmethod
+    async def from_id(cls, song_id: int) -> Self:
+        ...
 
     @abstractmethod
     async def get_url(self) -> str:
@@ -135,7 +145,7 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
     async def _build_selection(
         self,
         resp: _T_RawRespContent,
-    ) -> Union[_TBaseSong, "BaseSearcher"]:
+    ) -> Union[_TBaseSong, "BaseSearcherType"]:
         ...
 
     def _calc_index_offset(self, page: int) -> int:
@@ -144,7 +154,7 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
     async def search(
         self,
         page: int = 1,
-    ) -> Union[SearchResp, BaseSong, "BaseSearcher", None]:
+    ) -> Union[SearchResp, "BaseSongType", "BaseSearcherType", None]:
         if self.keyword.isdigit():
             with suppress(Exception):
                 if song := await self.search_by_id(int(self.keyword)):
@@ -167,7 +177,10 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         return resp
 
     @abstractmethod
-    async def search_by_id(self, arg_id: int) -> Union[BaseSong, "BaseSearcher", None]:
+    async def search_by_id(
+        self,
+        arg_id: int,
+    ) -> Union["BaseSongType", "BaseSearcherType", None]:
         ...
 
     async def next_page(self) -> SearchResp:
@@ -182,7 +195,7 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
             raise ValueError("Already first page")
         return cast(Any, await self.search(self._last_page - 1))
 
-    async def select(self, index: int) -> Union[_TBaseSong, "BaseSearcher"]:
+    async def select(self, index: int) -> Union[_TBaseSong, "BaseSearcherType"]:
         index -= 1  # item index starts with 0
         page_index = (index // config.ncm_list_limit) + 1  # page index starts with 1
         if page_index not in self._cache:
@@ -196,8 +209,12 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         return await self._build_selection(caches[item_index])
 
 
-songs: List[Type[BaseSong]] = []
-searchers: List[Type[BaseSearcher]] = []
+BaseSongType = BaseSong[SongInfoModelType]
+BaseSearcherType = BaseSearcher[SearchRespModelType, Any, BaseSongType]
+
+
+songs: List[Type[BaseSongType]] = []
+searchers: List[Type[BaseSearcherType]] = []
 
 
 def song(cls: Type[_TBaseSong]) -> Type[_TBaseSong]:

@@ -18,6 +18,9 @@ class Voice(BaseSong[VoiceBaseInfo]):
     calling = CALLING
     link_types = LINK_TYPES
 
+    async def get_id(self) -> int:
+        return self.info.id
+
     @classmethod
     async def from_id(cls, program_id: int) -> "Voice":
         info = await get_voice_info(program_id)

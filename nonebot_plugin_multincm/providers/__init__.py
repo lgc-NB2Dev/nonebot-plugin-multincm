@@ -1,5 +1,7 @@
 from .base import BaseSearcher as BaseSearcher
+from .base import BaseSearcherType as BaseSearcherType
 from .base import BaseSong as BaseSong
+from .base import BaseSongType as BaseSongType
 from .base import searchers as searchers
 from .base import songs as songs
 from .song import Song as Song
