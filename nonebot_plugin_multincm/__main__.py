@@ -48,7 +48,7 @@ async def finish_with_delete_msg(
     await matcher.finish(msg)
 
 
-async def send_search_resp(resp: SearchResp, reject: bool = False, pause: bool = False):
+async def send_search_resp(resp: SearchResp):
     matcher = current_matcher.get()
     state = matcher.state
 
@@ -62,11 +62,6 @@ async def send_search_resp(resp: SearchResp, reject: bool = False, pause: bool =
     msg_id = ret.get("message_id")
     if msg_id:
         state.setdefault(KEY_LIST_MSG_ID, []).append(msg_id)
-
-    if reject:
-        await matcher.reject()
-    elif pause:
-        await matcher.pause()
 
 
 # endregion
@@ -134,14 +129,16 @@ async def searcher_handler_4(matcher: Matcher, event: MessageEvent, state: T_Sta
             resp = await searcher.prev_page()
         except ValueError:
             await matcher.reject("已经是第一页了")
-        await send_search_resp(resp, reject=True)
+        await send_search_resp(resp)
+        await matcher.reject()
 
     if arg in NEXT_COMMAND:
         try:
             resp = await searcher.next_page()
         except ValueError:
             await matcher.reject("已经是最后一页了")
-        await send_search_resp(resp, reject=True)
+        await send_search_resp(resp)
+        await matcher.reject()
 
     if arg.isdigit():
         try:
