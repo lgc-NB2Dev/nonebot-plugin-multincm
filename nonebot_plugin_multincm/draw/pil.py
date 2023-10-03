@@ -5,7 +5,7 @@ from pil_utils.types import ColorType, HAlignType
 
 from ..config import config
 from ..const import RES_DIR
-from .shared import TableHead
+from .shared import SearchResp, TableHead
 
 BACKGROUND = BuildImage.open(RES_DIR / "bg.jpg")
 
@@ -176,20 +176,15 @@ def draw_table(
     return pic
 
 
-async def draw_search_res(
-    calling: str,
-    current_page: int,
-    max_page: int,
-    max_count: int,
-    heads: Sequence[TableHead],
-    lines: Sequence[Sequence[str]],
-) -> bytes:
+async def draw_search_res(res: SearchResp) -> bytes:
     pic_padding = 50
     table_padding = 20
     table_border_radius = 15
 
-    table = draw_table(heads, lines, border_radius=table_border_radius)
+    heads, lines = res.table
+    table_img = draw_table(heads, lines, border_radius=table_border_radius)
 
+    calling = res.calling
     title_txt = Text2Image.from_text(
         f"{calling}列表",
         80,
@@ -205,16 +200,16 @@ async def draw_search_res(
         fontname=config.ncm_list_font or "",
     )
     footer_txt = Text2Image.from_bbcode_text(
-        f"第 [b]{current_page}[/b] / [b]{max_page}[/b] 页 | 共 [b]{max_count}[/b] 首",
+        f"第 [b]{res.current_page}[/b] / [b]{res.max_page}[/b] 页 | 共 [b]{res.max_count}[/b] 首",
         30,
         align="center",
         fill=(255, 255, 255),
         fontname=config.ncm_list_font or "",
     )
 
-    width = table.width + pic_padding * 2 + table_padding * 2
+    width = table_img.width + pic_padding * 2 + table_padding * 2
     height = (
-        table.height
+        table_img.height
         + title_txt.height
         + tip_txt.height
         + footer_txt.height
@@ -234,7 +229,10 @@ async def draw_search_res(
         (
             BuildImage.new(
                 "RGBA",
-                (table.width + table_padding * 2, table.height + table_padding * 2),
+                (
+                    table_img.width + table_padding * 2,
+                    table_img.height + table_padding * 2,
+                ),
                 (255, 255, 255, 50),
             ).circle_corner(table_border_radius)
         ),
@@ -243,8 +241,8 @@ async def draw_search_res(
     )
     y_offset += table_padding
 
-    bg.paste(table, (pic_padding + table_padding, y_offset), alpha=True)
-    y_offset += table.height + table_padding * 2
+    bg.paste(table_img, (pic_padding + table_padding, y_offset), alpha=True)
+    y_offset += table_img.height + table_padding * 2
 
     footer_txt.draw_on_image(bg.image, ((width - footer_txt.width) // 2, y_offset))
 

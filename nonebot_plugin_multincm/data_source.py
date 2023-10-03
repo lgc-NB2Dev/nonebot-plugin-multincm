@@ -78,7 +78,7 @@ async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
 
 async def get_track_audio(
     song_ids: List[int],
-    bit_rate: int = 320000,
+    bit_rate: int = 999999,
     **kwargs,
 ) -> List[TrackAudio]:
     res = await ncm_request(GetTrackAudio, song_ids, bitrate=bit_rate, **kwargs)

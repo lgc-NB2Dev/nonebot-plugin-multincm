@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional
 
 import bbcode
 from jinja2 import Template
@@ -10,7 +10,7 @@ from pil_utils.types import ColorType, HAlignType
 
 from ..config import config
 from ..const import RES_DIR
-from .shared import TableHead
+from .shared import SearchResp
 
 SONG_LIST_TEMPLATE = Template(
     (RES_DIR / "song_list.html.jinja").read_text(encoding="u8"),
@@ -47,25 +47,18 @@ async def render_template(
         return await main_elem.screenshot(type="jpeg")
 
 
-async def draw_search_res(
-    calling: str,
-    current_page: int,
-    max_page: int,
-    max_count: int,
-    heads: Sequence[TableHead],
-    lines: Sequence[Sequence[str]],
-) -> bytes:
-    for x in heads:
+async def draw_search_res(res: SearchResp) -> bytes:
+    for x in res.table.head:
         x.name = BBCODE_PARSER.format(x.name)
-    lines = [[BBCODE_PARSER.format(y) for y in x] for x in lines]
+    lines = [[BBCODE_PARSER.format(y) for y in x] for x in res.table.rows]
 
     return await render_template(
         SONG_LIST_TEMPLATE,
-        calling=calling,
-        current_page=current_page,
-        max_page=max_page,
-        max_count=max_count,
-        heads=heads,
+        calling=res.calling,
+        current_page=res.current_page,
+        max_page=res.max_page,
+        max_count=res.max_count,
+        heads=res.table.head,
         lines=lines,
         font_path=get_font_path_uri(),
         enumerate=enumerate,

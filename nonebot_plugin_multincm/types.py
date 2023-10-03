@@ -1,36 +1,38 @@
+# ruff: noqa: A003 N815
+
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
+BrLevelType = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
 
-SearchResult = Union["SongSearchResult", "VoiceSearchResult"]
-SongInfo = Union["Song", "VoiceBaseInfo"]
+SearchRespModelType = Union["SongSearchResult", "VoiceSearchResult"]
+SongInfoModelType = Union["Song", "VoiceBaseInfo"]
 
 
 class Artist(BaseModel):
-    id: int  # noqa: A003
+    id: int
     name: str
     tns: List[str]
     alias: List[str]
 
 
 class Album(BaseModel):
-    id: int  # noqa: A003
+    id: int
     name: str
-    picUrl: str  # noqa: N815
+    picUrl: str
     tns: List[str]
 
 
 class Privilege(BaseModel):
-    id: int  # noqa: A003
+    id: int
     pl: int
-    # plLevel: BrLevel  # noqa: N815
+    # plLevel: BrLevel
 
 
 class Song(BaseModel):
     name: str
-    id: int  # noqa: A003
+    id: int
     ar: List[Artist]
     alia: List[str]
     pop: float
@@ -41,37 +43,37 @@ class Song(BaseModel):
 
 
 class QcReminder(BaseModel):
-    qcReminderPart: str  # noqa: N815
+    qcReminderPart: str
     """纠正内容部分"""
-    highLight: bool  # noqa: N815
+    highLight: bool
     """部分是否高亮（可点击纠正）"""
 
 
 class SearchQcReminder(BaseModel):
-    qcReminders: List[QcReminder]  # noqa: N815
-    qcReminderChannel: str  # noqa: N815
+    qcReminders: List[QcReminder]
+    qcReminderChannel: str
 
 
 class SongSearchResult(BaseModel):
-    searchQcReminder: Optional[SearchQcReminder]  # noqa: N815
+    searchQcReminder: Optional[SearchQcReminder]
     """搜索纠正"""
-    songCount: int  # noqa: N815
-    songs: List[Song] = Field(default_factory=list)
+    songCount: int
+    songs: Optional[List[Song]]
 
 
 class TrackAudio(BaseModel):
-    id: int  # noqa: A003
+    id: int
     url: str
     br: int
     size: int
     md5: str
     level: Optional[str]
-    encodeType: Optional[str]  # noqa: N815
+    encodeType: Optional[str]
     time: int
 
 
 class User(BaseModel):
-    id: int  # noqa: A003
+    id: int
     userid: int
     nickname: str
 
@@ -82,57 +84,57 @@ class Lyric(BaseModel):
 
 
 class LyricData(BaseModel):
-    transUser: Optional[User]  # noqa: N815
-    lyricUser: Optional[User]  # noqa: N815
+    transUser: Optional[User]
+    lyricUser: Optional[User]
     lrc: Optional[Lyric]
     tlyric: Optional[Lyric]
     romalrc: Optional[Lyric]
 
 
 class DJ(BaseModel):
-    userId: int  # noqa: N815
+    userId: int
     nickname: str
-    avatarUrl: str  # noqa: N815
+    avatarUrl: str
     gender: int
     signature: str
-    backgroundUrl: str  # noqa: N815
+    backgroundUrl: str
 
 
 class Radio(BaseModel):
-    id: int  # noqa: A003
+    id: int
     name: str
-    picUrl: str  # noqa: N815
+    picUrl: str
     desc: str
-    subCount: int  # noqa: N815
-    programCount: int  # noqa: N815
-    categoryId: int  # noqa: N815
-    secondCategoryId: Optional[int]  # noqa: N815
+    subCount: int
+    programCount: int
+    categoryId: int
+    secondCategoryId: Optional[int]
     category: str
-    secondCategory: Optional[str]  # noqa: N815
-    lastProgramId: int  # noqa: N815
+    secondCategory: Optional[str]
+    lastProgramId: int
 
 
 class VoiceBaseInfo(BaseModel):
-    id: int  # noqa: A003
-    mainTrackId: int  # noqa: N815
+    id: int
+    mainTrackId: int
     name: str
-    coverUrl: str  # noqa: N815
+    coverUrl: str
     description: str
     dj: DJ
     radio: Radio
     duration: int
-    listenerCount: int  # noqa: N815
-    shareCount: int  # noqa: N815
-    likedCount: int  # noqa: N815
-    commentCount: int  # noqa: N815
-    commentThreadId: str  # noqa: N815
+    listenerCount: int
+    shareCount: int
+    likedCount: int
+    commentCount: int
+    commentThreadId: str
 
 
 class VoiceResource(BaseModel):
-    baseInfo: VoiceBaseInfo  # noqa: N815
+    baseInfo: VoiceBaseInfo
 
 
 class VoiceSearchResult(BaseModel):
     resources: Optional[List[VoiceResource]]
-    totalCount: int  # noqa: N815
-    searchQcReminder: Optional[SearchQcReminder]  # noqa: N815
+    totalCount: int
+    searchQcReminder: Optional[SearchQcReminder]
