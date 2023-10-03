@@ -117,10 +117,7 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         self._cache = {}
 
     @abstractmethod
-    async def _build_search_resp(
-        self,
-        resp: _TRawSearchResp,
-    ) -> SearchResp:
+    async def _build_search_resp(self, resp: _TRawSearchResp, page: int) -> SearchResp:
         ...
 
     @abstractmethod
@@ -135,7 +132,10 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         ...
 
     @abstractmethod
-    async def _build_song(self, resp: _T_RawRespContent) -> _TBaseSong:
+    async def _build_selection(
+        self,
+        resp: _T_RawRespContent,
+    ) -> Union[_TBaseSong, "BaseSearcher"]:
         ...
 
     def _calc_index_offset(self, page: int) -> int:
@@ -157,9 +157,9 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         if not extracted:
             return None
         if page == 1 and len(extracted) == 1:
-            return await self._build_song(extracted[0])
+            return await self._build_selection(extracted[0])
 
-        resp = await self._build_search_resp(raw_resp)
+        resp = await self._build_search_resp(raw_resp, page)
         if isinstance(resp, SearchResp):
             self._last_page = page
             self._last_resp = resp
@@ -170,30 +170,30 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
     async def search_by_id(self, arg_id: int) -> Union[BaseSong, "BaseSearcher", None]:
         ...
 
-    async def next_page(self) -> Union[SearchResp, "BaseSearcher"]:
+    async def next_page(self) -> SearchResp:
         if not self._last_resp:
             raise ValueError("Please do a search first")
         if self._last_page >= self._last_resp.max_page:
             raise ValueError("Already last page")
         return cast(Any, await self.search(self._last_page + 1))
 
-    async def prev_page(self) -> Union[SearchResp, "BaseSearcher"]:
+    async def prev_page(self) -> SearchResp:
         if self._last_page <= 1:
             raise ValueError("Already first page")
         return cast(Any, await self.search(self._last_page - 1))
 
-    async def select(self, index: int) -> Union[_TBaseSong, "BaseSearcher", None]:
-        index -= 1
-        cache_index = index // config.ncm_list_limit
-        if cache_index not in self._cache:
+    async def select(self, index: int) -> Union[_TBaseSong, "BaseSearcher"]:
+        index -= 1  # item index starts with 0
+        page_index = (index // config.ncm_list_limit) + 1  # page index starts with 1
+        if page_index not in self._cache:
             raise ValueError("Cache not found, please do a properly search first")
 
-        caches = await self._extract_resp_content(self._cache[cache_index])
+        caches = await self._extract_resp_content(self._cache[page_index])
         if (not caches) or (
-            (sub_index := index % config.ncm_list_limit) >= len(caches)
+            (item_index := index % config.ncm_list_limit) >= len(caches)
         ):
             raise ValueError("Index out of range")
-        return await self._build_song(caches[sub_index])
+        return await self._build_selection(caches[item_index])
 
 
 songs: List[Type[BaseSong]] = []

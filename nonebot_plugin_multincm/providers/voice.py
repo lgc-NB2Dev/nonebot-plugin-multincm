@@ -88,7 +88,7 @@ class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
     async def _do_search(self, page: int) -> VoiceSearchResult:
         return await search_voice(self.keyword, page=page)
 
-    async def _build_song(self, resp: VoiceResource) -> Voice:
+    async def _build_selection(self, resp: VoiceResource) -> Voice:
         return Voice(info=resp.baseInfo)
 
     async def search_by_id(self, arg_id: int) -> Optional[BaseSong]:

@@ -93,7 +93,7 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
     async def _do_search(self, page: int) -> SongSearchResult:
         return await search_song(self.keyword, page=page)
 
-    async def _build_song(self, resp: SongModel) -> Song:
+    async def _build_selection(self, resp: SongModel) -> Song:
         return Song(info=resp)
 
     async def search_by_id(self, arg_id: int) -> Optional[BaseSong]:
