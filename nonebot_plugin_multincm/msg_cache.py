@@ -90,5 +90,5 @@ class CacheManager(Generic[KT, VT], Dict[KT, Tuple[float, VT]]):
                 del self[k]
 
 
-song_msg_id_cache: CacheManager[int, SongCache] = CacheManager()
+# song_msg_id_cache: CacheManager[int, SongCache] = CacheManager()
 chat_last_song_cache: CacheManager[str, SongCache] = CacheManager()

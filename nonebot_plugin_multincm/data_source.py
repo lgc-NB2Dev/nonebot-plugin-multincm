@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, List, cast
 
 import anyio
 from nonebot import get_available_plugin_names, logger, require
+from nonebot.utils import run_sync
 from pyncm import (
     DumpSessionAsString,
     GetCurrentSession,
@@ -29,7 +30,6 @@ from .types import (
     VoiceBaseInfo,
     VoiceSearchResult,
 )
-from .utils import awaitable
 
 SESSION_FILE = DATA_PATH / "session.cache"
 
@@ -39,7 +39,7 @@ def get_offset_by_page_num(page: int, limit: int = config.ncm_list_limit) -> int
 
 
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
-    ret = await awaitable(api)(*args, **kwargs)
+    ret = await run_sync(api)(*args, **kwargs)
     if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
     logger.debug(f"{api.__name__} - {ret}")
@@ -131,7 +131,7 @@ async def login(retry=True):
 
         if config.ncm_phone:
             logger.info("使用手机号登录")
-            await awaitable(LoginViaCellphone)(
+            await run_sync(LoginViaCellphone)(
                 ctcode=config.ncm_ctcode,
                 phone=config.ncm_phone,
                 password=config.ncm_password or "",
@@ -140,7 +140,7 @@ async def login(retry=True):
 
         else:
             logger.info("使用邮箱登录")
-            await awaitable(LoginViaEmail)(
+            await run_sync(LoginViaEmail)(
                 email=config.ncm_email or "",
                 password=config.ncm_password or "",
                 passwordHash=config.ncm_password_hash or "",
@@ -154,10 +154,10 @@ async def login(retry=True):
     else:
         retry = False
         logger.warning("账号或密码未填写，使用游客账号登录")
-        await awaitable(LoginViaAnonymousAccount)()
+        await run_sync(LoginViaAnonymousAccount)()
 
     try:
-        ret = cast(dict, await awaitable(GetCurrentLoginStatus)())
+        ret = cast(dict, await run_sync(GetCurrentLoginStatus)())
         assert ret["code"] == 200
         assert ret["account"]
     except Exception as e:

@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 BrLevel = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
 
@@ -56,7 +56,7 @@ class SongSearchResult(BaseModel):
     searchQcReminder: Optional[SearchQcReminder]  # noqa: N815
     """搜索纠正"""
     songCount: int  # noqa: N815
-    songs: List[Song]
+    songs: List[Song] = Field(default_factory=list)
 
 
 class TrackAudio(BaseModel):
