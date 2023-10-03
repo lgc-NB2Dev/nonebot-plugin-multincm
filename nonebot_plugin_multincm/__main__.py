@@ -171,14 +171,15 @@ async def upload_music(song: BaseSong):
     folder_id = None
     if folder_name := config.ncm_upload_folder_name:
         file_list_ret: Dict = await bot.get_group_root_files(group_id=event.group_id)
-        folder_names: Dict[str, str] = {
-            x["folder_name"]: x["folder_id"] for x in file_list_ret["folders"]
-        }
-
-        if folder_name in folder_names:
-            folder_id = folder_names[folder_name]
-
-        else:
+        folder_id = next(
+            (
+                x["folder_id"]
+                for x in (file_list_ret["folders"] or [])
+                if x["folder_name"] == folder_name
+            ),
+            None,
+        )
+        if not folder_id:
             try:
                 await bot.create_group_file_folder(
                     group_id=event.group_id,
