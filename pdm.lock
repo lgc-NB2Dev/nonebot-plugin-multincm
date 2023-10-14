@@ -6,7 +6,7 @@ groups = ["default", "playwright"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:7479156d82a41c83974b8923cb53df60a9a22229ac9b5fc993d183732a43a359"
+content_hash = "sha256:d1af7b6cea6ee29779bc9d199ded2cab1cc70b97faf233a0e9be735b2ca99eed"
 
 [[package]]
 name = "aiofiles"
@@ -777,6 +777,16 @@ files = [
     {file = "multidict-6.0.4-cp39-cp39-win32.whl", hash = "sha256:27c523fbfbdfd19c6867af7346332b62b586eed663887392cff78d614f9ec313"},
     {file = "multidict-6.0.4-cp39-cp39-win_amd64.whl", hash = "sha256:33029f5734336aa0d4c0384525da0387ef89148dc7191aae00ca5fb23d7aafc2"},
     {file = "multidict-6.0.4.tar.gz", hash = "sha256:3666906492efb76453c0e7b97f2cf459b0682e7402c0489a95484965dbc1da49"},
+]
+
+[[package]]
+name = "mutagen"
+version = "1.47.0"
+requires_python = ">=3.7"
+summary = "read and write audio tags for many formats"
+files = [
+    {file = "mutagen-1.47.0-py3-none-any.whl", hash = "sha256:edd96f50c5907a9539d8e5bba7245f62c9f520aef333d13392a79a4f70aca719"},
+    {file = "mutagen-1.47.0.tar.gz", hash = "sha256:719fadef0a978c31b4cf3c956261b3c58b6948b32023078a2117b1de09f0fc99"},
 ]
 
 [[package]]
