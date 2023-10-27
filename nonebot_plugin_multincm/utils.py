@@ -1,14 +1,9 @@
 from typing import List, Optional, TypeVar, cast
 from typing_extensions import ParamSpec
-import asyncio, httpx
 
 from . import lrc_parser
 from .config import config
 from .types import Artist, Lyric, LyricData, User
-
-from .providers import BaseSong
-
-from mutagen import File
 
 P = ParamSpec("P")
 TR = TypeVar("TR")
@@ -74,17 +69,3 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
             lines.append(f"翻译贡献者：{fmt_usr(usr)}")
 
     return "\n".join(lines).strip()
-
-def add_subinfo(filename: str, song: BaseSong):
-    songfile = File(filename)
-    title, artists, lyrics, cover_url = asyncio.run(
-        song.get_name(),
-        song.get_artists(),
-        song.get_lyric(),
-        song.get_cover_url(),
-    )
-    cover = httpx.get(cover_url).content
-    songfile["title"] = title
-    songfile["artist"] = artists
-    songfile["lyrics"] = "\n".join(lyrics)
-    songfile.save()
