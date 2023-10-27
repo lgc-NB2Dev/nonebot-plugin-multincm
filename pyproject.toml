@@ -6,13 +6,12 @@ authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
     "nonebot2>=2.0.0",
     "nonebot-adapter-onebot>=2.2.0",
-    "pydantic>=1.10.4",
+    "nonebot-plugin-apscheduler>=0.2.0",
+    "pydantic>=1.10.4,<2",
     "pil-utils>=0.1.7",
     "pyncm>=1.6.8.9.1",
     "typing-extensions>=4.5.0",
     "anyio>=3.6.2",
-    "nonebot-plugin-apscheduler>=0.2.0",
-    "mutagen>=1.47.0",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"
