@@ -1,5 +1,4 @@
 import asyncio
-import httpx
 import random
 import re
 from pathlib import Path
@@ -15,6 +14,7 @@ from typing import (
     cast,
 )
 
+from httpx import AsyncClient
 from nonebot import logger, on_command, on_regex
 from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11 import (
@@ -27,6 +27,7 @@ from nonebot.adapters.onebot.v11 import (
     NetworkError,
     PrivateMessageEvent,
 )
+from nonebot.consts import REGEX_MATCHED
 from nonebot.matcher import Matcher, current_bot, current_event, current_matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.rule import Rule
@@ -52,7 +53,6 @@ KEY_SONG_CACHE = "song_cache"
 KEY_SEND_LINK = "send_link"
 KEY_UPLOAD_FILE = "upload_file"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
-KEY_IS_SHORT_LINK = "is_short_link"
 
 EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
 PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
@@ -65,9 +65,9 @@ _link_types_reg = "|".join(LINK_TYPES)
 SONG_URL_REGEX = (
     rf"music\.163\.com/(.*?)(?P<type>{_link_types_reg})(/?\?id=|/)(?P<id>[0-9]+)&?"
 )
-SONG_SHORT_URL_REGEX = (
-    "163cn\.tv/.*"
-)
+SHORT_URL_BASE = "https://163cn.tv"
+SHORT_URL_REGEX = r"163cn\.tv/(?P<suffix>[a-zA-Z0-9]+)"
+
 
 # region util funcs
 
@@ -230,7 +230,7 @@ def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool
 async def resolve_music_from_msg(
     message: Message,
     auto_resolve: bool = False,
-    is_short_link: bool = False,
+    matched: Optional[re.Match[str]] = None,
 ) -> Optional[SongCache]:
     msg_str = None
 
@@ -242,22 +242,45 @@ async def resolve_music_from_msg(
             or config.ncm_resolve_playable_card
             or ('"musicUrl"' not in data)
         ):
+            matched = None
             msg_str = data
 
     if not msg_str:
         msg_str = message.extract_plain_text()
 
-    if is_short_link:
-        async with httpx.AsyncClient() as client:
-            req = await client.get(url=msg_str, follow_redirects=False)
-            msg_str = req.headers.get("Location")
+    short_suffix = None
+    if matched and (short_suffix := matched.group("suffix")):
+        pass
+    elif not matched:
+        short_matched = re.match(SHORT_URL_REGEX, msg_str, re.I)
+        if short_matched:
+            short_suffix = short_matched.group("suffix")
 
-    res = re.search(SONG_URL_REGEX, msg_str, re.I)
-    if not res:
+    if short_suffix:
+        async with AsyncClient(base_url=SHORT_URL_BASE) as client:
+            resp = await client.get(short_suffix, follow_redirects=False)
+
+            if resp.status_code // 100 != 3:
+                logger.warning(
+                    f"Short url {short_suffix} "
+                    f"returned invalid status code {resp.status_code}",
+                )
+                return None
+
+            resp_location = resp.headers.get("Location")
+            if not resp_location:
+                logger.warning(f"Short url {short_suffix} returned no location header")
+                return None
+
+            msg_str = resp_location
+
+    if not matched:
+        matched = re.match(SONG_URL_REGEX, msg_str, re.I)
+    if not matched:
         return None
 
-    song_type = await get_song_from_type(res.group("type"))
-    song_id = int(res.group("id"))
+    song_type = await get_song_from_type(matched.group("type"))
+    song_id = int(matched.group("id"))
     return SongCache(song_type, song_id)
 
 
@@ -265,7 +288,7 @@ async def rule_music_msg(event: MessageEvent, state: T_State) -> bool:
     if song := await resolve_music_from_msg(
         event.message,
         KEY_IS_AUTO_RESOLVE in state,
-        KEY_IS_SHORT_LINK in state,
+        state.get(REGEX_MATCHED),
     ):
         state[KEY_SONG_CACHE] = song
     return bool(song)
@@ -278,7 +301,7 @@ async def rule_reply_music_msg(event: MessageEvent, state: T_State) -> bool:
     if song := await resolve_music_from_msg(
         event.reply.message,
         KEY_IS_AUTO_RESOLVE in state,
-        KEY_IS_SHORT_LINK in state,
+        state.get(REGEX_MATCHED),
     ):
         state[KEY_SONG_CACHE] = song
 
@@ -440,10 +463,10 @@ reg_resolve = on_regex(
     state={KEY_IS_AUTO_RESOLVE: True},
 )
 reg_short_resolve = on_regex(
-    SONG_SHORT_URL_REGEX,
+    SHORT_URL_REGEX,
     re.I,
     rule=Rule(rule_auto_resolve) & rule_has_music_msg,
-    state={KEY_IS_AUTO_RESOLVE: True, KEY_IS_SHORT_LINK: True},
+    state={KEY_IS_AUTO_RESOLVE: True},
 )
 
 
