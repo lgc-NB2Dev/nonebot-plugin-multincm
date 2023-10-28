@@ -1,22 +1,22 @@
 import asyncio
 import random
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import (
-    Awaitable,
-    Callable,
+    AsyncIterable,
     Dict,
     List,
     NoReturn,
     Optional,
+    Protocol,
     Type,
     Union,
     cast,
 )
 
 from httpx import AsyncClient
-from nonebot import logger, on_command, on_regex
-from nonebot.adapters import Event
+from nonebot import logger, on_command, on_message
 from nonebot.adapters.onebot.v11 import (
     ActionFailed,
     Bot,
@@ -28,9 +28,12 @@ from nonebot.adapters.onebot.v11 import (
     PrivateMessageEvent,
 )
 from nonebot.consts import REGEX_MATCHED
+from nonebot.dependencies import Dependent
+from nonebot.internal.adapter import Bot as BaseBot
+from nonebot.internal.adapter import Event as BaseEvent
 from nonebot.matcher import Matcher, current_bot, current_event, current_matcher
 from nonebot.params import ArgPlainText, CommandArg
-from nonebot.rule import Rule
+from nonebot.rule import RegexRule, Rule
 from nonebot.typing import T_RuleChecker, T_State
 
 from .config import config
@@ -49,7 +52,7 @@ KEY_SEARCHER_TYPE = "searcher_type"
 KEY_SEARCHER = "searcher"
 KEY_LIST_MSG_ID = "list_msg_id"
 
-KEY_SONG_CACHE = "song_cache"
+KEY_RESOLVED_URL = "resolved_url"
 KEY_SEND_LINK = "send_link"
 KEY_UPLOAD_FILE = "upload_file"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
@@ -141,15 +144,55 @@ async def get_song_from_type(type_name: str) -> Type[BaseSongType]:
     raise RuntimeError  # should never reach here
 
 
-async def resolve_cache(cache: SongCache) -> BaseSong:
+async def build_cache_from_type(song_type: str, song_id: str) -> SongCache:
+    song_cls = await get_song_from_type(song_type)
+    return SongCache(song_cls, int(song_id))
+
+
+class UrlResolveRes(Protocol):
+    async def get(self) -> BaseSongType:
+        ...
+
+
+@dataclass
+class ShortUrlResolveRes(UrlResolveRes):
+    suffix: str
+
+    async def get(self) -> BaseSongType:
+        async with AsyncClient(base_url=SHORT_URL_BASE) as client:
+            resp = await client.get(self.suffix, follow_redirects=False)
+
+            if resp.status_code // 100 != 3:
+                raise ValueError(
+                    f"Short url {self.suffix} "
+                    f"returned invalid status code {resp.status_code}",
+                )
+
+            location = resp.headers.get("Location")
+            if not location:
+                raise ValueError(f"Short url {self.suffix} returned no location header")
+
+        matched = re.search(SONG_URL_REGEX, location, re.I)
+        if not matched:
+            raise ValueError(
+                f"Location {location} of short url {self.suffix} is not a song url",
+            )
+
+        groups = matched.groupdict()
+        cache = await build_cache_from_type(groups["type"], groups["id"])
+        return await cache.get()
+
+
+async def get_resolve_res(res: UrlResolveRes) -> BaseSongType:
     matcher = current_matcher.get()
     try:
-        return await cache.get()
-    except ValueError:
-        await matcher.finish("歌曲不存在")
+        return await res.get()
+    except ValueError as e:
+        logger.warning(f"ValueError: {e}")
+        await matcher.finish("链接无效")
     except Exception:
-        logger.exception(f"Get {cache.song_class.calling} {cache.song_id} failed")
-        await matcher.finish(f"解析{cache.song_class.calling}失败，请检查后台输出")
+        logger.exception(f"Get UrlResolveRes {res} failed")
+        await matcher.finish("解析失败，请检查后台输出")
 
 
 async def upload_music(song: BaseSong):
@@ -216,113 +259,114 @@ async def upload_music(song: BaseSong):
 # region rules
 
 
-def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool]]:
-    async def rule(bot: Bot, event: Event, state: T_State):
-        # 要按顺序执行，所以不能用 asyncio.gather
-        for x in rules:  # noqa: SIM110
-            if await Rule(x)(bot, event, state):
-                return True
-        return False
+class SequentialRule:
+    def __init__(
+        self,
+        *checkers: Union[T_RuleChecker, Dependent[bool]],
+        is_all: bool = False,
+    ) -> None:
+        self.checkers: List[Union[SequentialRule, Rule]] = [
+            (checker if isinstance(checker, (SequentialRule, Rule)) else Rule(checker))
+            for checker in checkers
+        ]
+        self.is_all: bool = is_all
 
-    return rule
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}("
+            f"{', '.join(f'{x!r}' for x in self.checkers)}, "
+            f"is_all={self.is_all})"
+        )
+
+    async def __call__(self, bot: BaseBot, event: BaseEvent, state: T_State) -> bool:
+        async def async_all(iterable: AsyncIterable[bool]) -> bool:
+            async for i in iterable:
+                if not i:
+                    return False
+            return True
+
+        async def async_any(iterable: AsyncIterable[bool]) -> bool:
+            async for i in iterable:
+                if i:
+                    return True
+            return False
+
+        async def check() -> AsyncIterable[bool]:
+            for checker in self.checkers:
+                resp = await checker(bot=bot, event=event, state=state)
+                yield bool(resp)
+
+        judge_func = async_all if self.is_all else async_any
+        return await judge_func(check())
+
+    def __and__(self, other: Union[T_RuleChecker, Rule, None]) -> "SequentialRule":
+        if not other:
+            return self
+        return SequentialRule(*self.checkers, other, is_all=self.is_all)
+
+    def __rand__(self, other: Union[T_RuleChecker, Rule, None]) -> "SequentialRule":
+        if not other:
+            return self
+        return SequentialRule(other, *self.checkers, is_all=self.is_all)
 
 
 async def resolve_music_from_msg(
-    message: Message,
-    auto_resolve: bool = False,
+    message: Optional[Message] = None,
     matched: Optional[re.Match[str]] = None,
-) -> Optional[SongCache]:
-    msg_str = None
+) -> Optional[UrlResolveRes]:
+    if (not message) and (not matched):
+        raise ValueError("Either message or matched should be provided")
+    if message and matched:
+        raise ValueError("Only one of message or matched should be provided")
 
-    cards = message["json"]
-    if cards:
-        data = cards[0].data["data"]
-        if (
-            (not auto_resolve)
-            or config.ncm_resolve_playable_card
-            or ('"musicUrl"' not in data)
-        ):
-            matched = None
-            msg_str = data
-
-    if not msg_str:
+    if not matched:
+        assert message
         msg_str = message.extract_plain_text()
+        for regex in (SONG_URL_REGEX, SHORT_URL_REGEX):
+            matched = re.search(regex, msg_str, re.I)
+            if matched:
+                break
 
-    short_suffix = None
-    if matched and (short_suffix := matched.group("suffix")):
-        pass
-    elif not matched:
-        short_matched = re.match(SHORT_URL_REGEX, msg_str, re.I)
-        if short_matched:
-            short_suffix = short_matched.group("suffix")
+        if not matched:
+            return None
 
-    if short_suffix:
-        async with AsyncClient(base_url=SHORT_URL_BASE) as client:
-            resp = await client.get(short_suffix, follow_redirects=False)
+    groups = matched.groupdict()
+    if "suffix" in groups:
+        return ShortUrlResolveRes(groups["suffix"])
 
-            if resp.status_code // 100 != 3:
-                logger.warning(
-                    f"Short url {short_suffix} "
-                    f"returned invalid status code {resp.status_code}",
-                )
-                return None
-
-            resp_location = resp.headers.get("Location")
-            if not resp_location:
-                logger.warning(f"Short url {short_suffix} returned no location header")
-                return None
-
-            msg_str = resp_location
-
-    if not matched:
-        matched = re.match(SONG_URL_REGEX, msg_str, re.I)
-    if not matched:
-        return None
-
-    song_type = await get_song_from_type(matched.group("type"))
-    song_id = int(matched.group("id"))
-    return SongCache(song_type, song_id)
+    return await build_cache_from_type(groups["type"], groups["id"])
 
 
 async def rule_music_msg(event: MessageEvent, state: T_State) -> bool:
-    if song := await resolve_music_from_msg(
-        event.message,
-        KEY_IS_AUTO_RESOLVE in state,
-        state.get(REGEX_MATCHED),
-    ):
-        state[KEY_SONG_CACHE] = song
-    return bool(song)
-
-
-async def rule_reply_music_msg(event: MessageEvent, state: T_State) -> bool:
-    if not event.reply:
-        return False
-
-    if song := await resolve_music_from_msg(
-        event.reply.message,
-        KEY_IS_AUTO_RESOLVE in state,
-        state.get(REGEX_MATCHED),
-    ):
-        state[KEY_SONG_CACHE] = song
-
-    return bool(song)
+    message = event.reply.message if event.reply else event.message
+    if res := await resolve_music_from_msg(message=message):
+        state[KEY_RESOLVED_URL] = res
+    return bool(res)
 
 
 async def rule_chat_last_music(event: MessageEvent, state: T_State) -> bool:
     cache = chat_last_song_cache.get(event.get_session_id())
     if cache:
-        state[KEY_SONG_CACHE] = cache
+        state[KEY_RESOLVED_URL] = cache
     return bool(cache)
 
 
-async def rule_auto_resolve():
-    return config.ncm_auto_resolve
+async def rule_auto_resolve(event: MessageEvent, state: T_State) -> bool:
+    cards = event.message["json"]
+    if cards:
+        msg_str = cards[0].data["data"]  # json 卡片内容
+        if (not config.ncm_resolve_playable_card) and ('"musicUrl"' in msg_str):
+            return False  # auto resolve 时不解析可播放卡片
+
+    if res := await resolve_music_from_msg(matched=state.get(REGEX_MATCHED)):
+        state[KEY_RESOLVED_URL] = res
+    return bool(res)
 
 
-rule_has_music_msg = any_rule(
+rule_has_music_msg = SequentialRule(
     rule_music_msg,
-    rule_reply_music_msg,
     rule_chat_last_music,
+    is_all=False,
 )
 
 
@@ -456,31 +500,17 @@ cmd_resolve_file = on_command(
     rule=rule_has_music_msg,
     state={KEY_UPLOAD_FILE: True},
 )
-reg_resolve = on_regex(
-    SONG_URL_REGEX,
-    re.I,
-    rule=Rule(rule_auto_resolve) & rule_has_music_msg,
-    state={KEY_IS_AUTO_RESOLVE: True},
-)
-reg_short_resolve = on_regex(
-    SHORT_URL_REGEX,
-    re.I,
-    rule=Rule(rule_auto_resolve) & rule_has_music_msg,
-    state={KEY_IS_AUTO_RESOLVE: True},
-)
 
 
 @cmd_resolve.handle()
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
-@reg_resolve.handle()
-@reg_short_resolve.handle()
-async def _(matcher: Matcher, state: T_State):
+async def resolve_handler(matcher: Matcher, state: T_State):
     if KEY_IS_AUTO_RESOLVE in state:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
 
-    cache: SongCache = state[KEY_SONG_CACHE]
-    song = await resolve_cache(cache)
+    cache: SongCache = state[KEY_RESOLVED_URL]
+    song = await get_resolve_res(cache)
 
     if KEY_SEND_LINK in state:
         await matcher.finish(await song.get_playable_url())
@@ -494,16 +524,36 @@ async def _(matcher: Matcher, state: T_State):
             logger.exception(f"Upload {song.calling} {await song.get_id()} failed")
             if isinstance(e, NetworkError):
                 await matcher.finish(
-                    f"上传{song.calling}失败，可能是下载超时！请尝试调高 API_TIMEOUT 配置",
+                    f"上传{song.calling}失败，可能是下载或上传超时！请尝试调高 API_TIMEOUT 配置",
                 )
             if isinstance(e, ActionFailed):
-                await matcher.finish(f"上传{song.calling}失败，可能是无权限上传文件！请检查后台输出")
+                await matcher.finish(
+                    f"上传{song.calling}失败，可能是下载文件出错或无权限上传文件！请检查后台输出",
+                )
             await matcher.finish(f"上传{song.calling}失败，请检查后台输出")
 
         else:
             await matcher.finish()
 
     await send_song(song)
+
+
+if config.ncm_auto_resolve:
+
+    def reg_resolve_handler(regex: str):
+        handler = on_message(
+            rule=SequentialRule(
+                RegexRule(regex, flags=re.I),
+                rule_auto_resolve,
+                # rule_has_music_msg,
+                is_all=True,
+            ),
+            state={KEY_IS_AUTO_RESOLVE: True},
+        )
+        handler.handle()(resolve_handler)
+
+    reg_resolve_handler(SONG_URL_REGEX)
+    reg_resolve_handler(SHORT_URL_REGEX)
 
 
 # endregion
@@ -521,8 +571,8 @@ cmd_get_lrc = on_command(
 
 @cmd_get_lrc.handle()
 async def _(matcher: Matcher, state: T_State):
-    cache: SongCache = state[KEY_SONG_CACHE]
-    song = await resolve_cache(cache)
+    cache: SongCache = state[KEY_RESOLVED_URL]
+    song = await get_resolve_res(cache)
 
     try:
         lrc = await song.get_lyric()
