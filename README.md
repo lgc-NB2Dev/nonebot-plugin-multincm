@@ -238,6 +238,8 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 ### 0.4.1
 
 - 支持了 `163.tv` 短链（Thanks to [@XieXiLin2](https://github.com/XieXiLin2)）
+- 修复当 `NCM_RESOLVE_PLAYABLE_CARD` 为 `False` 时，Bot 依然会回复的问题
+- 部分代码优化
 
 ### 0.4.0
 
