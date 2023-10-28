@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 import random
 import re
 from pathlib import Path
@@ -51,6 +52,7 @@ KEY_SONG_CACHE = "song_cache"
 KEY_SEND_LINK = "send_link"
 KEY_UPLOAD_FILE = "upload_file"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
+KEY_IS_SHORT_LINK = "is_short_link"
 
 EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
 PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
@@ -62,6 +64,9 @@ LINK_TYPES = [t for s in songs for t in s.link_types]
 _link_types_reg = "|".join(LINK_TYPES)
 SONG_URL_REGEX = (
     rf"music\.163\.com/(.*?)(?P<type>{_link_types_reg})(/?\?id=|/)(?P<id>[0-9]+)&?"
+)
+SONG_SHORT_URL_REGEX = (
+    "163cn\.tv/.*"
 )
 
 # region util funcs
@@ -225,6 +230,7 @@ def any_rule(*rules: Union[T_RuleChecker, Rule]) -> Callable[..., Awaitable[bool
 async def resolve_music_from_msg(
     message: Message,
     auto_resolve: bool = False,
+    is_short_link: bool = False,
 ) -> Optional[SongCache]:
     msg_str = None
 
@@ -241,6 +247,11 @@ async def resolve_music_from_msg(
     if not msg_str:
         msg_str = message.extract_plain_text()
 
+    if is_short_link:
+        async with httpx.AsyncClient() as client:
+            req = await client.get(url=msg_str, follow_redirects=False)
+            msg_str = req.headers.get("Location")
+
     res = re.search(SONG_URL_REGEX, msg_str, re.I)
     if not res:
         return None
@@ -254,6 +265,7 @@ async def rule_music_msg(event: MessageEvent, state: T_State) -> bool:
     if song := await resolve_music_from_msg(
         event.message,
         KEY_IS_AUTO_RESOLVE in state,
+        KEY_IS_SHORT_LINK in state,
     ):
         state[KEY_SONG_CACHE] = song
     return bool(song)
@@ -266,6 +278,7 @@ async def rule_reply_music_msg(event: MessageEvent, state: T_State) -> bool:
     if song := await resolve_music_from_msg(
         event.reply.message,
         KEY_IS_AUTO_RESOLVE in state,
+        KEY_IS_SHORT_LINK in state,
     ):
         state[KEY_SONG_CACHE] = song
 
@@ -426,12 +439,19 @@ reg_resolve = on_regex(
     rule=Rule(rule_auto_resolve) & rule_has_music_msg,
     state={KEY_IS_AUTO_RESOLVE: True},
 )
+reg_short_resolve = on_regex(
+    SONG_SHORT_URL_REGEX,
+    re.I,
+    rule=Rule(rule_auto_resolve) & rule_has_music_msg,
+    state={KEY_IS_AUTO_RESOLVE: True, KEY_IS_SHORT_LINK: True},
+)
 
 
 @cmd_resolve.handle()
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
 @reg_resolve.handle()
+@reg_short_resolve.handle()
 async def _(matcher: Matcher, state: T_State):
     if KEY_IS_AUTO_RESOLVE in state:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
