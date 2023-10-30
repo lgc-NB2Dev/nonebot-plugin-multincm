@@ -385,6 +385,8 @@ async def search_got_arg(
     keyword = arg.strip()
     if not keyword:
         await matcher.finish("消息无文本，放弃搜索")
+    if keyword in EXIT_COMMAND:
+        await matcher.finish("已退出搜索")
 
     searcher = cast(Type[BaseSearcher], state[KEY_SEARCHER_TYPE])(keyword)
     state[KEY_SEARCHER] = searcher
@@ -465,7 +467,7 @@ def register_search_handlers():
         c_pri, *c_alias = s.commands
         cmd = on_command(c_pri, aliases=set(c_alias), state={KEY_SEARCHER_TYPE: s})
         cmd.handle()(search_handle_extract_arg)
-        cmd.got("arg", "请发送搜索内容")(search_got_arg)
+        cmd.got("arg", "请发送搜索内容，发送 0 退出搜索")(search_got_arg)
         cmd.handle()(search_handle_search)
         cmd.receive()(search_receive_select)
 

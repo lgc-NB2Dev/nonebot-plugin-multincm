@@ -235,6 +235,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 0.4.3
+
+- 可以退出搜索模式了
+
 ### 0.4.2
 
 - resolve [#13](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/13)
