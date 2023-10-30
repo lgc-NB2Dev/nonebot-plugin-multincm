@@ -506,7 +506,7 @@ cmd_auto_resolve = on_message(
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
 @cmd_auto_resolve.handle()
-async def resolve_handler(matcher: Matcher, state: T_State):
+async def _(matcher: Matcher, state: T_State):
     if KEY_IS_AUTO_RESOLVE in state:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
 
