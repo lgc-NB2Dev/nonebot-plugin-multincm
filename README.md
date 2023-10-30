@@ -235,6 +235,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 0.4.2
+
+- resolve [#13](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/13)
+
 ### 0.4.1
 
 - 支持了 `163cn.tv` 短链（Thanks to [@XieXiLin2](https://github.com/XieXiLin2)）

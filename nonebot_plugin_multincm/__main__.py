@@ -27,13 +27,12 @@ from nonebot.adapters.onebot.v11 import (
     NetworkError,
     PrivateMessageEvent,
 )
-from nonebot.consts import REGEX_MATCHED
 from nonebot.dependencies import Dependent
 from nonebot.internal.adapter import Bot as BaseBot
 from nonebot.internal.adapter import Event as BaseEvent
 from nonebot.matcher import Matcher, current_bot, current_event, current_matcher
 from nonebot.params import ArgPlainText, CommandArg
-from nonebot.rule import RegexRule, Rule
+from nonebot.rule import Rule
 from nonebot.typing import T_RuleChecker, T_State
 
 from .config import config
@@ -311,54 +310,51 @@ class SequentialRule:
 
 
 async def resolve_music_from_msg(
-    message: Optional[Message] = None,
-    matched: Optional[re.Match[str]] = None,
+    message: Message,
+    resolve_playable_card: bool = True,
 ) -> Optional[UrlResolveRes]:
-    if (not message) and (not matched):
-        raise ValueError("Either message or matched should be provided")
-    if message and matched:
-        raise ValueError("Only one of message or matched should be provided")
-
-    if not matched:
-        assert message
-        msg_str = message.extract_plain_text()
-        for regex in (SONG_URL_REGEX, SHORT_URL_REGEX):
-            matched = re.search(regex, msg_str, re.I)
-            if matched:
-                break
-
-        if not matched:
+    card = next(iter(message["json"]), None)
+    if card:
+        msg_str = card.data["data"]
+        is_playable_card = '"musicUrl"' in msg_str
+        if (not resolve_playable_card) and is_playable_card:
             return None
+    else:
+        msg_str = message.extract_plain_text()
+
+    matched = None
+    for regex in (SONG_URL_REGEX, SHORT_URL_REGEX):
+        if matched := re.search(regex, msg_str, re.I):
+            break
+    if not matched:
+        return None
 
     groups = matched.groupdict()
     if "suffix" in groups:
         return ShortUrlResolveRes(groups["suffix"])
-
     return await build_cache_from_type(groups["type"], groups["id"])
 
 
 async def rule_music_msg(event: MessageEvent, state: T_State) -> bool:
     message = event.reply.message if event.reply else event.message
-    if res := await resolve_music_from_msg(message=message):
+    if res := await resolve_music_from_msg(message):
         state[KEY_RESOLVED_URL] = res
     return bool(res)
 
 
 async def rule_chat_last_music(event: MessageEvent, state: T_State) -> bool:
-    cache = chat_last_song_cache.get(event.get_session_id())
-    if cache:
+    if cache := chat_last_song_cache.get(event.get_session_id()):
         state[KEY_RESOLVED_URL] = cache
     return bool(cache)
 
 
 async def rule_auto_resolve(event: MessageEvent, state: T_State) -> bool:
-    cards = event.message["json"]
-    if cards:
-        msg_str = cards[0].data["data"]  # json 卡片内容
-        if (not config.ncm_resolve_playable_card) and ('"musicUrl"' in msg_str):
-            return False  # auto resolve 时不解析可播放卡片
-
-    if res := await resolve_music_from_msg(matched=state.get(REGEX_MATCHED)):
+    if not config.ncm_auto_resolve:
+        return False
+    if res := await resolve_music_from_msg(
+        event.message,
+        config.ncm_resolve_playable_card,
+    ):
         state[KEY_RESOLVED_URL] = res
     return bool(res)
 
@@ -500,11 +496,16 @@ cmd_resolve_file = on_command(
     rule=rule_has_music_msg,
     state={KEY_UPLOAD_FILE: True},
 )
+cmd_auto_resolve = on_message(
+    rule=rule_auto_resolve,
+    state={KEY_IS_AUTO_RESOLVE: True},
+)
 
 
 @cmd_resolve.handle()
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
+@cmd_auto_resolve.handle()
 async def resolve_handler(matcher: Matcher, state: T_State):
     if KEY_IS_AUTO_RESOLVE in state:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
@@ -536,24 +537,6 @@ async def resolve_handler(matcher: Matcher, state: T_State):
             await matcher.finish()
 
     await send_song(song)
-
-
-if config.ncm_auto_resolve:
-
-    def reg_resolve_handler(regex: str):
-        handler = on_message(
-            rule=SequentialRule(
-                RegexRule(regex, flags=re.I),
-                rule_auto_resolve,
-                # rule_has_music_msg,
-                is_all=True,
-            ),
-            state={KEY_IS_AUTO_RESOLVE: True},
-        )
-        handler.handle()(resolve_handler)
-
-    reg_resolve_handler(SONG_URL_REGEX)
-    reg_resolve_handler(SHORT_URL_REGEX)
 
 
 # endregion
