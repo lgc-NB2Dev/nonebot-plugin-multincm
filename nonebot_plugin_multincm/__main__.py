@@ -55,6 +55,7 @@ KEY_RESOLVED_URL = "resolved_url"
 KEY_SEND_LINK = "send_link"
 KEY_UPLOAD_FILE = "upload_file"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
+KEY_ILLEGAL_COUNT = "illegal_count"
 
 EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
 PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
@@ -251,6 +252,17 @@ async def upload_music(song: BaseSong):
         folder=folder_id,
     )
 
+async def illegal_finish():
+    if config.ncm_illegal_cmd_finish:
+        await finish_with_delete_msg("非正确指令，已退出点歌")
+    if config.ncm_illegal_cmd_limit == 0:
+        return
+    state = current_matcher.get().state
+    count = state.get(KEY_ILLEGAL_COUNT, 0) + 1
+    if count >= config.ncm_illegal_cmd_limit:
+        await finish_with_delete_msg("非法指令次数过多，已自动退出点歌")
+    state[KEY_ILLEGAL_COUNT] = count
+    
 
 # endregion
 
@@ -445,6 +457,7 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
         try:
             song = await searcher.select(int(arg))
         except ValueError:
+            await illegal_finish()
             await matcher.reject("序号输入有误，请重新输入")
 
         if isinstance(song, BaseSong):
@@ -456,9 +469,7 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
         await search_handle_search(matcher, state)
         await matcher.reject()
 
-    if config.ncm_illegal_cmd_finish:
-        await finish_with_delete_msg("非正确指令，已退出点歌")
-
+    await illegal_finish()
     await matcher.reject("非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式")
 
 

@@ -22,6 +22,7 @@ class ConfigModel(BaseModel):
     ncm_auto_resolve: bool = False
     ncm_resolve_playable_card: bool = False
     ncm_illegal_cmd_finish: bool = False
+    ncm_illegal_cmd_limit: int = 5
     ncm_delete_list_msg: bool = True
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_upload_folder_name: str = "MultiNCM"
