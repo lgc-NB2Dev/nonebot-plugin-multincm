@@ -155,7 +155,7 @@ plugins = [
 |     `NCM_AUTO_RESOLVE`      |  否  |   `False`    |                     当用户发送音乐链接时，是否自动解析并发送音乐卡片                     |
 | `NCM_RESOLVE_PLAYABLE_CARD` |  否  |   `False`    |                           开启自动解析时，是否解析可播放的卡片                           |
 |  `NCM_ILLEGAL_CMD_FINISH`   |  否  |   `False`    |                      当用户在点歌时输入了非法指令，是否直接退出点歌                      |
-|   `NCM_ILLEGAL_CMD_LIMIT`   |  否  |     `5`      |                     当用户在点歌时输入了多少次非法指令后直接退出点歌                      |
+|   `NCM_ILLEGAL_CMD_LIMIT`   |  否  |     `5`      | 当未启用 `NCM_ILLEGAL_CMD_FINISH` 时，用户在点歌时输入了多少次非法指令后直接退出点歌，填 `0` 以禁用此功能 |
 |    `NCM_USE_PLAYWRIGHT`     |  否  |   `False`    |                       是否使用 `playwright` 绘制歌曲列表与歌词图片                       |
 |    `NCM_DELETE_LIST_MSG`    |  否  |    `True`    |                           是否在退出点歌模式后自动撤回歌曲列表                           |
 | `NCM_DELETE_LIST_MSG_DELAY` |  否  | `[0.5, 2.0]` |                          自动撤回歌曲列表消息间隔时间（单位秒）                          |
