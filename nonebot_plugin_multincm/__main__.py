@@ -255,7 +255,7 @@ async def upload_music(song: BaseSong):
 async def illegal_finish():
     if config.ncm_illegal_cmd_finish:
         await finish_with_delete_msg("非正确指令，已退出点歌")
-    if config.ncm_illegal_cmd_limit == 0:
+    if config.ncm_illegal_cmd_limit <= 0:
         return
     state = current_matcher.get().state
     count = state.get(KEY_ILLEGAL_COUNT, 0) + 1
