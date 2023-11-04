@@ -26,7 +26,9 @@ _TRawSearchResp = TypeVar("_TRawSearchResp", bound=SearchRespModelType)
 _T_RawRespContent = TypeVar("_T_RawRespContent")
 
 _TBaseSong = TypeVar("_TBaseSong", bound="BaseSong")
-_TBaseSearcher = TypeVar("_TBaseSearcher", bound="BaseSearcher")
+_TBasePlaylist = TypeVar("_TBasePlaylist", bound="BasePlaylist")
+_TBaseSongOrPlaylist = TypeVar("_TBaseSongOrPlaylist", "BaseSong", "BasePlaylist")
+_TSearcher = TypeVar("_TSearcher", bound="BaseSearcher")
 
 
 class BaseSong(ABC, Generic[_TSongInfoModel]):
@@ -95,22 +97,17 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
         return Message(seg)
 
 
-class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong]):
-    calling: str = "BaseSearcher"
-    commands: ClassVar[List[str]] = []
+class BasePlaylist(
+    ABC,
+    Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
+):
+    calling: str = "BasePlaylist"
+    child_calling: str = "BaseSong"
+    link_types: ClassVar[List[str]] = []
 
-    _keyword: str
     _last_page: int
     _last_resp: Optional[SearchResp]
     _cache: Dict[int, _TRawSearchResp]
-
-    @property
-    def keyword(self) -> str:
-        return self._keyword
-
-    @keyword.setter
-    def keyword(self, value: str) -> None:
-        self._keyword = value
 
     @property
     def last_page(self) -> int:
@@ -120,14 +117,13 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
     def last_resp(self) -> Optional[SearchResp]:
         return self._last_resp
 
-    def __init__(self, keyword: str, *_, **__) -> None:
-        self.keyword = keyword
+    def __init__(self, *_, **__) -> None:
         self._last_page = 1
         self._last_resp = None
         self._cache = {}
 
     @abstractmethod
-    async def _build_search_resp(self, resp: _TRawSearchResp, page: int) -> SearchResp:
+    async def _build_list_resp(self, resp: _TRawSearchResp, page: int) -> SearchResp:
         ...
 
     @abstractmethod
@@ -138,30 +134,30 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         ...
 
     @abstractmethod
-    async def _do_search(self, page: int) -> _TRawSearchResp:
+    async def _do_get_page(self, page: int) -> _TRawSearchResp:
         ...
 
     @abstractmethod
     async def _build_selection(
         self,
         resp: _T_RawRespContent,
-    ) -> Union[_TBaseSong, "BaseSearcherType"]:
+    ) -> _TBaseSongOrPlaylist:
+        ...
+
+    @classmethod
+    @abstractmethod
+    async def from_id(cls, arg_id: int) -> Self:
         ...
 
     def _calc_index_offset(self, page: int) -> int:
         return ((page - 1) * config.ncm_list_limit) + 1
 
-    async def search(
+    async def get_page(
         self,
         page: int = 1,
-    ) -> Union[SearchResp, "BaseSongType", "BaseSearcherType", None]:
-        if self.keyword.isdigit():
-            with suppress(Exception):
-                if song := await self.search_by_id(int(self.keyword)):
-                    return song
-
+    ) -> Union[SearchResp, _TBaseSongOrPlaylist, None]:
         raw_resp = (
-            self._cache[page] if page in self._cache else await self._do_search(page)
+            self._cache[page] if page in self._cache else await self._do_get_page(page)
         )
         extracted = await self._extract_resp_content(raw_resp)
         if not extracted:
@@ -169,33 +165,26 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         if page == 1 and len(extracted) == 1:
             return await self._build_selection(extracted[0])
 
-        resp = await self._build_search_resp(raw_resp, page)
+        resp = await self._build_list_resp(raw_resp, page)
         if isinstance(resp, SearchResp):
             self._last_page = page
             self._last_resp = resp
             self._cache[page] = raw_resp
         return resp
 
-    @abstractmethod
-    async def search_by_id(
-        self,
-        arg_id: int,
-    ) -> Union["BaseSongType", "BaseSearcherType", None]:
-        ...
-
     async def next_page(self) -> SearchResp:
         if not self._last_resp:
             raise ValueError("Please do a search first")
         if self._last_page >= self._last_resp.max_page:
             raise ValueError("Already last page")
-        return cast(Any, await self.search(self._last_page + 1))
+        return cast(Any, await self.get_page(self._last_page + 1))
 
     async def prev_page(self) -> SearchResp:
         if self._last_page <= 1:
             raise ValueError("Already first page")
-        return cast(Any, await self.search(self._last_page - 1))
+        return cast(Any, await self.get_page(self._last_page - 1))
 
-    async def select(self, index: int) -> Union[_TBaseSong, "BaseSearcherType"]:
+    async def select(self, index: int) -> _TBaseSongOrPlaylist:
         index -= 1  # item index starts with 0
         page_index = (index // config.ncm_list_limit) + 1  # page index starts with 1
         if page_index not in self._cache:
@@ -209,12 +198,36 @@ class BaseSearcher(ABC, Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSong])
         return await self._build_selection(caches[item_index])
 
 
-BaseSongType = BaseSong[SongInfoModelType]
-BaseSearcherType = BaseSearcher[SearchRespModelType, Any, BaseSongType]
+class BaseSearcher(
+    Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
+    BasePlaylist[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
+):
+    commands: ClassVar[List[str]] = []
+
+    keyword: str
+
+    def __init__(self, keyword: str, *_, **__) -> None:
+        self.keyword = keyword
+        super().__init__(*_, **__)
+
+    @classmethod
+    async def from_id(cls, arg_id: int) -> Optional[_TBaseSongOrPlaylist]:
+        raise NotImplementedError
+
+    async def get_page(
+        self,
+        page: int = 1,
+    ) -> Union[SearchResp, _TBaseSongOrPlaylist, None]:
+        if self.keyword.isdigit():
+            with suppress(Exception):
+                if song := await self.from_id(int(self.keyword)):
+                    return song
+        return await super().get_page(page)
 
 
-songs: List[Type[BaseSongType]] = []
-searchers: List[Type[BaseSearcherType]] = []
+songs: List[Type[BaseSong]] = []
+playlists: List[Type[BasePlaylist]] = []
+searchers: List[Type[BaseSearcher]] = []
 
 
 def song(cls: Type[_TBaseSong]) -> Type[_TBaseSong]:
@@ -222,6 +235,11 @@ def song(cls: Type[_TBaseSong]) -> Type[_TBaseSong]:
     return cls
 
 
-def searcher(cls: Type[_TBaseSearcher]) -> Type[_TBaseSearcher]:
+def playlist(cls: Type[_TBasePlaylist]) -> Type[_TBasePlaylist]:
+    playlists.append(cls)
+    return cls
+
+
+def searcher(cls: Type[_TSearcher]) -> Type[_TSearcher]:
     searchers.append(cls)
     return cls

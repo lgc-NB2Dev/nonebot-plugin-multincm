@@ -51,10 +51,17 @@ class Voice(BaseSong[VoiceBaseInfo]):
 
 @searcher
 class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
-    calling = CALLING
+    child_calling = CALLING
     commands = COMMANDS
 
-    async def _build_search_resp(
+    @classmethod
+    async def from_id(cls, arg_id: int) -> Optional[Voice]:
+        try:
+            return await Voice.from_id(arg_id)
+        except ValueError:
+            return None
+
+    async def _build_list_resp(
         self,
         resp: VoiceSearchResult,
         page: int,
@@ -80,7 +87,7 @@ class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
                 for i, x in enumerate(resp.resources, self._calc_index_offset(page))
             ],
         )
-        return SearchResp(table, self.calling, page, resp.totalCount)
+        return SearchResp(table, self.child_calling, page, resp.totalCount)
 
     async def _extract_resp_content(
         self,
@@ -88,14 +95,8 @@ class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
     ) -> Optional[List[VoiceResource]]:
         return resp.resources
 
-    async def _do_search(self, page: int) -> VoiceSearchResult:
+    async def _do_get_page(self, page: int) -> VoiceSearchResult:
         return await search_voice(self.keyword, page=page)
 
     async def _build_selection(self, resp: VoiceResource) -> Voice:
         return Voice(info=resp.baseInfo)
-
-    async def search_by_id(self, arg_id: int) -> Optional[BaseSong]:
-        try:
-            return await Voice.from_id(arg_id)
-        except ValueError:
-            return None

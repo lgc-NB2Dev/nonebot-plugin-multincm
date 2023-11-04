@@ -2,12 +2,7 @@ from typing import List, Optional, Union
 
 from ..config import config
 from ..const import MUSIC_LINK_TEMPLATE
-from ..data_source import (
-    get_track_audio,
-    get_track_info,
-    get_track_lrc,
-    search_song,
-)
+from ..data_source import get_track_audio, get_track_info, get_track_lrc, search_song
 from ..draw import SearchResp, Table, TableHead
 from ..types import Song as SongModel
 from ..types import SongSearchResult
@@ -56,10 +51,21 @@ class Song(BaseSong[SongModel]):
 
 @searcher
 class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
-    calling = CALLING
+    child_calling = CALLING
     commands = COMMANDS
 
-    async def _build_search_resp(
+    def __init__(self, keyword: str, *args, **kwargs) -> None:
+        self.keyword = keyword
+        super().__init__(*args, **kwargs)
+
+    @classmethod
+    async def from_id(cls, arg_id: int) -> Optional[Song]:
+        try:
+            return await Song.from_id(arg_id)
+        except ValueError:
+            return None
+
+    async def _build_list_resp(
         self,
         resp: SongSearchResult,
         page: int,
@@ -85,7 +91,7 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
                 for i, x in enumerate(resp.songs, self._calc_index_offset(page))
             ],
         )
-        return SearchResp(table, self.calling, page, resp.songCount)
+        return SearchResp(table, self.child_calling, page, resp.songCount)
 
     async def _extract_resp_content(
         self,
@@ -93,14 +99,8 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
     ) -> Optional[List[SongModel]]:
         return resp.songs
 
-    async def _do_search(self, page: int) -> SongSearchResult:
+    async def _do_get_page(self, page: int) -> SongSearchResult:
         return await search_song(self.keyword, page=page)
 
     async def _build_selection(self, resp: SongModel) -> Song:
         return Song(info=resp)
-
-    async def search_by_id(self, arg_id: int) -> Optional[BaseSong]:
-        try:
-            return await Song.from_id(arg_id)
-        except ValueError:
-            return None
