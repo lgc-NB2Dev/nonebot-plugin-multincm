@@ -345,7 +345,7 @@ async def search_got_arg(
     if keyword in EXIT_COMMAND:
         await matcher.finish("已退出搜索")
 
-    searcher = cast(Type[BasePlaylist], state[KEY_SEARCHER_TYPE])(keyword)
+    searcher = cast(Type[BaseSearcher], state[KEY_SEARCHER_TYPE])(keyword)
     state[KEY_PLAYLIST] = searcher
 
 

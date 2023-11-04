@@ -9,10 +9,11 @@ dependencies = [
     "nonebot-plugin-apscheduler>=0.2.0",
     "pydantic>=1.10.4,<2",
     "pil-utils>=0.1.7",
+    "Pillow<10",
     "pyncm>=1.6.8.9.1",
     "typing-extensions>=4.5.0",
     "anyio>=3.6.2",
-    "httpx>=0.25.0",
+    "httpx>=0.24.0",
 ]
 requires-python = ">=3.8,<4.0"
 readme = "README.md"

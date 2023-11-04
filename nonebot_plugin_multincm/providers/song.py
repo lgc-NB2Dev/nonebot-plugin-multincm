@@ -55,10 +55,6 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
     child_calling = CALLING
     commands = COMMANDS
 
-    def __init__(self, keyword: str, *args, **kwargs) -> None:
-        self.keyword = keyword
-        super().__init__(*args, **kwargs)
-
     @classmethod
     async def from_id(cls, arg_id: int) -> Optional[Song]:
         try:
