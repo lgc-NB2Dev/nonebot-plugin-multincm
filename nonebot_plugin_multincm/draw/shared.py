@@ -21,7 +21,7 @@ class Table(NamedTuple):
 
 
 @dataclass()
-class SearchResp:
+class TablePage:
     table: Table
     calling: str
     current_page: int

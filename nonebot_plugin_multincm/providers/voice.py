@@ -3,7 +3,7 @@ from typing import List, Optional
 from ..config import config
 from ..const import MUSIC_LINK_TEMPLATE
 from ..data_source import get_track_audio, get_voice_info, search_voice
-from ..draw import SearchResp, Table, TableHead
+from ..draw import Table, TableHead, TablePage
 from ..types import VoiceBaseInfo, VoiceResource, VoiceSearchResult
 from ..utils import format_time
 from .base import BaseSearcher, BaseSong, searcher, song
@@ -18,7 +18,8 @@ class Voice(BaseSong[VoiceBaseInfo]):
     calling = CALLING
     link_types = LINK_TYPES
 
-    async def get_id(self) -> int:
+    @property
+    def song_id(self) -> int:
         return self.info.id
 
     @classmethod
@@ -65,7 +66,7 @@ class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
         self,
         resp: VoiceSearchResult,
         page: int,
-    ) -> SearchResp:
+    ) -> TablePage:
         if not resp.resources:
             raise ValueError("No resource in raw response")
         table = Table(
@@ -87,7 +88,7 @@ class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
                 for i, x in enumerate(resp.resources, self._calc_index_offset(page))
             ],
         )
-        return SearchResp(table, self.child_calling, page, resp.totalCount)
+        return TablePage(table, self.child_calling, page, resp.totalCount)
 
     async def _extract_resp_content(
         self,

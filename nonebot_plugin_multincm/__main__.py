@@ -22,14 +22,12 @@ from nonebot.params import ArgPlainText, CommandArg, Depends
 from nonebot.typing import T_State
 
 from .config import config
-from .draw import SearchResp, draw_search_res, str_to_pic
+from .draw import TablePage, draw_table_page, str_to_pic
 from .msg_cache import SongCache, chat_last_song_cache
 from .providers import BasePlaylist, BaseSearcher, BaseSong, playlists, searchers, songs
 
-KEY_ONLY_SONG = "only_song"
-
 KEY_SEARCHER_TYPE = "searcher_type"
-KEY_SEARCHER = "searcher"
+KEY_PLAYLIST = "playlist"
 KEY_LIST_MSG_ID = "list_msg_id"
 
 KEY_RESOLVE = "resolve"
@@ -82,12 +80,12 @@ async def finish_with_delete_msg(
     await matcher.finish(msg)
 
 
-async def send_search_resp(resp: SearchResp):
+async def send_table_page(resp: TablePage):
     matcher = current_matcher.get()
     state = matcher.state
 
     try:
-        pic = await draw_search_res(resp)
+        pic = await draw_table_page(resp)
     except Exception:
         logger.exception(f"Draw {resp.calling} list failed")
         await finish_with_delete_msg(f"绘制{resp.calling}列表失败，请检查后台输出")
@@ -101,7 +99,7 @@ async def send_search_resp(resp: SearchResp):
 async def cache_song(song: BaseSong, session: Optional[str] = None):
     if not session:
         session = current_event.get().get_session_id()
-    chat_last_song_cache.set(session, SongCache(type(song), await song.get_id()))
+    chat_last_song_cache.set(session, SongCache(type(song), song.song_id))
 
 
 async def send_song(song: BaseSong):
@@ -347,19 +345,25 @@ async def search_got_arg(
     if keyword in EXIT_COMMAND:
         await matcher.finish("已退出搜索")
 
-    searcher = cast(Type[BaseSearcher], state[KEY_SEARCHER_TYPE])(keyword)
-    state[KEY_SEARCHER] = searcher
+    searcher = cast(Type[BasePlaylist], state[KEY_SEARCHER_TYPE])(keyword)
+    state[KEY_PLAYLIST] = searcher
 
 
 async def search_handle_search(matcher: Matcher, state: T_State):
-    searcher: BaseSearcher = state[KEY_SEARCHER]
-    calling = searcher.child_calling
+    playlist: BasePlaylist = state[KEY_PLAYLIST]
+    calling = playlist.child_calling
 
     try:
-        result = await searcher.get_page()
+        result = cast(
+            Union[TablePage, SongOrPlaylist, None],
+            await playlist.get_page(),
+        )
     except Exception:
-        logger.exception(f"Search {calling} `{searcher.keyword}` failed")
-        await matcher.finish(f"搜索{calling}失败，请检查后台输出")
+        logger.exception(f"Failed to call get_page() of {playlist}")
+        if isinstance(playlist, BaseSearcher):
+            await matcher.finish(f"搜索{calling}失败，请检查后台输出")
+        else:
+            await matcher.finish(f"获取{calling}列表失败，请检查后台输出")
 
     if not result:
         await matcher.finish(f"没搜到任何{calling}捏")
@@ -369,11 +373,11 @@ async def search_handle_search(matcher: Matcher, state: T_State):
         await matcher.finish()
 
     if isinstance(result, BasePlaylist):
-        state[KEY_SEARCHER] = result
+        state[KEY_PLAYLIST] = result
         await search_handle_search(matcher, state)
         return
 
-    await send_search_resp(result)
+    await send_table_page(result)
 
 
 async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_State):
@@ -382,7 +386,7 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
     if arg in EXIT_COMMAND:
         await finish_with_delete_msg("已退出选择")
 
-    searcher: BaseSearcher = state[KEY_SEARCHER]
+    playlist: BasePlaylist = state[KEY_PLAYLIST]
 
     def reset_illegal():
         state[KEY_ILLEGAL_COUNT] = 0
@@ -390,24 +394,24 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
     if arg in PREVIOUS_COMMAND:
         reset_illegal()
         try:
-            resp = await searcher.prev_page()
+            resp = await playlist.prev_page()
         except ValueError:
             await matcher.reject("已经是第一页了")
-        await send_search_resp(resp)
+        await send_table_page(resp)
         await matcher.reject()
 
     if arg in NEXT_COMMAND:
         reset_illegal()
         try:
-            resp = await searcher.next_page()
+            resp = await playlist.next_page()
         except ValueError:
             await matcher.reject("已经是最后一页了")
-        await send_search_resp(resp)
+        await send_table_page(resp)
         await matcher.reject()
 
     if arg.isdigit():
         try:
-            song = await searcher.select(int(arg))
+            song = cast(SongOrPlaylist, await playlist.select(int(arg)))
         except ValueError:
             await illegal_finish()
             await matcher.reject("序号输入有误，请重新输入")
@@ -417,8 +421,8 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
             await send_song(song)
             await finish_with_delete_msg()
 
-        # else:  # BaseSearcher
-        state[KEY_SEARCHER] = song
+        # else:  # BasePlaylist
+        state[KEY_PLAYLIST] = song
         await search_handle_search(matcher, state)
         await matcher.reject()
 
@@ -426,7 +430,7 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
     await matcher.reject("非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式")
 
 
-def append_searcher_handlers(matcher: Type[Matcher]):
+def append_playlist_handlers(matcher: Type[Matcher]):
     matcher.handle()(search_handle_search)
     matcher.receive()(search_receive_select)
 
@@ -437,7 +441,7 @@ def register_search_handlers():
         cmd = on_command(c_pri, aliases=set(c_alias), state={KEY_SEARCHER_TYPE: s})
         cmd.handle()(search_handle_extract_arg)
         cmd.got("arg", "请发送搜索内容，发送 0 退出搜索")(search_got_arg)
-        append_searcher_handlers(cmd)
+        append_playlist_handlers(cmd)
 
     for s in searchers:
         reg_one(s)
@@ -495,9 +499,7 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
             await upload_music(resolved)
 
         except Exception as e:
-            logger.exception(
-                f"Upload {resolved.calling} {await resolved.get_id()} failed",
-            )
+            logger.exception(f"Upload {resolved.calling} {resolved.song_id} failed")
             if isinstance(e, NetworkError):
                 await matcher.finish(
                     f"上传{resolved.calling}失败，可能是下载或上传超时！请尝试调高 API_TIMEOUT 配置",
@@ -513,7 +515,7 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
 
 def append_searcher_handlers_to_resolve():
     def once(m: Type[Matcher]):
-        append_searcher_handlers(m)
+        append_playlist_handlers(m)
 
     for m in (cmd_resolve, cmd_resolve_url, cmd_resolve_file):
         once(m)
@@ -539,9 +541,7 @@ async def _(matcher: Matcher, resolved: ResolvedSongOrPlaylist):
     try:
         lrc = await resolved.get_lyric()
     except Exception:
-        logger.exception(
-            f"Get {resolved.calling} {await resolved.get_id()} lyric failed",
-        )
+        logger.exception(f"Get {resolved.calling} {resolved.song_id} lyric failed")
         await matcher.finish(f"获取{resolved.calling}歌词失败，请检查后台输出")
 
     if not lrc:

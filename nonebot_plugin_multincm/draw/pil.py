@@ -5,7 +5,7 @@ from pil_utils.types import ColorType, HAlignType
 
 from ..config import config
 from ..const import RES_DIR
-from .shared import SearchResp, TableHead
+from .shared import TableHead, TablePage
 
 BACKGROUND = BuildImage.open(RES_DIR / "bg.jpg")
 
@@ -176,7 +176,7 @@ def draw_table(
     return pic
 
 
-async def draw_search_res(res: SearchResp) -> bytes:
+async def draw_table_page(res: TablePage) -> bytes:
     pic_padding = 50
     table_padding = 20
     table_border_radius = 15

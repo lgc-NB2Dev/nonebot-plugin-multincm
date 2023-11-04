@@ -10,7 +10,7 @@ from pil_utils.types import ColorType, HAlignType
 
 from ..config import config
 from ..const import RES_DIR
-from .shared import SearchResp
+from .shared import TablePage
 
 SONG_LIST_TEMPLATE = Template(
     (RES_DIR / "song_list.html.jinja").read_text(encoding="u8"),
@@ -47,7 +47,7 @@ async def render_template(
         return await main_elem.screenshot(type="jpeg")
 
 
-async def draw_search_res(res: SearchResp) -> bytes:
+async def draw_table_page(res: TablePage) -> bytes:
     for x in res.table.head:
         x.name = BBCODE_PARSER.format(x.name)
     lines = [[BBCODE_PARSER.format(y) for y in x] for x in res.table.rows]

@@ -3,7 +3,7 @@ from typing import List, Optional, Union
 from ..config import config
 from ..const import MUSIC_LINK_TEMPLATE
 from ..data_source import get_track_audio, get_track_info, get_track_lrc, search_song
-from ..draw import SearchResp, Table, TableHead
+from ..draw import Table, TableHead, TablePage
 from ..types import Song as SongModel
 from ..types import SongSearchResult
 from ..utils import format_alias, format_artists, format_lrc, format_time
@@ -19,7 +19,8 @@ class Song(BaseSong[SongModel]):
     calling = CALLING
     link_types = LINK_TYPES
 
-    async def get_id(self) -> int:
+    @property
+    def song_id(self) -> int:
         return self.info.id
 
     @classmethod
@@ -69,7 +70,7 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
         self,
         resp: SongSearchResult,
         page: int,
-    ) -> Union[SearchResp, BaseSong, None]:
+    ) -> Union[TablePage, BaseSong, None]:
         if not resp.songs:
             raise ValueError("No song in raw response")
         table = Table(
@@ -91,7 +92,7 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
                 for i, x in enumerate(resp.songs, self._calc_index_offset(page))
             ],
         )
-        return SearchResp(table, self.child_calling, page, resp.songCount)
+        return TablePage(table, self.child_calling, page, resp.songCount)
 
     async def _extract_resp_content(
         self,
