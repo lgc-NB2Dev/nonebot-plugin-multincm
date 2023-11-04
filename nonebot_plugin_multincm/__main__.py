@@ -273,6 +273,9 @@ async def resolve_song_from_message(
     if not matched:
         matcher.skip()
 
+    if is_auto_resolve:
+        await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
+
     groups = matched.groupdict()
     if "suffix" in groups:
         suffix = groups["suffix"]
@@ -300,15 +303,15 @@ async def dependency_resolve_song(
     state: T_State,
 ) -> BaseSongType:
     is_auto_resolve = state.get(KEY_IS_AUTO_RESOLVE, False)
-    if is_auto_resolve:
-        if not config.ncm_auto_resolve:
-            matcher.skip()
-        await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
+    if is_auto_resolve and (not config.ncm_auto_resolve):
+        matcher.skip()
 
     if song := await resolve_song_from_message(matcher, event, is_auto_resolve):
         return song
 
-    if cache := chat_last_song_cache.get(event.get_session_id()):
+    if (not is_auto_resolve) and (
+        cache := chat_last_song_cache.get(event.get_session_id())
+    ):
         try:
             return await cache.get()
         except Exception:
@@ -327,7 +330,13 @@ ResolvedSong = Annotated[BaseSongType, Depends(dependency_resolve_song)]
 # region search handlers
 
 
-async def search_handle_extract_arg(matcher: Matcher, arg_msg: Message = CommandArg()):
+async def search_handle_extract_arg(
+    matcher: Matcher,
+    event: MessageEvent,
+    arg_msg: Message = CommandArg(),
+):
+    if event.reply:
+        arg_msg = event.reply.message
     if arg_msg.extract_plain_text().strip():
         matcher.set_arg("arg", arg_msg)
 
@@ -423,13 +432,16 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
 
 
 def register_search_handlers():
-    for s in searchers:
+    def reg_one(s: Type[BaseSearcherType]):
         c_pri, *c_alias = s.commands
         cmd = on_command(c_pri, aliases=set(c_alias), state={KEY_SEARCHER_TYPE: s})
         cmd.handle()(search_handle_extract_arg)
         cmd.got("arg", "请发送搜索内容，发送 0 退出搜索")(search_got_arg)
         cmd.handle()(search_handle_search)
         cmd.receive()(search_receive_select)
+
+    for s in searchers:
+        reg_one(s)
 
 
 register_search_handlers()
@@ -469,7 +481,7 @@ async def _(matcher: Matcher, state: T_State, song: ResolvedSong):
         await matcher.finish(await song.get_playable_url())
 
     if KEY_UPLOAD_FILE in state:
-        await matcher.send("正在下载并上传音乐，需要的时间可能较长，请耐心等待")
+        await matcher.send(f"正在下载并上传{song.calling}，需要的时间可能较长，请耐心等待")
         try:
             await upload_music(song)
 
@@ -481,12 +493,12 @@ async def _(matcher: Matcher, state: T_State, song: ResolvedSong):
                 )
             if isinstance(e, ActionFailed):
                 await matcher.finish(
-                    f"上传{song.calling}失败，可能是下载文件出错或无权限上传文件！请检查后台输出",
+                    f"上传{song.calling}失败，可能是下载/上传文件出错或无权限上传文件！\n{e}",
                 )
-            await matcher.finish(f"上传{song.calling}失败，请检查后台输出")
+            await matcher.finish(f"上传{song.calling}失败，遇到未知错误，请检查后台输出")
 
         else:
-            await matcher.finish()
+            return
 
     await send_song(song)
 
