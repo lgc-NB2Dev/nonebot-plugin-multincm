@@ -2,15 +2,7 @@ import asyncio
 import random
 import re
 from pathlib import Path
-from typing import (
-    Dict,
-    List,
-    NoReturn,
-    Optional,
-    Type,
-    Union,
-    cast,
-)
+from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
 
 from httpx import AsyncClient
@@ -252,7 +244,11 @@ async def resolve_song_from_message(
     event: MessageEvent,
     is_auto_resolve: bool = False,
 ) -> BaseSongType:
-    message = event.reply.message if event.reply else event.message
+    message = (
+        event.reply.message
+        if ((not is_auto_resolve) and event.reply)
+        else event.message
+    )
     resolve_playable_card = (
         config.ncm_resolve_playable_card if is_auto_resolve else True
     )
@@ -321,7 +317,10 @@ async def dependency_resolve_song(
     return matcher.skip()
 
 
-ResolvedSong = Annotated[BaseSongType, Depends(dependency_resolve_song)]
+ResolvedSong = Annotated[
+    BaseSongType,
+    Depends(dependency_resolve_song, use_cache=False),
+]
 
 
 # endregion
@@ -469,6 +468,7 @@ cmd_resolve_file = on_command(
 )
 cmd_auto_resolve = on_message(
     state={KEY_IS_AUTO_RESOLVE: True},
+    priority=2,
 )
 
 
