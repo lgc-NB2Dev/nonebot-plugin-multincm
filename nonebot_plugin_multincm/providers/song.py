@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from ..config import config
 from ..const import MUSIC_LINK_TEMPLATE
@@ -52,7 +52,7 @@ class Song(BaseSong[SongModel]):
 
 @searcher
 class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
-    child_calling = CALLING
+    calling = CALLING
     commands = COMMANDS
 
     @classmethod
@@ -66,7 +66,7 @@ class SongSearcher(BaseSearcher[SongSearchResult, SongModel, Song]):
         self,
         resp: SongSearchResult,
         page: int,
-    ) -> Union[TablePage, BaseSong, None]:
+    ) -> TablePage:
         if not resp.songs:
             raise ValueError("No song in raw response")
         table = Table(

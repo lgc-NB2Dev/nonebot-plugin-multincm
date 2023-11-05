@@ -52,7 +52,7 @@ class Voice(BaseSong[VoiceBaseInfo]):
 
 @searcher
 class VoiceSearcher(BaseSearcher[VoiceSearchResult, VoiceResource, Voice]):
-    child_calling = CALLING
+    calling = CALLING
     commands = COMMANDS
 
     @classmethod

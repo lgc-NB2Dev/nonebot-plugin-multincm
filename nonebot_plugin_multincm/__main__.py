@@ -246,7 +246,7 @@ async def resolve_song_or_playlist_from_msg(
         msg_str = card.data["data"]
         is_playable_card = '"musicUrl"' in msg_str
         if (not resolve_playable_card) and is_playable_card:
-            matcher.skip()
+            await matcher.finish()
     else:
         msg_str = message.extract_plain_text()
 
@@ -255,7 +255,7 @@ async def resolve_song_or_playlist_from_msg(
         if matched := re.search(regex, msg_str, re.I):
             break
     if not matched:
-        matcher.skip()
+        await matcher.finish()
 
     if is_auto_resolve:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
@@ -290,7 +290,7 @@ async def dependency_resolve_song_or_playlist(
 ) -> SongOrPlaylist:
     is_auto_resolve = state.get(KEY_IS_AUTO_RESOLVE, False)
     if is_auto_resolve and (not config.ncm_auto_resolve):
-        matcher.skip()
+        await matcher.finish()
 
     if song := await resolve_song_or_playlist_from_msg(
         matcher,
@@ -308,7 +308,7 @@ async def dependency_resolve_song_or_playlist(
             logger.exception(f"Get {cache} failed")
             await matcher.finish(f"获取{cache.song_class.calling}失败，请检查后台输出")
 
-    return matcher.skip()
+    return await matcher.finish()
 
 
 ResolvedSongOrPlaylist = Annotated[
@@ -472,7 +472,7 @@ cmd_resolve_file = on_command(
     state={KEY_UPLOAD_FILE: True},
 )
 cmd_auto_resolve = on_message(
-    state={KEY_IS_AUTO_RESOLVE: True},
+    state={KEY_RESOLVE: True, KEY_IS_AUTO_RESOLVE: True},
     priority=2,
 )
 
@@ -484,6 +484,7 @@ cmd_auto_resolve = on_message(
 async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
     if KEY_RESOLVE in state:
         if isinstance(resolved, BasePlaylist):
+            state[KEY_PLAYLIST] = resolved
             return
         await send_song(resolved)
 
@@ -517,8 +518,11 @@ def append_searcher_handlers_to_resolve():
     def once(m: Type[Matcher]):
         append_playlist_handlers(m)
 
-    for m in (cmd_resolve, cmd_resolve_url, cmd_resolve_file):
+    for m in (cmd_resolve, cmd_auto_resolve):
         once(m)
+
+
+append_searcher_handlers_to_resolve()
 
 
 # endregion

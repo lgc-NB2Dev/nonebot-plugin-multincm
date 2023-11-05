@@ -4,6 +4,7 @@ from .base import BaseSong as BaseSong
 from .base import playlists as playlists
 from .base import searchers as searchers
 from .base import songs as songs
+from .playlist import Playlist as Playlist
 from .song import Song as Song
 from .song import SongSearcher as SongSearcher
 from .voice import Voice as Voice

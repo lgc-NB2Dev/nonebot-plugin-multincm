@@ -1,12 +1,18 @@
 # ruff: noqa: A003 N815
 
 from typing import List, Literal, Optional, Union
+from typing_extensions import TypeAlias
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 BrLevelType = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
 
-SearchRespModelType = Union["SongSearchResult", "VoiceSearchResult"]
+SearchRespModelType = Union[
+    "SongSearchResult",
+    "VoiceSearchResult",
+    "PlaylistSearchResult",
+]
+PlaylistRespModelType: TypeAlias = "Playlist"
 SongInfoModelType = Union["Song", "VoiceBaseInfo"]
 
 
@@ -39,7 +45,7 @@ class Song(BaseModel):
     al: Album
     dt: int
     """歌曲时长，单位 ms"""
-    privilege: Privilege
+    privilege: Optional[Privilege]
 
 
 class QcReminder(BaseModel):
@@ -137,4 +143,36 @@ class VoiceResource(BaseModel):
 class VoiceSearchResult(BaseModel):
     resources: Optional[List[VoiceResource]]
     totalCount: int
+    searchQcReminder: Optional[SearchQcReminder]
+
+
+class TrackId(BaseModel):
+    id: int
+
+
+class PlaylistCreator(BaseModel):
+    userId: int
+    nickname: str
+
+
+class PlaylistFromSearch(BaseModel):
+    id: int
+    name: str
+    coverImgUrl: str
+    creator: PlaylistCreator
+    trackCount: int
+    playCount: int
+    bookCount: int
+    description: Optional[str]
+
+
+class Playlist(PlaylistFromSearch):
+    bookCount: int = Field(alias="subscribedCount")
+    tracks: List[Song]
+    trackIds: List[TrackId]
+
+
+class PlaylistSearchResult(BaseModel):
+    playlists: Optional[List[PlaylistFromSearch]]
+    playlistCount: int
     searchQcReminder: Optional[SearchQcReminder]

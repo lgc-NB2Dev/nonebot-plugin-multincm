@@ -19,10 +19,15 @@ from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
 from ..config import config
 from ..draw import TablePage
-from ..types import SearchRespModelType, SongInfoModelType
+from ..types import PlaylistRespModelType, SearchRespModelType, SongInfoModelType
 
 _TSongInfoModel = TypeVar("_TSongInfoModel", bound=SongInfoModelType)
 _TRawSearchResp = TypeVar("_TRawSearchResp", bound=SearchRespModelType)
+_TRawPlaylistResp = TypeVar(
+    "_TRawPlaylistResp",
+    PlaylistRespModelType,
+    SearchRespModelType,
+)
 _T_RawRespContent = TypeVar("_T_RawRespContent")
 
 _TBaseSong = TypeVar("_TBaseSong", bound="BaseSong")
@@ -103,7 +108,7 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
 
 class BasePlaylist(
     ABC,
-    Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
+    Generic[_TRawPlaylistResp, _T_RawRespContent, _TBaseSongOrPlaylist],
 ):
     calling: str = "BasePlaylist"
     child_calling: str = "BaseSong"
@@ -111,7 +116,12 @@ class BasePlaylist(
 
     _last_page: int
     _last_resp: Optional[TablePage]
-    _cache: Dict[int, _TRawSearchResp]
+    _cache: Dict[int, _TRawPlaylistResp]
+
+    @property
+    @abstractmethod
+    def playlist_id(self) -> int:
+        ...
 
     @property
     def last_page(self) -> int:
@@ -130,18 +140,18 @@ class BasePlaylist(
         return f"{self.__class__.__name__}()"
 
     @abstractmethod
-    async def _build_list_resp(self, resp: _TRawSearchResp, page: int) -> TablePage:
+    async def _build_list_resp(self, resp: _TRawPlaylistResp, page: int) -> TablePage:
         ...
 
     @abstractmethod
     async def _extract_resp_content(
         self,
-        resp: _TRawSearchResp,
+        resp: _TRawPlaylistResp,
     ) -> Optional[List[_T_RawRespContent]]:
         ...
 
     @abstractmethod
-    async def _do_get_page(self, page: int) -> _TRawSearchResp:
+    async def _do_get_page(self, page: int) -> _TRawPlaylistResp:
         ...
 
     @abstractmethod
@@ -213,8 +223,16 @@ class BaseSearcher(
 
     keyword: str
 
+    @property
+    def playlist_id(self) -> int:
+        return 0
+
     def __init__(self, keyword: str, *_, **__) -> None:
         self.keyword = keyword
+
+        calling = self.__class__.calling or self.__class__.child_calling
+        self.__class__.calling = self.__class__.child_calling = calling
+
         super().__init__(*_, **__)
 
     def __repr__(self) -> str:

@@ -1,8 +1,22 @@
-from typing import Any, Callable, Dict, List, cast
+from functools import partial
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import anyio
 from nonebot import get_available_plugin_names, logger, require
 from nonebot.utils import run_sync
+from pydantic import BaseModel
 from pyncm import (
     DumpSessionAsString,
     GetCurrentSession,
@@ -10,6 +24,7 @@ from pyncm import (
     SetCurrentSession,
 )
 from pyncm.apis import WeapiCryptoRequest
+from pyncm.apis import cloudsearch as search
 from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.login import (
     GetCurrentLoginStatus,
@@ -17,12 +32,15 @@ from pyncm.apis.login import (
     LoginViaCellphone,
     LoginViaEmail,
 )
+from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from .config import config
 from .const import DATA_PATH
 from .types import (
     LyricData,
+    Playlist,
+    PlaylistSearchResult,
     Privilege,
     Song,
     SongSearchResult,
@@ -30,6 +48,8 @@ from .types import (
     VoiceBaseInfo,
     VoiceSearchResult,
 )
+
+TModel = TypeVar("TModel", bound=BaseModel)
 
 SESSION_FILE = DATA_PATH / "session.cache"
 
@@ -46,16 +66,60 @@ async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     return ret
 
 
-async def search_song(keyword: str, page: int = 1, **kwargs) -> SongSearchResult:
+@overload
+async def get_search_result(
+    keyword: str,
+    return_model: Type[TModel],
+    page: int = 1,
+    search_type: int = search.SONG,
+    **kwargs,
+) -> TModel:
+    ...
+
+
+@overload
+async def get_search_result(
+    keyword: str,
+    return_model: Literal[None] = None,
+    page: int = 1,
+    search_type: int = search.SONG,
+    **kwargs,
+) -> Dict[str, Any]:
+    ...
+
+
+async def get_search_result(
+    keyword: str,
+    return_model: Optional[Type[TModel]] = None,
+    page: int = 1,
+    search_type: int = search.SONG,
+    **kwargs,
+) -> Union[Dict[str, Any], TModel]:
     offset = get_offset_by_page_num(page)
     res = await ncm_request(
         GetSearchResult,
         keyword=keyword,
         limit=config.ncm_list_limit,
         offset=offset,
+        stype=search_type,
         **kwargs,
     )
-    return SongSearchResult(**res["result"])
+    result = res["result"]
+    if return_model:
+        return return_model(**result)
+    return result
+
+
+search_song = partial(
+    get_search_result,
+    search_type=search.SONG,
+    return_model=SongSearchResult,
+)
+search_playlist = partial(
+    get_search_result,
+    search_type=search.PLAYLIST,
+    return_model=PlaylistSearchResult,
+)
 
 
 async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
@@ -113,6 +177,11 @@ async def get_voice_info(program_id: int) -> VoiceBaseInfo:
 
     res = await ncm_request(GetProgramDetail)
     return VoiceBaseInfo(**res["program"])
+
+
+async def get_playlist_info(playlist_id: int) -> Any:
+    res = await ncm_request(GetPlaylistInfo, playlist_id)
+    return Playlist(**res["playlist"])
 
 
 async def login(retry=True):
