@@ -191,7 +191,7 @@ class BasePlaylist(
 
     async def next_page(self) -> TablePage:
         if not self._last_resp:
-            raise ValueError("Please do a search first")
+            raise ValueError("Please get a page first")
         if self._last_page >= self._last_resp.max_page:
             raise ValueError("Already last page")
         return cast(Any, await self.get_page(self._last_page + 1))
