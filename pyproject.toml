@@ -1,15 +1,15 @@
 [project]
 name = "nonebot-plugin-multincm"
-version = "0.5.0.dev1"
+version = "0.5.0.dev2"
 description = "NCM Song Searcher"
 authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
     "nonebot2>=2.0.0",
     "nonebot-adapter-onebot>=2.2.0",
-    "nonebot-plugin-apscheduler>=0.2.0",
+    # "nonebot-plugin-apscheduler>=0.2.0",
     "pydantic>=1.10.4,<2",
     "pil-utils>=0.1.7",
-    "Pillow<10",
+    "Pillow>=9,<10",
     "pyncm>=1.6.8.9.1",
     "typing-extensions>=4.5.0",
     "anyio>=3.6.2",

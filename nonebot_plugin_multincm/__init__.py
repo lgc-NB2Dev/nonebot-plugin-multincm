@@ -1,9 +1,10 @@
-from nonebot.plugin import PluginMetadata, require
+from nonebot.plugin import PluginMetadata
 
-require("nonebot_plugin_apscheduler")
-
+# require("nonebot_plugin_apscheduler")
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel, config  # noqa: E402
+
+auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"
 
 __version__ = "0.5.0"
 __plugin_meta__ = PluginMetadata(
@@ -14,8 +15,11 @@ __plugin_meta__ = PluginMetadata(
         "▶ 点歌 [歌曲名 / 音乐 ID]\n"
         "    ▷ 介绍：搜索歌曲。当输入音乐 ID 时会直接发送对应音乐\n"
         "    ▷ 别名：`网易云`、`wyy`\n"
-        "▶ 电台 [歌曲名 / 节目 ID]\n"
+        "▶ 电台 [节目名 / 节目 ID]\n"
         "    ▷ 介绍：搜索电台节目。当输入电台 ID 时会直接发送对应节目\n"
+        "    ▷ 别名：`声音`、`网易电台`、`wydt`、`wydj`\n"
+        "▶ 歌单 [歌单名 / 歌单 ID]\n"
+        "    ▷ 介绍：搜索歌单。当输入歌单 ID 时会直接发送对应歌单\n"
         "    ▷ 别名：`声音`、`网易电台`、`wydt`、`wydj`\n"
         " \n"
         "操作指令：\n"
@@ -33,7 +37,7 @@ __plugin_meta__ = PluginMetadata(
         "    ▷ 别名：`lrc`、`lyric`、`lyrics`\n"
         " \n"
         "Tip：\n"
-        f"{'▶ Bot 会自动解析你发送的网易云歌曲或电台节目链接' if config.ncm_auto_resolve else ''}"
+        f"{auto_resolve_tip if config.ncm_auto_resolve else ''}"
         "▶ 点击 Bot 发送的音乐卡片会跳转到官网歌曲页\n"
         "▶ 使用需要回复音乐卡片的指令时，如果没有回复，会自动使用你触发发送的最近一个音乐卡片的信息"
     ),

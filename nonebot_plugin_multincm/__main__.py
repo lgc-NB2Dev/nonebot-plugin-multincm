@@ -6,7 +6,7 @@ from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
 
 from httpx import AsyncClient
-from nonebot import logger, on_command, on_message
+from nonebot import logger, on_command
 from nonebot.adapters.onebot.v11 import (
     ActionFailed,
     Bot,
@@ -17,8 +17,10 @@ from nonebot.adapters.onebot.v11 import (
     NetworkError,
     PrivateMessageEvent,
 )
+from nonebot.consts import REGEX_MATCHED
 from nonebot.matcher import Matcher, current_bot, current_event, current_matcher
 from nonebot.params import ArgPlainText, CommandArg, Depends
+from nonebot.plugin.on import on_regex
 from nonebot.typing import T_State
 
 from .config import config
@@ -225,13 +227,15 @@ async def illegal_finish():
 
 
 # region dependencies & rules
+# 怎么感觉越写越花了，写得自己像个傻逼
 
 
 async def resolve_song_or_playlist_from_msg(
     matcher: Matcher,
     event: MessageEvent,
-    is_auto_resolve: bool = False,
-) -> SongOrPlaylist:
+    matched: Optional[re.Match] = None,
+) -> Optional[SongOrPlaylist]:
+    is_auto_resolve = bool(matched)
     message = (
         event.reply.message
         if ((not is_auto_resolve) and event.reply)
@@ -246,16 +250,15 @@ async def resolve_song_or_playlist_from_msg(
         msg_str = card.data["data"]
         is_playable_card = '"musicUrl"' in msg_str
         if (not resolve_playable_card) and is_playable_card:
-            await matcher.finish()
-    else:
-        msg_str = message.extract_plain_text()
+            return None
 
-    matched = None
-    for regex in (URL_REGEX, SHORT_URL_REGEX):
-        if matched := re.search(regex, msg_str, re.I):
-            break
     if not matched:
-        await matcher.finish()
+        msg_str = message.extract_plain_text()
+        for regex in (URL_REGEX, SHORT_URL_REGEX):
+            if matched := re.search(regex, msg_str, re.I):
+                break
+        if not matched:
+            return None
 
     if is_auto_resolve:
         await matcher.send("检测到您发送了网易云音乐卡片/链接，正在为您解析")
@@ -288,14 +291,14 @@ async def dependency_resolve_song_or_playlist(
     event: MessageEvent,
     state: T_State,
 ) -> SongOrPlaylist:
-    is_auto_resolve = state.get(KEY_IS_AUTO_RESOLVE, False)
+    is_auto_resolve: bool = state.get(KEY_IS_AUTO_RESOLVE, False)
     if is_auto_resolve and (not config.ncm_auto_resolve):
         await matcher.finish()
 
     if song := await resolve_song_or_playlist_from_msg(
         matcher,
         event,
-        is_auto_resolve,
+        state.get(REGEX_MATCHED) if is_auto_resolve else None,
     ):
         return song
 
@@ -471,9 +474,9 @@ cmd_resolve_file = on_command(
     aliases={"upload"},
     state={KEY_UPLOAD_FILE: True},
 )
-cmd_auto_resolve = on_message(
+cmd_auto_resolve = on_regex(
+    URL_REGEX,
     state={KEY_RESOLVE: True, KEY_IS_AUTO_RESOLVE: True},
-    priority=2,
 )
 
 
