@@ -6,7 +6,7 @@ from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
 
 from httpx import AsyncClient
-from nonebot import logger, on_command
+from nonebot import logger, on_command, on_regex
 from nonebot.adapters.onebot.v11 import (
     ActionFailed,
     Bot,
@@ -20,7 +20,6 @@ from nonebot.adapters.onebot.v11 import (
 from nonebot.consts import REGEX_MATCHED
 from nonebot.matcher import Matcher, current_bot, current_event, current_matcher
 from nonebot.params import ArgPlainText, CommandArg, Depends
-from nonebot.plugin.on import on_regex
 from nonebot.typing import T_State
 
 from .config import config
