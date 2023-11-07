@@ -40,6 +40,7 @@ KEY_ILLEGAL_COUNT = "illegal_count"
 EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
 PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
 NEXT_COMMAND = ("下一页", "xyy", "next", "n")
+JUMP_PAGE_PREFIX = ("page", "p", "跳页", "页")
 
 LINK_TYPES_MAP = {s: s.link_types for s in (*songs, *playlists)}
 LINK_TYPES = [t for s in (*songs, *playlists) for t in s.link_types]
@@ -62,19 +63,16 @@ async def delete_list_msg(msg_id: List[int], bot: Bot):
         try:
             await bot.delete_msg(message_id=i)
         except Exception as e:
-            logger.warning(f"撤回消息 {msg_id} 失败: {e!r}")
+            logger.warning(f"撤回消息 {i} 失败: {e!r}")
 
 
 async def finish_with_delete_msg(
     msg: Optional[Union[str, MessageSegment, Message]] = None,
 ) -> NoReturn:
     matcher = current_matcher.get()
-    msg_id = current_matcher.get().state.get(KEY_LIST_MSG_ID)
+    msg_id = matcher.state.get(KEY_LIST_MSG_ID)
 
-    if not config.ncm_delete_list_msg:
-        await matcher.finish()
-
-    if msg_id:
+    if config.ncm_delete_list_msg and msg_id:
         bot = cast(Bot, current_bot.get())
         asyncio.create_task(delete_list_msg(msg_id, bot))
 
@@ -325,6 +323,28 @@ ResolvedSongOrPlaylist = Annotated[
 # region search handlers
 
 
+async def handle_get_page(
+    result: Union[TablePage, SongOrPlaylist, None],
+    calling: str,
+):
+    matcher = current_matcher.get()
+    state = matcher.state
+
+    if not result:
+        await matcher.finish(f"没搜到任何{calling}捏")
+
+    if isinstance(result, BaseSong):
+        await send_song(result)
+        await matcher.finish()
+
+    if isinstance(result, BasePlaylist):
+        state[KEY_PLAYLIST] = result
+        await search_handle_search(matcher, state)
+
+    else:
+        await send_table_page(result)
+
+
 async def search_handle_extract_arg(
     matcher: Matcher,
     event: MessageEvent,
@@ -367,19 +387,7 @@ async def search_handle_search(matcher: Matcher, state: T_State):
         else:
             await matcher.finish(f"获取{calling}列表失败，请检查后台输出")
 
-    if not result:
-        await matcher.finish(f"没搜到任何{calling}捏")
-
-    if isinstance(result, BaseSong):
-        await send_song(result)
-        await matcher.finish()
-
-    if isinstance(result, BasePlaylist):
-        state[KEY_PLAYLIST] = result
-        await search_handle_search(matcher, state)
-        return
-
-    await send_table_page(result)
+    await handle_get_page(result, calling)
 
 
 async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_State):
@@ -411,20 +419,39 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
         await send_table_page(resp)
         await matcher.reject()
 
+    if prefix := next((p for p in JUMP_PAGE_PREFIX if arg.startswith(p)), None):
+        arg = arg[len(prefix) :].strip()
+        if not arg.isdigit():
+            await illegal_finish()
+            await matcher.reject("页码输入有误，请重新输入")
+
+        try:
+            resp = cast(
+                Union[TablePage, SongOrPlaylist, None],
+                await playlist.get_page(int(arg)),
+            )
+        except ValueError:
+            await illegal_finish()
+            await matcher.reject("页码输入有误，请重新输入")
+
+        reset_illegal()
+        await handle_get_page(resp, playlist.calling)
+        await matcher.reject()
+
     if arg.isdigit():
         try:
-            song = cast(SongOrPlaylist, await playlist.select(int(arg)))
+            result = cast(SongOrPlaylist, await playlist.select(int(arg)))
         except ValueError:
             await illegal_finish()
             await matcher.reject("序号输入有误，请重新输入")
 
         reset_illegal()
-        if isinstance(song, BaseSong):
-            await send_song(song)
+        if isinstance(result, BaseSong):
+            await send_song(result)
             await finish_with_delete_msg()
 
         # else:  # BasePlaylist
-        state[KEY_PLAYLIST] = song
+        state[KEY_PLAYLIST] = result
         await search_handle_search(matcher, state)
         await matcher.reject()
 

@@ -193,7 +193,10 @@ async def draw_table_page(res: TablePage) -> bytes:
         fontname=config.ncm_list_font or "",
     )
     tip_txt = Text2Image.from_bbcode_text(
-        f"Tip：[b]发送序号[/b] 选择{calling}\n其他操作：[b]上一页[/b](P) | [b]下一页[/b](N) | [b]退出[/b](E)",
+        (
+            f"Tip：[b]发送序号[/b] 选择{calling} | 发送 [b]P[/b]+[b]数字[/b] 跳到指定页数\n"
+            "其他操作：[b]上一页[/b](P) | [b]下一页[/b](N) | [b]退出[/b](E)"
+        ),
         30,
         align="center",
         fill=(255, 255, 255),

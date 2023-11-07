@@ -128,6 +128,12 @@ class BasePlaylist(
         return self._last_page
 
     @property
+    def max_page(self) -> int:
+        if not self._last_resp:
+            raise ValueError("Please get a page first")
+        return self._last_resp.max_page
+
+    @property
     def last_resp(self) -> Optional[TablePage]:
         return self._last_resp
 
@@ -173,6 +179,9 @@ class BasePlaylist(
         self,
         page: int = 1,
     ) -> Union[TablePage, _TBaseSongOrPlaylist, None]:
+        if not ((page == 1) or (1 <= page <= self.max_page)):
+            raise ValueError("Page out of range")
+
         raw_resp = (
             self._cache[page] if page in self._cache else await self._do_get_page(page)
         )
@@ -190,9 +199,7 @@ class BasePlaylist(
         return resp
 
     async def next_page(self) -> TablePage:
-        if not self._last_resp:
-            raise ValueError("Please get a page first")
-        if self._last_page >= self._last_resp.max_page:
+        if self._last_page >= self.max_page:
             raise ValueError("Already last page")
         return cast(Any, await self.get_page(self._last_page + 1))
 
@@ -204,15 +211,20 @@ class BasePlaylist(
     async def select(self, index: int) -> _TBaseSongOrPlaylist:
         index -= 1  # item index starts with 0
         page_index = (index // config.ncm_list_limit) + 1  # page index starts with 1
-        if page_index not in self._cache:
-            raise ValueError("Cache not found, please do a properly search first")
+        if page_index in self._cache:
+            resp = self._cache[page_index]
+        elif not (1 <= page_index <= self.max_page):
+            raise ValueError("Index out of range")
+        else:
+            resp = await self._do_get_page(page_index)
+            self._cache[page_index] = resp
 
-        caches = await self._extract_resp_content(self._cache[page_index])
-        if (not caches) or (
-            (item_index := index % config.ncm_list_limit) >= len(caches)
+        content = await self._extract_resp_content(resp)
+        if (not content) or (
+            (item_index := index % config.ncm_list_limit) >= len(content)
         ):
             raise ValueError("Index out of range")
-        return await self._build_selection(caches[item_index])
+        return await self._build_selection(content[item_index])
 
 
 class BaseSearcher(
