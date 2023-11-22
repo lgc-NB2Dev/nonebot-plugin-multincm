@@ -504,12 +504,17 @@ cmd_auto_resolve = on_regex(
     URL_REGEX,
     state={KEY_RESOLVE: True, KEY_IS_AUTO_RESOLVE: True},
 )
+cmd_auto_resolve_short = on_regex(
+    SHORT_URL_REGEX,
+    state={KEY_RESOLVE: True, KEY_IS_AUTO_RESOLVE: True},
+)
 
 
 @cmd_resolve.handle()
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
 @cmd_auto_resolve.handle()
+@cmd_auto_resolve_short.handle()
 async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
     if KEY_RESOLVE in state:
         if isinstance(resolved, BasePlaylist):
