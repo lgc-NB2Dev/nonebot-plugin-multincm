@@ -248,9 +248,10 @@ async def resolve_song_or_playlist_from_msg(
         is_playable_card = '"musicUrl"' in msg_str
         if (not resolve_playable_card) and is_playable_card:
             return None
+    else:
+        msg_str = message.extract_plain_text()
 
     if not matched:
-        msg_str = message.extract_plain_text()
         for regex in (URL_REGEX, SHORT_URL_REGEX):
             if matched := re.search(regex, msg_str, re.I):
                 break
