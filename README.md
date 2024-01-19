@@ -188,6 +188,9 @@ plugins = [
 - 歌词 [回复 音乐卡片 / 链接]
   - 介绍：获取该音乐的歌词，以图片形式发送
   - 别名：`lrc`、`lyric`、`lyrics`
+- 发送语音 [回复 音乐卡片 / 链接]
+  - 介绍：发送该音乐的声音
+  - 别名：`record`
 
 ### Tip
 
@@ -240,6 +243,7 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 - 支持歌单，专辑等（开发中）
 - 点歌指令可以回复一条文本消息作为搜索内容了
+- 支持使用语音发送歌曲声音
 - resolve [#14](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/14)
 - 重构部分代码
 
