@@ -34,6 +34,7 @@ KEY_LIST_MSG_ID = "list_msg_id"
 KEY_RESOLVE = "resolve"
 KEY_SEND_LINK = "send_link"
 KEY_UPLOAD_FILE = "upload_file"
+KEY_SEND_RECORD = "send_record"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
 KEY_ILLEGAL_COUNT = "illegal_count"
 
@@ -501,6 +502,11 @@ cmd_resolve_file = on_command(
     aliases={"upload"},
     state={KEY_UPLOAD_FILE: True},
 )
+cmd_send_record = on_command(
+    "发送语音",
+    aliases={"record"},
+    state={KEY_SEND_RECORD: True},
+)
 cmd_auto_resolve = on_regex(
     URL_REGEX,
     state={KEY_RESOLVE: True, KEY_IS_AUTO_RESOLVE: True},
@@ -514,6 +520,7 @@ cmd_auto_resolve_short = on_regex(
 @cmd_resolve.handle()
 @cmd_resolve_url.handle()
 @cmd_resolve_file.handle()
+@cmd_send_record.handle()
 @cmd_auto_resolve.handle()
 @cmd_auto_resolve_short.handle()
 async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
@@ -545,6 +552,9 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
                     f"上传{resolved.calling}失败，可能是下载/上传文件出错或无权限上传文件！\n{e}",
                 )
             await matcher.finish(f"上传{resolved.calling}失败，遇到未知错误，请检查后台输出")
+
+    elif KEY_SEND_RECORD in state:
+        await matcher.send(MessageSegment.record(await resolved.get_playable_url()))
 
     await matcher.finish()
 
