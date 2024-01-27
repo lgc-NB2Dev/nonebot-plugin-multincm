@@ -554,8 +554,19 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
             await matcher.finish(f"上传{resolved.calling}失败，遇到未知错误，请检查后台输出")
 
     elif KEY_SEND_RECORD in state:
-        await matcher.send(MessageSegment.record(await resolved.get_playable_url()))
-
+        try:
+            await matcher.send(MessageSegment.record(await resolved.get_playable_url()))
+        except Exception as e:
+            logger.warning(f"Send {resolved.calling} {resolved.song_id} record failed")
+            if isinstance(e, NetworkError):
+                await matcher.finish(
+                    f"发送{resolved.calling}语音失败！",
+                )
+            if isinstance(e, ActionFailed):
+                await matcher.finish(
+                    f"发送{resolved.calling}语音失败，可能是机器人被风控！",
+                )
+            await matcher.finish(f"发送{resolved.calling}语音失败，遇到未知错误，请检查后台输出")
     await matcher.finish()
 
 
