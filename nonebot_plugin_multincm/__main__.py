@@ -263,7 +263,7 @@ async def send_record(song: BaseSong):
     )
     await process.wait()
     await matcher.send(
-        MessageSegment.record((TEMP_DIR / f"{song.song_id}.silk").absolute())
+        MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute())),
     )
 
 
