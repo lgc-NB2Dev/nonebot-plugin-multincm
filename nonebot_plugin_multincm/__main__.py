@@ -232,6 +232,7 @@ async def send_record(song: BaseSong):
     matcher = current_matcher.get()
     if not config.ncm_convert_record:
         await matcher.send(MessageSegment.record(await song.get_playable_url()))
+        return
     TEMP_DIR.mkdir(exist_ok=True)
     music_file = (
         TEMP_DIR / f"{song.song_id}.{(await song.get_playable_url()).split('.')[-1]}"
@@ -261,7 +262,9 @@ async def send_record(song: BaseSong):
         stderr=asyncio.subprocess.PIPE,
     )
     await process.wait()
-    await matcher.send(MessageSegment.record(TEMP_DIR / f"{song.song_id}.silk"))
+    await matcher.send(
+        MessageSegment.record((TEMP_DIR / f"{song.song_id}.silk").absolute())
+    )
 
 
 async def illegal_finish():
