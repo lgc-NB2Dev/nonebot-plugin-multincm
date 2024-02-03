@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
 
+import httpx
 from httpx import AsyncClient
 from nonebot import logger, on_command, on_regex
 from nonebot.adapters.onebot.v11 import (
@@ -38,7 +39,19 @@ KEY_SEND_RECORD = "send_record"
 KEY_IS_AUTO_RESOLVE = "is_auto_resolve"
 KEY_ILLEGAL_COUNT = "illegal_count"
 
-EXIT_COMMAND = ("退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0")
+EXIT_COMMAND = (
+    "退出",
+    "tc",
+    "取消",
+    "qx",
+    "quit",
+    "q",
+    "exit",
+    "e",
+    "cancel",
+    "c",
+    "0",
+)
 PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
 NEXT_COMMAND = ("下一页", "xyy", "next", "n")
 JUMP_PAGE_PREFIX = ("page", "p", "跳页", "页")
@@ -52,6 +65,11 @@ URL_REGEX = (
 )
 SHORT_URL_BASE = "https://163cn.tv"
 SHORT_URL_REGEX = r"163cn\.tv/(?P<suffix>[a-zA-Z0-9]+)"
+FFMPEG_COMMAND = (
+    "{ffmpeg} -i {infile} -acodec pcm_s16le -f s16le -ac 2 -ar {ar} {outfile}"
+)
+SILK_COMMAND = "{silk} {infile} {outfile} -tencent"
+TEMP_DIR = Path.cwd() / "temp"
 
 SongOrPlaylist = Union[BaseSong, BasePlaylist]
 
@@ -207,6 +225,42 @@ async def upload_music(song: BaseSong):
         name=file_name,
         folder=folder_id,
     )
+
+
+async def send_record(song: BaseSong):
+    matcher = current_matcher.get()
+    if not config.ncm_convert_record:
+        await matcher.send(MessageSegment.record(await song.get_playable_url()))
+    TEMP_DIR.mkdir(exist_ok=True)
+    music_file = (
+        TEMP_DIR / f"{song.song_id}.{(await song.get_playable_url()).split('.')[-1]}"
+    )
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(await song.get_playable_url())
+        resp.raise_for_status()
+        music_file.write_bytes(resp.content)
+    process = await asyncio.create_subprocess_shell(
+        FFMPEG_COMMAND.format(
+            ffmpeg=config.ncm_ffmpeg_path,
+            infile=music_file,
+            ar=24000,
+            outfile=TEMP_DIR / f"{song.song_id}.pcm",
+        ),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await process.wait()
+    process = await asyncio.create_subprocess_shell(
+        SILK_COMMAND.format(
+            silk=config.ncm_silk_path,
+            infile=TEMP_DIR / f"{song.song_id}.pcm",
+            outfile=TEMP_DIR / f"{song.song_id}.silk",
+        ),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await process.wait()
+    await matcher.send(MessageSegment.record(TEMP_DIR / f"{song.song_id}.silk"))
 
 
 async def illegal_finish():
@@ -458,7 +512,9 @@ async def search_receive_select(matcher: Matcher, event: MessageEvent, state: T_
         await matcher.reject()
 
     await illegal_finish()
-    await matcher.reject("非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式")
+    await matcher.reject(
+        "非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式",
+    )
 
 
 def append_playlist_handlers(matcher: Type[Matcher]):
@@ -503,7 +559,7 @@ cmd_resolve_file = on_command(
     state={KEY_UPLOAD_FILE: True},
 )
 cmd_send_record = on_command(
-    "发送语音",
+    "语音",
     aliases={"record"},
     state={KEY_SEND_RECORD: True},
 )
@@ -537,7 +593,9 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
         await matcher.finish(await resolved.get_playable_url())
 
     elif KEY_UPLOAD_FILE in state:
-        await matcher.send(f"正在下载并上传{resolved.calling}，需要的时间可能较长，请耐心等待")
+        await matcher.send(
+            f"正在下载并上传{resolved.calling}，需要的时间可能较长，请耐心等待",
+        )
         try:
             await upload_music(resolved)
 
@@ -551,13 +609,17 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
                 await matcher.finish(
                     f"上传{resolved.calling}失败，可能是下载/上传文件出错或无权限上传文件！\n{e}",
                 )
-            await matcher.finish(f"上传{resolved.calling}失败，遇到未知错误，请检查后台输出")
+            await matcher.finish(
+                f"上传{resolved.calling}失败，遇到未知错误，请检查后台输出",
+            )
 
-    elif KEY_SEND_RECORD in state:
+    elif KEY_SEND_RECORD in state and config.ncm_enable_record:
         try:
-            await matcher.send(MessageSegment.record(await resolved.get_playable_url()))
+            await send_record(resolved)
         except Exception as e:
             logger.warning(f"Send {resolved.calling} {resolved.song_id} record failed")
+            if isinstance(e, httpx.HTTPStatusError):
+                await matcher.finish(f"下载{resolved.calling}歌曲文件失败！")
             if isinstance(e, NetworkError):
                 await matcher.finish(
                     f"发送{resolved.calling}语音失败！",
@@ -566,7 +628,9 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
                 await matcher.finish(
                     f"发送{resolved.calling}语音失败，可能是机器人被风控！",
                 )
-            await matcher.finish(f"发送{resolved.calling}语音失败，遇到未知错误，请检查后台输出")
+            await matcher.finish(
+                f"发送{resolved.calling}语音失败，遇到未知错误，请检查后台输出",
+            )
     await matcher.finish()
 
 
