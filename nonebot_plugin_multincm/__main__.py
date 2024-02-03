@@ -1,6 +1,7 @@
 import asyncio
 import random
 import re
+import shutil
 from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
@@ -241,7 +242,7 @@ async def send_record(song: BaseSong):
         music_file.write_bytes(resp.content)
     process = await asyncio.create_subprocess_shell(
         FFMPEG_COMMAND.format(
-            ffmpeg=config.ncm_ffmpeg_path,
+            ffmpeg=shutil.which(config.ncm_ffmpeg_path) or config.ncm_ffmpeg_path,
             infile=music_file,
             ar=24000,
             outfile=TEMP_DIR / f"{song.song_id}.pcm",
@@ -252,7 +253,7 @@ async def send_record(song: BaseSong):
     await process.wait()
     process = await asyncio.create_subprocess_shell(
         SILK_COMMAND.format(
-            silk=config.ncm_silk_path,
+            silk=shutil.which(config.ncm_silk_path) or config.ncm_silk_path,
             infile=TEMP_DIR / f"{song.song_id}.pcm",
             outfile=TEMP_DIR / f"{song.song_id}.silk",
         ),
