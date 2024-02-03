@@ -237,6 +237,11 @@ async def send_record(song: BaseSong):
     music_file = (
         TEMP_DIR / f"{song.song_id}.{(await song.get_playable_url()).split('.')[-1]}"
     )
+    if (TEMP_DIR / f"{song.song_id}.silk").exists():
+        await matcher.send(
+            MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute()))
+        )
+        return
     async with httpx.AsyncClient() as client:
         resp = await client.get(await song.get_playable_url())
         resp.raise_for_status()
