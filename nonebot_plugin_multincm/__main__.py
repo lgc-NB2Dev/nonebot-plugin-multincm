@@ -157,7 +157,7 @@ async def resolve_short_url(suffix: str) -> SongOrPlaylist:
         if not location:
             raise ValueError(f"Short url {suffix} returned no location header")
 
-    matched = re.search(URL_REGEX, location, re.I)
+    matched = re.search(URL_REGEX, location, re.IGNORECASE)
     if not matched:
         raise ValueError(
             f"Location {location} of short url {suffix} is not a song url",
@@ -239,7 +239,7 @@ async def send_record(song: BaseSong):
     )
     if (TEMP_DIR / f"{song.song_id}.silk").exists():
         await matcher.send(
-            MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute()))
+            MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute())),
         )
         return
     async with httpx.AsyncClient() as client:
@@ -317,7 +317,7 @@ async def resolve_song_or_playlist_from_msg(
 
     if not matched:
         for regex in (URL_REGEX, SHORT_URL_REGEX):
-            if matched := re.search(regex, msg_str, re.I):
+            if matched := re.search(regex, msg_str, re.IGNORECASE):
                 break
         if not matched:
             return None

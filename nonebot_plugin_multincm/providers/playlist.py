@@ -8,9 +8,13 @@ from ..data_source import (
     search_playlist,
 )
 from ..draw import Table, TableHead, TablePage
-from ..types import Playlist as PlaylistModel
-from ..types import PlaylistFromSearch, PlaylistSearchResult, SongSearchResult
-from ..types import Song as SongModel
+from ..types import (
+    Playlist as PlaylistModel,
+    PlaylistFromSearch,
+    PlaylistSearchResult,
+    Song as SongModel,
+    SongSearchResult,
+)
 from .base import BasePlaylist, BaseSearcher, playlist, searcher
 from .song import Song, SongSearcher
 

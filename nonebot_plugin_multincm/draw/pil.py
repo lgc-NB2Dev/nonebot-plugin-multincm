@@ -69,31 +69,30 @@ def draw_table(
     line_len = len(lines)
     heads = [TableHead(x) if isinstance(x, str) else x for x in heads]
 
-    line_texts: List[List[Text2Image]] = [
+    head_line_text = [
+        generate_line_text(
+            head,
+            f"[b]{head.name}[/b]",
+            fontsize=font_size,
+            fill=font_color,
+            **kwargs,
+        )
+        for head in heads
+    ]
+    body_line_texts = [
         [
             generate_line_text(
-                head,
-                f"[b]{head.name}[/b]",
+                heads[i],
+                x,
                 fontsize=font_size,
                 fill=font_color,
                 **kwargs,
             )
-            for head in heads
-        ],
+            for i, x in enumerate(line)
+        ]
+        for line in lines
     ]
-    for line in lines:
-        line_texts.append(
-            [
-                generate_line_text(
-                    heads[i],
-                    x,
-                    fontsize=font_size,
-                    fill=font_color,
-                    **kwargs,
-                )
-                for i, x in enumerate(line)
-            ],
-        )
+    line_texts: List[List[Text2Image]] = [head_line_text, *body_line_texts]
 
     col_widths = [
         calculate_width(x, max([y[i].width for y in line_texts]))

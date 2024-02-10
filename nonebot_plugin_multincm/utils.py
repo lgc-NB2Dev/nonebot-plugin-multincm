@@ -41,11 +41,15 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
 
     lines = []
     if not lyrics:
-        lines.append("[i]该歌曲没有滚动歌词[/i]")
-        lines.append("")
-        lines.append(empty_line)
-        lines.append("")
-        lines.append(raw_lrc)
+        lines.extend(
+            (
+                "[i]该歌曲没有滚动歌词[/i]",
+                "",
+                empty_line,
+                "",
+                raw_lrc,
+            ),
+        )
 
     else:
         if lyrics[0][-1].time >= 5940000:
@@ -59,10 +63,7 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
             lines.extend([f"{x.lrc}" for x in li[1:]])
 
     if lrc.lyricUser or lrc.transUser:
-        lines.append("")
-        lines.append(empty_line)
-        lines.append("")
-
+        lines.extend(("", empty_line, ""))
         if usr := lrc.lyricUser:
             lines.append(f"歌词贡献者：{fmt_usr(usr)}")
         if usr := lrc.transUser:

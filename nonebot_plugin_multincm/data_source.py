@@ -23,8 +23,7 @@ from pyncm import (
     LoadSessionFromString,
     SetCurrentSession,
 )
-from pyncm.apis import WeapiCryptoRequest
-from pyncm.apis import cloudsearch as search
+from pyncm.apis import WeapiCryptoRequest, cloudsearch as search
 from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.login import (
     GetCurrentLoginStatus,
@@ -184,7 +183,7 @@ async def get_playlist_info(playlist_id: int) -> Any:
     return Playlist(**res["playlist"])
 
 
-async def login(retry=True):
+async def login(retry: bool = True):
     if SESSION_FILE.exists():
         logger.info(f"使用缓存登录态 ({SESSION_FILE})")
         SetCurrentSession(

@@ -13,7 +13,7 @@ class LrcLine:
 
 
 LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))?"
-LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.M)
+LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.MULTILINE)
 
 
 def parse(
@@ -34,7 +34,8 @@ def parse(
                         + int(float(f'{i["sec"]}.{i["mili"] or 0}') * 1000)
                     ),
                     lrc=lrc,
-                    skip_merge=bool(i["meta"]) or lrc.startswith(("作词", "作曲", "编曲")),
+                    skip_merge=bool(i["meta"])
+                    or lrc.startswith(("作词", "作曲", "编曲")),
                 )
                 for i in times
             ],

@@ -32,7 +32,7 @@ class ConfigModel(BaseModel):
     ncm_silk_path: str = "silk_v3_encoder"
 
     @validator("ncm_upload_folder_name")
-    def validate_upload_folder_name(cls, v) -> str:  # noqa: N805
+    def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805
         v = v.strip("/")
         if "/" in v:
             raise ValueError("Upload folder name cannot contain `/`")

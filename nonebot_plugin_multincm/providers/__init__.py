@@ -1,11 +1,11 @@
-from .base import BasePlaylist as BasePlaylist
-from .base import BaseSearcher as BaseSearcher
-from .base import BaseSong as BaseSong
-from .base import playlists as playlists
-from .base import searchers as searchers
-from .base import songs as songs
+from .base import (
+    BasePlaylist as BasePlaylist,
+    BaseSearcher as BaseSearcher,
+    BaseSong as BaseSong,
+    playlists as playlists,
+    searchers as searchers,
+    songs as songs,
+)
 from .playlist import Playlist as Playlist
-from .song import Song as Song
-from .song import SongSearcher as SongSearcher
-from .voice import Voice as Voice
-from .voice import VoiceSearcher as VoiceSearcher
+from .song import Song as Song, SongSearcher as SongSearcher
+from .voice import Voice as Voice, VoiceSearcher as VoiceSearcher

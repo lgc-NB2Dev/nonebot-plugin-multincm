@@ -4,8 +4,7 @@ from ..config import config
 from ..const import MUSIC_LINK_TEMPLATE
 from ..data_source import get_track_audio, get_track_info, get_track_lrc, search_song
 from ..draw import Table, TableHead, TablePage
-from ..types import Song as SongModel
-from ..types import SongSearchResult
+from ..types import Song as SongModel, SongSearchResult
 from ..utils import format_alias, format_artists, format_lrc, format_time
 from .base import BaseSearcher, BaseSong, searcher, song
 
