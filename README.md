@@ -161,9 +161,6 @@ plugins = [
 | `NCM_DELETE_LIST_MSG_DELAY` |  否  |   `[0.5, 2.0]`    |                                  自动撤回歌曲列表消息间隔时间（单位秒）                                   |
 |  `NCM_UPLOAD_FOLDER_NAME`   |  否  |    `MultiNCM`     |         在群内使用上传指令时，上传到的文件夹名称，不存在时会自动创建，如果创建失败会上传到根目录          |
 |     `NCM_ENABLE_RECORD`     |  否  |      `False`      |                                        是否开启发送歌曲语音的功能                                         |
-|    `NCM_CONVERT_RECORD`     |  否  |      `False`      |                                    是否预先转换音乐文件为 `slik` 格式                                     |
-|      `NCM_FFMPEG_PATH`      |  否  |     `ffmpeg`      |                             开启 `NCM_CONVERT_RECORD` 后，配置 `ffmpeg` 路径                              |
-|       `NCM_SILK_PATH`       |  否  | `silk_v3_encoder` |                          开启 `NCM_CONVERT_RECORD` 后，配置 `silk` 转换程序路径                           |
 
 ## 🎉 使用
 

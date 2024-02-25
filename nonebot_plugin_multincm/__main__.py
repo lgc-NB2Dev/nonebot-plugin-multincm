@@ -1,12 +1,10 @@
 import asyncio
 import random
 import re
-import shutil
 from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Type, Union, cast
 from typing_extensions import Annotated
 
-import httpx
 from httpx import AsyncClient
 from nonebot import logger, on_command, on_regex
 from nonebot.adapters.onebot.v11 import (
@@ -66,11 +64,6 @@ URL_REGEX = (
 )
 SHORT_URL_BASE = "https://163cn.tv"
 SHORT_URL_REGEX = r"163cn\.tv/(?P<suffix>[a-zA-Z0-9]+)"
-FFMPEG_COMMAND = (
-    "{ffmpeg} -i {infile} -acodec pcm_s16le -f s16le -ac 2 -ar {ar} {outfile}"
-)
-SILK_COMMAND = "{silk} {infile} {outfile} -tencent"
-TEMP_DIR = Path.cwd() / "temp"
 
 SongOrPlaylist = Union[BaseSong, BasePlaylist]
 
@@ -225,50 +218,6 @@ async def upload_music(song: BaseSong):
         file=file_path,
         name=file_name,
         folder=folder_id,
-    )
-
-
-async def send_record(song: BaseSong):
-    matcher = current_matcher.get()
-    if not config.ncm_convert_record:
-        await matcher.send(MessageSegment.record(await song.get_playable_url()))
-        return
-    TEMP_DIR.mkdir(exist_ok=True)
-    music_file = (
-        TEMP_DIR / f"{song.song_id}.{(await song.get_playable_url()).split('.')[-1]}"
-    )
-    if (TEMP_DIR / f"{song.song_id}.silk").exists():
-        await matcher.send(
-            MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute())),
-        )
-        return
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(await song.get_playable_url())
-        resp.raise_for_status()
-        music_file.write_bytes(resp.content)
-    process = await asyncio.create_subprocess_shell(
-        FFMPEG_COMMAND.format(
-            ffmpeg=shutil.which(config.ncm_ffmpeg_path) or config.ncm_ffmpeg_path,
-            infile=music_file,
-            ar=24000,
-            outfile=TEMP_DIR / f"{song.song_id}.pcm",
-        ),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    await process.wait()
-    process = await asyncio.create_subprocess_shell(
-        SILK_COMMAND.format(
-            silk=shutil.which(config.ncm_silk_path) or config.ncm_silk_path,
-            infile=TEMP_DIR / f"{song.song_id}.pcm",
-            outfile=TEMP_DIR / f"{song.song_id}.silk",
-        ),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    await process.wait()
-    await matcher.send(
-        MessageSegment.record(str((TEMP_DIR / f"{song.song_id}.silk").absolute())),
     )
 
 
@@ -623,23 +572,8 @@ async def _(matcher: Matcher, state: T_State, resolved: ResolvedSongOrPlaylist):
             )
 
     elif KEY_SEND_RECORD in state and config.ncm_enable_record:
-        try:
-            await send_record(resolved)
-        except Exception as e:
-            logger.warning(f"Send {resolved.calling} {resolved.song_id} record failed")
-            if isinstance(e, httpx.HTTPStatusError):
-                await matcher.finish(f"下载{resolved.calling}歌曲文件失败！")
-            if isinstance(e, NetworkError):
-                await matcher.finish(
-                    f"发送{resolved.calling}语音失败！",
-                )
-            if isinstance(e, ActionFailed):
-                await matcher.finish(
-                    f"发送{resolved.calling}语音失败，可能是机器人被风控！",
-                )
-            await matcher.finish(
-                f"发送{resolved.calling}语音失败，遇到未知错误，请检查后台输出",
-            )
+        await matcher.send(MessageSegment.record(await resolved.get_playable_url()))
+
     await matcher.finish()
 
 

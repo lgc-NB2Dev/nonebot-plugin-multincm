@@ -27,9 +27,6 @@ class ConfigModel(BaseModel):
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_upload_folder_name: str = "MultiNCM"
     ncm_enable_record: bool = False
-    ncm_convert_record: bool = False
-    ncm_ffmpeg_path: str = "ffmpeg"
-    ncm_silk_path: str = "silk_v3_encoder"
 
     @validator("ncm_upload_folder_name")
     def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805
