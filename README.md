@@ -244,7 +244,7 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 - 支持歌单，专辑等（开发中）
 - 点歌指令可以回复一条文本消息作为搜索内容了
-- 支持使用语音发送歌曲并支持配置功能开关和配置是否预先转换为 silk 格式的文件
+- 支持使用语音发送歌曲
 - resolve [#14](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/issues/14)
 - 重构部分代码
 
