@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from nonebot import get_plugin_config
 from pydantic import BaseModel
 
-from .compact import field_validator
+from .compat import field_validator
 
 
 class ConfigModel(BaseModel):
