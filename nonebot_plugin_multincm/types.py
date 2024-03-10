@@ -16,6 +16,9 @@ PlaylistRespModelType: TypeAlias = "Playlist"
 SongInfoModelType = Union["Song", "VoiceBaseInfo"]
 
 
+# TODO snake_case with alias generator
+
+
 class Artist(BaseModel):
     id: int
     name: str

@@ -1,36 +1,64 @@
+from dataclasses import dataclass
+from math import ceil
 from pathlib import Path
-from typing import Optional
+from typing import List, Literal, NamedTuple, Optional, Tuple, Union
 
-import bbcode
+import bbcode  # TODO 弃用 bbcode
 from jinja2 import Template
-from nonebot import logger
 from nonebot_plugin_htmlrender import get_new_page
-from pil_utils.fonts import Font
-from pil_utils.types import ColorType, HAlignType
 
-from ..config import config
-from ..const import RES_DIR
-from .shared import TablePage
+from .config import config
+from .const import RES_DIR
+
+ColorType = Union[str, Tuple[int, int, int], Tuple[int, int, int, int]]
+HAlignType = Literal["left", "right", "center"]
+
 
 SONG_LIST_TEMPLATE = Template(
     (RES_DIR / "song_list.html.jinja").read_text(encoding="u8"),
+    autoescape=True,
     enable_async=True,
 )
 LYRIC_TEMPLATE = Template(
     (RES_DIR / "lyric.html.jinja").read_text(encoding="u8"),
+    autoescape=True,
     enable_async=True,
 )
 BBCODE_PARSER = bbcode.Parser()
 BBCODE_PARSER.install_default_formatters()
 
 
+@dataclass()
+class TableHead:
+    name: str
+    align: HAlignType = "left"
+    min_width: Optional[int] = None
+    max_width: Optional[int] = None
+
+
+class Table(NamedTuple):
+    head: List[TableHead]
+    rows: List[List[str]]
+
+
+@dataclass()
+class TablePage:
+    table: Table
+    calling: str
+    current_page: int
+    max_count: int
+
+    @property
+    def max_page(self) -> int:
+        return ceil(self.max_count / config.ncm_list_limit)
+
+
 def get_font_path_uri() -> Optional[str]:
     font_path = config.ncm_list_font
-    if font_path:
-        if (path := Path(font_path)).exists():
-            return path.resolve().as_uri()
-        return Font.find(font_path).path.as_uri()
-    return None
+    if font_path and (path := Path(font_path)).exists():
+        p = path.resolve().as_uri().replace("\\", "\\\\").replace("'", "\\'")
+        return f"url('{p}')"
+    return f"local('{font_path}')" if font_path else None
 
 
 async def render_template(
@@ -38,7 +66,8 @@ async def render_template(
     **kwargs,
 ) -> bytes:
     html_txt = await template.render_async(**kwargs)
-    logger.debug(html_txt)
+    if (dbg := Path.cwd() / "multincm-debug.html").exists():
+        dbg.write_text(html_txt, encoding="u8")
     async with get_new_page() as page:
         await page.goto(RES_DIR.as_uri())
         await page.set_content(html_txt, wait_until="networkidle")

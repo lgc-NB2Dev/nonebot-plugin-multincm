@@ -1,7 +1,9 @@
 from typing import Optional, Tuple
 
-from nonebot import get_driver
-from pydantic import BaseModel, validator
+from nonebot import get_plugin_config
+from pydantic import BaseModel
+
+from .compact import field_validator
 
 
 class ConfigModel(BaseModel):
@@ -28,7 +30,7 @@ class ConfigModel(BaseModel):
     ncm_upload_folder_name: str = "MultiNCM"
     ncm_enable_record: bool = False
 
-    @validator("ncm_upload_folder_name")
+    @field_validator("ncm_upload_folder_name")
     def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805
         v = v.strip("/")
         if "/" in v:
@@ -36,4 +38,4 @@ class ConfigModel(BaseModel):
         return v
 
 
-config: ConfigModel = ConfigModel.parse_obj(get_driver().config.dict())
+config = get_plugin_config(ConfigModel)

@@ -5,7 +5,7 @@ from .config import ConfigModel, config  # noqa: E402
 
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"
 
-__version__ = "0.5.0.dev8"
+__version__ = "0.5.0.dev9"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",
