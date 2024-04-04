@@ -164,6 +164,7 @@ plugins = [
 | `NCM_DELETE_LIST_MSG_DELAY` |  否  | `[0.5, 2.0]` |                                  自动撤回歌曲列表消息间隔时间（单位秒）                                   |
 |  `NCM_UPLOAD_FOLDER_NAME`   |  否  |  `MultiNCM`  |         在群内使用上传指令时，上传到的文件夹名称，不存在时会自动创建，如果创建失败会上传到根目录          |
 |     `NCM_ENABLE_RECORD`     |  否  |   `False`    |                                        是否开启发送歌曲语音的功能                                         |
+|   `NCM_DOWNLOAD_LOCALLY`    |  否  |   `False`    |                                        是否在本地下载文件后再上传                                         |
 
 ## 🎉 使用
 

@@ -29,6 +29,7 @@ class ConfigModel(BaseModel):
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_upload_folder_name: str = "MultiNCM"
     ncm_enable_record: bool = False
+    ncm_download_locally: bool = False
 
     @field_validator("ncm_upload_folder_name")
     def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805
