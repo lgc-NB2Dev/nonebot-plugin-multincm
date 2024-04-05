@@ -28,6 +28,7 @@ class ConfigModel(BaseModel):
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_upload_folder_name: str = "MultiNCM"
     ncm_enable_record: bool = False
+    ncm_download_locally: bool = False
     ncm_use_json_segment: bool = True
 
     @field_validator("ncm_upload_folder_name")

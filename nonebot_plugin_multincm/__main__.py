@@ -23,6 +23,7 @@ from nonebot.params import ArgPlainText, CommandArg, Depends
 from nonebot.typing import T_State
 
 from .config import config
+from .const import TEMP_PATH
 from .draw import TablePage, draw_table_page, str_to_pic
 from .msg_cache import SongCache, chat_last_song_cache
 from .providers import BasePlaylist, BaseSearcher, BaseSong, playlists, searchers, songs
@@ -174,8 +175,16 @@ async def upload_music(song: BaseSong):
     file_name = f"[{song.calling}] {name} - {'、'.join(artists)}{suffix}"
 
     bot = cast(Bot, current_bot.get())
-    download_ret: Dict[str, str] = await bot.download_file(url=playable_url)
-    file_path = download_ret["file"]
+
+    if config.ncm_download_locally:
+        file_path = TEMP_PATH / file_name
+        async with AsyncClient(follow_redirects=True) as client:
+            resp = await client.get(playable_url)
+            resp.raise_for_status()
+            file_path.write_bytes(resp.content)
+    else:
+        download_ret: Dict[str, str] = await bot.download_file(url=playable_url)
+        file_path = download_ret["file"]
 
     event = cast(Union[PrivateMessageEvent, GroupMessageEvent], current_event.get())
     if isinstance(event, PrivateMessageEvent):

@@ -7,4 +7,8 @@ DATA_PATH = Path().cwd() / "data" / "multincm"
 for _p in (DATA_PATH,):
     _p.mkdir(parents=True, exist_ok=True)
 
+TEMP_PATH = DATA_PATH / "temp" / "multincm"
+for _p in (TEMP_PATH,):
+    _p.mkdir(parents=True, exist_ok=True)
+
 RES_DIR = Path(__file__).parent / "res"
