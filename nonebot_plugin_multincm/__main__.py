@@ -116,16 +116,23 @@ async def cache_song(song: BaseSong, session: Optional[str] = None):
 
 
 async def send_song(song: BaseSong):
+    await cache_song(song)
+
     bot = cast(Bot, current_bot.get())
     matcher = current_matcher.get()
 
     try:
-        await matcher.send(await song.to_card_message(int(bot.self_id)))
+        msg = await song.to_card_message(int(bot.self_id))
+    except Exception:
+        logger.exception(f"Generate {song.calling} card failed")
+        await matcher.finish(f"生成{song.calling}卡片失败，请检查后台输出")
+
+    try:
+        await matcher.send(msg)
     except ActionFailed:
         logger.warning(f"Send {song.calling} card failed")
+        logger.opt(exception=True).debug("Stacktrace")
         await matcher.send(f"发送卡片失败\n{await song.get_url()}")
-
-    await cache_song(song)
 
 
 async def get_class_from_link_type(type_name: str) -> Type[SongOrPlaylist]:

@@ -89,15 +89,13 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
             MessageSegment(
                 "json",
                 {
-                    "data": json.dumps(
-                        construct_music_card(
-                            uin=uin,
-                            desc=content,
-                            jump_url=url,
-                            music_url=playable_url,
-                            preview=cover_url,
-                            title=name,
-                        ),
+                    "data": await construct_music_card(
+                        uin=uin,
+                        desc=content,
+                        jump_url=url,
+                        music_url=playable_url,
+                        preview=cover_url,
+                        title=name,
                     ),
                 },
             )

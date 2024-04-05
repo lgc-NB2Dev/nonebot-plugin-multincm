@@ -29,7 +29,7 @@ class ConfigModel(BaseModel):
     ncm_upload_folder_name: str = "MultiNCM"
     ncm_enable_record: bool = False
     ncm_download_locally: bool = False
-    ncm_use_json_segment: bool = True
+    ncm_use_json_segment: bool = False
 
     @field_validator("ncm_upload_folder_name")
     def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805

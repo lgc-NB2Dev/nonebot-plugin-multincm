@@ -55,7 +55,12 @@ class CardDict(TypedDict):
 MUSIC_CARD_TEMPLATE: CardDict = json.loads(MUSIC_CARD_TEMPLATE_PATH.read_text("u8"))
 
 
-def construct_music_card(
+async def sign_card(card_json: str) -> str:
+    # placeholder
+    return card_json
+
+
+async def construct_music_card(
     *,
     uin: int,
     desc: str,
@@ -63,11 +68,16 @@ def construct_music_card(
     music_url: str,
     preview: str,
     title: str,
-) -> CardDict:
+    sign: bool = True,
+) -> str:
     data = MUSIC_CARD_TEMPLATE.copy()
+    # ctime = int(time.time())
+    # config = data["config"]
     extra = data["extra"]
     meta = data["meta"]["music"]
+    # config["ctime"] = ctime
     extra["uin"] = uin
+    # meta["ctime"] = ctime
     meta["desc"] = desc
     meta["jumpUrl"] = jump_url
     meta["musicUrl"] = music_url
@@ -75,4 +85,5 @@ def construct_music_card(
     meta["title"] = title
     meta["uin"] = uin
     data["prompt"] = f"[分享]{title}"
-    return data
+    card_json = json.dumps(data)
+    return await sign_card(card_json) if sign else card_json
