@@ -61,7 +61,7 @@ async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
     if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
-    logger.debug(f"{api.__name__} - {ret}")
+    # logger.debug(f"{api.__name__} - {ret}")
     return ret
 
 
@@ -72,8 +72,7 @@ async def get_search_result(
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
-) -> TModel:
-    ...
+) -> TModel: ...
 
 
 @overload
@@ -83,8 +82,7 @@ async def get_search_result(
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
-) -> Dict[str, Any]:
-    ...
+) -> Dict[str, Any]: ...
 
 
 async def get_search_result(

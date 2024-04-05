@@ -115,12 +115,14 @@ async def cache_song(song: BaseSong, session: Optional[str] = None):
 
 
 async def send_song(song: BaseSong):
+    bot = cast(Bot, current_bot.get())
     matcher = current_matcher.get()
 
     try:
-        await matcher.send(await song.to_card_message())
+        await matcher.send(await song.to_card_message(int(bot.self_id)))
     except ActionFailed:
         logger.warning(f"Send {song.calling} card failed")
+        await matcher.send(f"发送卡片失败\n{await song.get_url()}")
 
     await cache_song(song)
 

@@ -16,12 +16,12 @@ HAlignType = Literal["left", "right", "center"]
 
 SONG_LIST_TEMPLATE = Template(
     (RES_DIR / "song_list.html.jinja").read_text(encoding="u8"),
-    autoescape=True,
+    # autoescape=True,
     enable_async=True,
 )
 LYRIC_TEMPLATE = Template(
     (RES_DIR / "lyric.html.jinja").read_text(encoding="u8"),
-    autoescape=True,
+    # autoescape=True,
     enable_async=True,
 )
 BBCODE_PARSER = bbcode.Parser()

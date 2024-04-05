@@ -1,4 +1,6 @@
-from nonebot.plugin import PluginMetadata
+from nonebot.plugin import PluginMetadata, require
+
+require("nonebot_plugin_htmlrender")
 
 from . import __main__ as __main__  # noqa: E402
 from .config import ConfigModel, config  # noqa: E402

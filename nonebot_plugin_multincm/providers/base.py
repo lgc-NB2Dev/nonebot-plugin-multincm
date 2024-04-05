@@ -1,4 +1,5 @@
 import asyncio
+import json
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import (
@@ -17,6 +18,7 @@ from typing_extensions import Self
 
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
+from ..card_helper import construct_music_card
 from ..config import config
 from ..draw import TablePage
 from ..types import PlaylistRespModelType, SearchRespModelType, SongInfoModelType
@@ -44,8 +46,7 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
 
     @property
     @abstractmethod
-    def song_id(self) -> int:
-        ...
+    def song_id(self) -> int: ...
 
     def __init__(self, info: _TSongInfoModel, *_, **__) -> None:
         self.info = info
@@ -55,34 +56,27 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
 
     @classmethod
     @abstractmethod
-    async def from_id(cls, song_id: int) -> Self:
-        ...
+    async def from_id(cls, song_id: int) -> Self: ...
 
     @abstractmethod
-    async def get_url(self) -> str:
-        ...
+    async def get_url(self) -> str: ...
 
     @abstractmethod
-    async def get_playable_url(self) -> str:
-        ...
+    async def get_playable_url(self) -> str: ...
 
     @abstractmethod
-    async def get_name(self) -> str:
-        ...
+    async def get_name(self) -> str: ...
 
     @abstractmethod
-    async def get_artists(self) -> List[str]:
-        ...
+    async def get_artists(self) -> List[str]: ...
 
     @abstractmethod
-    async def get_cover_url(self) -> str:
-        ...
+    async def get_cover_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyric(self) -> Optional[str]:
-        ...
+    async def get_lyric(self) -> Optional[str]: ...
 
-    async def to_card_message(self) -> Message:
+    async def to_card_message(self, uin: int) -> Message:
         url, playable_url, name, artists, cover_url = await asyncio.gather(
             self.get_url(),
             self.get_playable_url(),
@@ -90,18 +84,37 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
             self.get_artists(),
             self.get_cover_url(),
         )
-        seg = MessageSegment(
-            "music",
-            {
-                "type": "custom",
-                "subtype": "163",
-                "url": url,
-                "jumpUrl": url,  # icqq
-                "voice": playable_url,
-                "title": name,
-                "content": "、".join(artists),
-                "image": cover_url,
-            },
+        content = "、".join(artists)
+        seg = (
+            MessageSegment(
+                "json",
+                {
+                    "data": json.dumps(
+                        construct_music_card(
+                            uin=uin,
+                            desc=content,
+                            jump_url=url,
+                            music_url=playable_url,
+                            preview=cover_url,
+                            title=name,
+                        ),
+                    ),
+                },
+            )
+            if config.ncm_use_json_segment
+            else MessageSegment(
+                "music",
+                {
+                    "type": "custom",
+                    "subtype": "163",
+                    "url": url,
+                    "jumpUrl": url,  # icqq
+                    "voice": playable_url,
+                    "title": name,
+                    "content": content,
+                    "image": cover_url,
+                },
+            )
         )
         return Message(seg)
 
@@ -120,8 +133,7 @@ class BasePlaylist(
 
     @property
     @abstractmethod
-    def playlist_id(self) -> int:
-        ...
+    def playlist_id(self) -> int: ...
 
     @property
     def last_page(self) -> int:
@@ -146,31 +158,30 @@ class BasePlaylist(
         return f"{self.__class__.__name__}()"
 
     @abstractmethod
-    async def _build_list_resp(self, resp: _TRawPlaylistResp, page: int) -> TablePage:
-        ...
+    async def _build_list_resp(
+        self,
+        resp: _TRawPlaylistResp,
+        page: int,
+    ) -> TablePage: ...
 
     @abstractmethod
     async def _extract_resp_content(
         self,
         resp: _TRawPlaylistResp,
-    ) -> Optional[List[_T_RawRespContent]]:
-        ...
+    ) -> Optional[List[_T_RawRespContent]]: ...
 
     @abstractmethod
-    async def _do_get_page(self, page: int) -> _TRawPlaylistResp:
-        ...
+    async def _do_get_page(self, page: int) -> _TRawPlaylistResp: ...
 
     @abstractmethod
     async def _build_selection(
         self,
         resp: _T_RawRespContent,
-    ) -> _TBaseSongOrPlaylist:
-        ...
+    ) -> _TBaseSongOrPlaylist: ...
 
     @classmethod
     @abstractmethod
-    async def from_id(cls, arg_id: int) -> Self:
-        ...
+    async def from_id(cls, arg_id: int) -> Self: ...
 
     def _calc_index_offset(self, page: int) -> int:
         return ((page - 1) * config.ncm_list_limit) + 1

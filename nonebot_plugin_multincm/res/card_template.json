@@ -1,0 +1,36 @@
+{
+  "app": "com.tencent.structmsg",
+  "config": {
+    "ctime": 1712281916,
+    "forward": 1,
+    "token": "25f70581889bb7ec6a3bbe30df32a438",
+    "type": "normal"
+  },
+  "extra": {
+    "app_type": 1,
+    "appid": 100495085,
+    "uin": 1145141919
+  },
+  "meta": {
+    "music": {
+      "action": "",
+      "android_pkg_name": "",
+      "app_type": 1,
+      "appid": 100495085,
+      "ctime": 1712281916,
+      "desc": "{{ desc }}",
+      "jumpUrl": "{{ jumpUrl }}",
+      "musicUrl": "{{ musicUrl }}",
+      "preview": "{{ preview }}",
+      "sourceMsgId": "0",
+      "source_icon": "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
+      "source_url": "",
+      "tag": "网易云音乐",
+      "title": "{{ title }}",
+      "uin": 1145141919
+    }
+  },
+  "prompt": "[分享]{{ title }}",
+  "ver": "0.0.0.1",
+  "view": "music"
+}
