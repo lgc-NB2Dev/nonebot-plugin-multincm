@@ -1,5 +1,4 @@
 import asyncio
-import json
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import (
@@ -18,7 +17,6 @@ from typing_extensions import Self
 
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 
-from ..card_helper import construct_music_card
 from ..config import config
 from ..draw import TablePage
 from ..types import PlaylistRespModelType, SearchRespModelType, SongInfoModelType
@@ -76,7 +74,7 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
     @abstractmethod
     async def get_lyric(self) -> Optional[str]: ...
 
-    async def to_card_message(self, uin: int) -> Message:
+    async def to_card_message(self) -> Message:
         url, playable_url, name, artists, cover_url = await asyncio.gather(
             self.get_url(),
             self.get_playable_url(),
@@ -85,36 +83,34 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
             self.get_cover_url(),
         )
         content = "、".join(artists)
-        seg = (
-            MessageSegment(
-                "json",
-                {
-                    "data": await construct_music_card(
-                        uin=uin,
-                        desc=content,
-                        jump_url=url,
-                        music_url=playable_url,
-                        preview=cover_url,
-                        title=name,
-                    ),
-                },
-            )
-            if config.ncm_use_json_segment
-            else MessageSegment(
-                "music",
-                {
-                    "type": "custom",
-                    "subtype": "163",
-                    "url": url,
-                    "jumpUrl": url,  # icqq
-                    "voice": playable_url,
-                    "title": name,
-                    "content": content,
-                    "image": cover_url,
-                },
-            )
+        seg = MessageSegment(
+            "music",
+            {
+                "type": "custom",
+                "url": url,
+                "audio": playable_url,
+                "title": name,
+                "content": content,
+                "image": cover_url,
+                "subtype": "163",  # gocq
+                "voice": playable_url,  # gocq
+                "jumpUrl": url,  # icqq
+            },
         )
         return Message(seg)
+
+    async def _to_text_message(self) -> Message:
+        name, artists, cover_url = await asyncio.gather(
+            self.get_name(),
+            self.get_artists(),
+            self.get_cover_url(),
+        )
+        content = "、".join(artists)
+        return MessageSegment.image(cover_url) + f"{name}\nBy: {content}"
+
+    async def to_text_message(self) -> Message:
+        msg, url = await asyncio.gather(self._to_text_message(), self.get_url())
+        return msg + f"\n{url}\n使用指令 `direct` 获取播放链接"
 
 
 class BasePlaylist(

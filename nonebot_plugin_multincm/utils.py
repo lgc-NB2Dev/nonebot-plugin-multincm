@@ -1,5 +1,8 @@
+from contextlib import contextmanager
 from typing import List, Optional, TypeVar, cast
 from typing_extensions import ParamSpec
+
+from nonebot import logger
 
 from . import lrc_parser
 from .config import config
@@ -70,3 +73,12 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
             lines.append(f"翻译贡献者：{fmt_usr(usr)}")
 
     return "\n".join(lines).strip()
+
+
+@contextmanager
+def logged_suppress(msg: str):
+    try:
+        yield
+    except Exception:
+        logger.exception(msg)
+        return None

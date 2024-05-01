@@ -3,6 +3,7 @@ import random
 import re
 from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Type, Union, cast
+from nonebot_plugin_multincm.utils import logged_suppress
 from typing_extensions import Annotated
 
 from httpx import AsyncClient
@@ -115,24 +116,30 @@ async def cache_song(song: BaseSong, session: Optional[str] = None):
     chat_last_song_cache.set(session, SongCache(type(song), song.song_id))
 
 
-async def send_song(song: BaseSong):
+async def send_song(song: BaseSong, use_text: bool = False):
     await cache_song(song)
 
-    bot = cast(Bot, current_bot.get())
     matcher = current_matcher.get()
+    msg_type = "text" if use_text else "card"
 
     try:
-        msg = await song.to_card_message(int(bot.self_id))
+        msg = await song.to_text_message() if use_text else await song.to_card_message()
     except Exception:
-        logger.exception(f"Generate {song.calling} card failed")
-        await matcher.finish(f"生成{song.calling}卡片失败，请检查后台输出")
+        logger.exception(f"Generate {song.calling} {msg_type} message failed")
+        if use_text:
+            await matcher.finish(f"获取{song.calling}信息失败，请检查后台输出")
+        else:
+            await send_song(song, use_text=True)
+            return
 
     try:
         await matcher.send(msg)
     except ActionFailed:
-        logger.warning(f"Send {song.calling} card failed")
+        logger.warning(f"Send {song.calling} failed")
         logger.opt(exception=True).debug("Stacktrace")
-        await matcher.send(f"发送卡片失败\n{await song.get_url()}")
+        if not use_text:
+            await send_song(song, use_text=True)
+            return
 
 
 async def get_class_from_link_type(type_name: str) -> Type[SongOrPlaylist]:
