@@ -244,6 +244,8 @@ async def upload_music(song: BaseSong):
         name=file_name,
         folder=folder_id,
     )
+    if isinstance(file_path, Path):
+        file_path.unlink(missing_ok=True)
 
 
 async def illegal_finish():
