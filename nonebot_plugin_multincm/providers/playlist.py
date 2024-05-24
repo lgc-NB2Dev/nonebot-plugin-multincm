@@ -1,138 +1,79 @@
-from typing import Any, List, Optional, cast
+from contextlib import suppress
+from typing import List, Optional
+from typing_extensions import Self, override
 
-from ..config import config
-from ..data_source import (
-    get_offset_by_page_num,
-    get_playlist_info,
-    get_track_info,
-    search_playlist,
-)
-from ..draw import Table, TableHead, TablePage
-from ..types import (
-    Playlist as PlaylistModel,
-    PlaylistFromSearch,
-    PlaylistSearchResult,
-    Song as SongModel,
-    SongSearchResult,
-)
-from .base import BasePlaylist, BaseSearcher, playlist, searcher
-from .song import Song, SongSearcher
+from cookit.pyd import model_dump
 
-CALLING = "歌单"
-CHILD_CALLING = Song.calling
-COMMANDS = ["歌单", "playlist"]
-LINK_TYPES = ["playlist"]
+from ..data_source import get_playlist_info, get_track_info, md, search_playlist
+from ..utils import calc_min_max_index
+from .base import BasePlaylist, BaseSearcher
+from .song import Song
 
 
-@playlist
-class Playlist(BasePlaylist[PlaylistModel, SongModel, Song]):
-    calling = CALLING
-    child_calling = CHILD_CALLING
-    link_types = LINK_TYPES
-
-    info: PlaylistModel
+class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
+    def __init__(self, info: md.Playlist) -> None:
+        super().__init__(info)
 
     @property
-    def playlist_id(self) -> int:
+    @override
+    def id(self) -> int:
         return self.info.id
 
-    def __init__(self, info: PlaylistModel, *args, **kwargs) -> None:
-        self.info = info
-        super().__init__(*args, **kwargs)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(playlist_id={self.playlist_id})"
-
     @classmethod
-    async def from_id(cls, arg_id: int) -> "Playlist":
+    @override
+    async def from_id(cls, arg_id: int) -> Self:
         resp = await get_playlist_info(arg_id)
         return cls(resp)
 
-    async def _build_list_resp(self, resp: PlaylistModel, page: int) -> TablePage:
-        if not resp.tracks:
-            raise ValueError("Playlist is empty")
-        fake_song_search_resp = SongSearchResult(
-            searchQcReminder=None,
-            songCount=resp.trackCount,
-            songs=resp.tracks,
-        )
-        return await SongSearcher._build_list_resp(  # noqa: SLF001
-            cast(Any, self),
-            fake_song_search_resp,
-            page,
-        )
-
+    @override
     async def _extract_resp_content(
         self,
-        resp: PlaylistModel,
-    ) -> List[SongModel]:
+        resp: md.Playlist,
+    ) -> List[md.Song]:
         return resp.tracks
 
-    async def _do_get_page(self, page: int) -> PlaylistModel:
-        offset = get_offset_by_page_num(page)
-        track_ids = [
-            x.id for x in self.info.trackIds[offset : offset + config.ncm_list_limit]
-        ]
-        tracks = await get_track_info(track_ids)
-        kwargs = {**self.info.dict(by_alias=True), "tracks": tracks}
-        return PlaylistModel(**kwargs)
+    @override
+    async def _extract_total_count(self, resp: md.Playlist) -> int:
+        return resp.track_count
 
-    async def _build_selection(self, resp: SongModel) -> Song:
+    @override
+    async def _do_get_page(self, page: int) -> md.Playlist:
+        min_index, max_index = calc_min_max_index(page)
+        track_ids = [x.id for x in self.info.track_ids[min_index:max_index]]
+        tracks = await get_track_info(track_ids)
+        kwargs = {**model_dump(self.info, by_alias=True), "tracks": tracks}
+        return md.Playlist(**kwargs)
+
+    @override
+    async def _build_selection(self, resp: md.Song) -> Song:
         return Song(info=resp)
 
 
-@searcher
 class PlaylistSearcher(
-    BaseSearcher[PlaylistSearchResult, PlaylistFromSearch, Playlist],
+    BaseSearcher[md.PlaylistSearchResult, md.PlaylistFromSearch, Playlist],
 ):
-    calling = CALLING
-    commands = COMMANDS
-
-    @classmethod
-    async def from_id(cls, arg_id: int) -> Optional[Playlist]:
-        try:
+    @override
+    @staticmethod
+    async def search_from_id(arg_id: int) -> Optional[Playlist]:
+        with suppress(Exception):
             return await Playlist.from_id(arg_id)
-        except ValueError:
-            return None
+        return None
 
-    async def _build_list_resp(
-        self,
-        resp: PlaylistSearchResult,
-        page: int,
-    ) -> TablePage:
-        if not resp.playlists:
-            raise ValueError("No song in raw response")
-        table = Table(
-            [
-                TableHead("序号", align="right"),
-                TableHead("歌单名", max_width=config.ncm_max_name_len),
-                TableHead("创建者", max_width=config.ncm_max_artist_len),
-                TableHead("歌曲数", align="center"),
-                TableHead("播放数", align="center"),
-                TableHead("收藏数", align="center"),
-            ],
-            [
-                [
-                    f"[b]{i}[/b]",
-                    x.name,
-                    x.creator.nickname,
-                    f"{x.trackCount}",
-                    f"{x.playCount}",
-                    f"{x.bookCount}",
-                ]
-                for i, x in enumerate(resp.playlists, self._calc_index_offset(page))
-            ],
-        )
-        return TablePage(table, self.child_calling, page, resp.playlistCount)
-
+    @override
     async def _extract_resp_content(
         self,
-        resp: PlaylistSearchResult,
-    ) -> Optional[List[PlaylistFromSearch]]:
+        resp: md.PlaylistSearchResult,
+    ) -> Optional[List[md.PlaylistFromSearch]]:
         return resp.playlists
 
-    async def _do_get_page(self, page: int) -> PlaylistSearchResult:
+    @override
+    async def _extract_total_count(self, resp: md.PlaylistSearchResult) -> int:
+        return resp.playlist_count
+
+    @override
+    async def _do_get_page(self, page: int) -> md.PlaylistSearchResult:
         return await search_playlist(self.keyword, page=page)
 
-    async def _build_selection(self, resp: PlaylistFromSearch) -> Playlist:
+    @override
+    async def _build_selection(self, resp: md.PlaylistFromSearch) -> Playlist:
         return await Playlist.from_id(resp.id)

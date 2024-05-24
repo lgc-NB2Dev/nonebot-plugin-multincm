@@ -1,60 +1,27 @@
-import asyncio
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from contextlib import suppress
-from typing import (
-    Any,
-    ClassVar,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
-from typing_extensions import Self
-
-from nonebot.adapters.onebot.v11 import Message, MessageSegment
+from typing import Dict, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Self, override
 
 from ..config import config
-from ..draw import TablePage
-from ..types import PlaylistRespModelType, SearchRespModelType, SongInfoModelType
+from ..utils import calc_max_page, calc_min_index, calc_page_number
 
-_TSongInfoModel = TypeVar("_TSongInfoModel", bound=SongInfoModelType)
-_TRawSearchResp = TypeVar("_TRawSearchResp", bound=SearchRespModelType)
-_TRawPlaylistResp = TypeVar(
-    "_TRawPlaylistResp",
-    PlaylistRespModelType,
-    SearchRespModelType,
-)
-_T_RawRespContent = TypeVar("_T_RawRespContent")
-
-_TBaseSong = TypeVar("_TBaseSong", bound="BaseSong")
-_TBasePlaylist = TypeVar("_TBasePlaylist", bound="BasePlaylist")
-_TBaseSongOrPlaylist = TypeVar("_TBaseSongOrPlaylist", "BaseSong", "BasePlaylist")
-_TSearcher = TypeVar("_TSearcher", bound="BaseSearcher")
+_TRawResp = TypeVar("_TRawResp")
+_TRawRespInner = TypeVar("_TRawRespInner")
+_TSongOrList = TypeVar("_TSongOrList", "BaseSong", "BaseSongList")
 
 
-class BaseSong(ABC, Generic[_TSongInfoModel]):
-    calling: str = "BaseSong"
-    link_types: ClassVar[List[str]] = []
-
-    info: _TSongInfoModel
+class BaseSong(Generic[_TRawResp]):
+    def __init__(self, info: _TRawResp) -> None:
+        self.info: _TRawResp = info
 
     @property
     @abstractmethod
-    def song_id(self) -> int: ...
-
-    def __init__(self, info: _TSongInfoModel, *_, **__) -> None:
-        self.info = info
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(song_id={self.song_id})"
+    def id(self) -> int: ...
 
     @classmethod
     @abstractmethod
-    async def from_id(cls, song_id: int) -> Self: ...
+    async def from_id(cls, arg_id: int) -> Self: ...
 
     @abstractmethod
     async def get_url(self) -> str: ...
@@ -74,217 +41,111 @@ class BaseSong(ABC, Generic[_TSongInfoModel]):
     @abstractmethod
     async def get_lyric(self) -> Optional[str]: ...
 
-    async def to_card_message(self) -> Message:
-        url, playable_url, name, artists, cover_url = await asyncio.gather(
-            self.get_url(),
-            self.get_playable_url(),
-            self.get_name(),
-            self.get_artists(),
-            self.get_cover_url(),
-        )
-        content = "、".join(artists)
-        seg = MessageSegment(
-            "music",
-            {
-                "type": "custom",
-                "url": url,
-                "audio": playable_url,
-                "title": name,
-                "content": content,
-                "image": cover_url,
-                "subtype": "163",  # gocq
-                "voice": playable_url,  # gocq
-                "jumpUrl": url,  # icqq
-            },
-        )
-        return Message(seg)
 
-    async def _to_text_message(self) -> Message:
-        name, artists, cover_url = await asyncio.gather(
-            self.get_name(),
-            self.get_artists(),
-            self.get_cover_url(),
-        )
-        content = "、".join(artists)
-        return MessageSegment.image(cover_url) + f"{name}\nBy: {content}"
-
-    async def to_text_message(self) -> Message:
-        msg, url = await asyncio.gather(self._to_text_message(), self.get_url())
-        return msg + f"\n{url}\n使用指令 `direct` 获取播放链接"
-
-
-class BasePlaylist(
-    ABC,
-    Generic[_TRawPlaylistResp, _T_RawRespContent, _TBaseSongOrPlaylist],
-):
-    calling: str = "BasePlaylist"
-    child_calling: str = "BaseSong"
-    link_types: ClassVar[List[str]] = []
-
-    _last_page: int
-    _last_resp: Optional[TablePage]
-    _cache: Dict[int, _TRawPlaylistResp]
-
-    @property
-    @abstractmethod
-    def playlist_id(self) -> int: ...
-
-    @property
-    def last_page(self) -> int:
-        return self._last_page
+class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
+    def __init__(self) -> None:
+        self.last_page: int = 1
+        self._total_count: Optional[int] = None
+        self._cache: Dict[int, _TRawRespInner] = {}
 
     @property
     def max_page(self) -> int:
-        if not self._last_resp:
-            raise ValueError("Please get a page first")
-        return self._last_resp.max_page
-
-    @property
-    def last_resp(self) -> Optional[TablePage]:
-        return self._last_resp
-
-    def __init__(self, *_, **__) -> None:
-        self._last_page = 1
-        self._last_resp = None
-        self._cache = {}
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
-
-    @abstractmethod
-    async def _build_list_resp(
-        self,
-        resp: _TRawPlaylistResp,
-        page: int,
-    ) -> TablePage: ...
+        if self._total_count is None:
+            raise ValueError("Total count not set, please call get_page first")
+        return calc_max_page(self._total_count)
 
     @abstractmethod
     async def _extract_resp_content(
         self,
-        resp: _TRawPlaylistResp,
-    ) -> Optional[List[_T_RawRespContent]]: ...
+        resp: _TRawResp,
+    ) -> Optional[List[_TRawRespInner]]: ...
 
     @abstractmethod
-    async def _do_get_page(self, page: int) -> _TRawPlaylistResp: ...
+    async def _extract_total_count(self, resp: _TRawResp) -> int: ...
+
+    @abstractmethod
+    async def _do_get_page(self, page: int) -> _TRawResp: ...
 
     @abstractmethod
     async def _build_selection(
         self,
-        resp: _T_RawRespContent,
-    ) -> _TBaseSongOrPlaylist: ...
+        resp: _TRawRespInner,
+    ) -> _TSongOrList: ...
+
+    def _update_cache(self, page: int, data: List[_TRawRespInner]):
+        min_index = calc_min_index(page)
+        self._cache.update({min_index + i: item for i, item in enumerate(data)})
+
+    async def get_page(
+        self,
+        page: int = 1,
+    ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
+        if not ((not self._total_count) or (1 <= page <= self._total_count)):
+            raise ValueError("Page out of range")
+
+        min_index = calc_min_index(page)
+        max_index = min_index + config.ncm_list_limit
+        index_range = range(min_index, max_index + 1)
+        if all(page in self._cache for page in index_range):
+            return [self._cache[page] for page in index_range]
+
+        resp = await self._do_get_page(page)
+        content = await self._extract_resp_content(resp)
+        if content is None:
+            return None
+        if len(content) == 1:
+            return await self._build_selection(content[0])
+
+        self._cache.update({min_index + i: item for i, item in enumerate(content)})
+        return content
+
+    async def select(self, index: int) -> _TSongOrList:
+        page_num = calc_page_number(index)
+        if index in self._cache:
+            content = self._cache[index]
+        elif not (1 <= page_num <= self.max_page):
+            raise ValueError("Index out of range")
+        else:
+            resp = await self._extract_resp_content(await self._do_get_page(page_num))
+            if resp is None:
+                raise ValueError("Empty response, index may out of range")
+            self._update_cache(page_num, resp)
+            content = resp[0]
+        return await self._build_selection(content)
+
+
+class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
+    @override
+    def __init__(self, info: _TRawResp) -> None:
+        super().__init__()
+        self.info: _TRawResp = info
+
+    @property
+    @abstractmethod
+    def id(self) -> int: ...
 
     @classmethod
     @abstractmethod
     async def from_id(cls, arg_id: int) -> Self: ...
 
-    def _calc_index_offset(self, page: int) -> int:
-        return ((page - 1) * config.ncm_list_limit) + 1
 
+class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
+    @override
+    def __init__(self, keyword: str) -> None:
+        super().__init__()
+        self.keyword: str = keyword
+
+    @staticmethod
+    @abstractmethod
+    async def search_from_id(arg_id: int) -> Optional[_TSongOrList]: ...
+
+    @override
     async def get_page(
         self,
         page: int = 1,
-    ) -> Union[TablePage, _TBaseSongOrPlaylist, None]:
-        if not ((page == 1) or (1 <= page <= self.max_page)):
-            raise ValueError("Page out of range")
-
-        raw_resp = (
-            self._cache[page] if page in self._cache else await self._do_get_page(page)
-        )
-        extracted = await self._extract_resp_content(raw_resp)
-        if not extracted:
-            return None
-        if page == 1 and len(extracted) == 1:
-            return await self._build_selection(extracted[0])
-
-        resp = await self._build_list_resp(raw_resp, page)
-        if isinstance(resp, TablePage):
-            self._last_page = page
-            self._last_resp = resp
-            self._cache[page] = raw_resp
-        return resp
-
-    async def next_page(self) -> TablePage:
-        if self._last_page >= self.max_page:
-            raise ValueError("Already last page")
-        return cast(Any, await self.get_page(self._last_page + 1))
-
-    async def prev_page(self) -> TablePage:
-        if self._last_page <= 1:
-            raise ValueError("Already first page")
-        return cast(Any, await self.get_page(self._last_page - 1))
-
-    async def select(self, index: int) -> _TBaseSongOrPlaylist:
-        index -= 1  # item index starts with 0
-        page_index = (index // config.ncm_list_limit) + 1  # page index starts with 1
-        if page_index in self._cache:
-            resp = self._cache[page_index]
-        elif not (1 <= page_index <= self.max_page):
-            raise ValueError("Index out of range")
-        else:
-            resp = await self._do_get_page(page_index)
-            self._cache[page_index] = resp
-
-        content = await self._extract_resp_content(resp)
-        if (not content) or (
-            (item_index := index % config.ncm_list_limit) >= len(content)
-        ):
-            raise ValueError("Index out of range")
-        return await self._build_selection(content[item_index])
-
-
-class BaseSearcher(
-    Generic[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
-    BasePlaylist[_TRawSearchResp, _T_RawRespContent, _TBaseSongOrPlaylist],
-):
-    commands: ClassVar[List[str]] = []
-
-    keyword: str
-
-    @property
-    def playlist_id(self) -> int:
-        return 0
-
-    def __init__(self, keyword: str, *_, **__) -> None:
-        self.keyword = keyword
-
-        calling = self.__class__.calling or self.__class__.child_calling
-        self.__class__.calling = self.__class__.child_calling = calling
-
-        super().__init__(*_, **__)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(keyword={self.keyword!r})"
-
-    @classmethod
-    async def from_id(cls, arg_id: int) -> Optional[_TBaseSongOrPlaylist]:
-        raise NotImplementedError
-
-    async def get_page(
-        self,
-        page: int = 1,
-    ) -> Union[TablePage, _TBaseSongOrPlaylist, None]:
+    ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
         if self.keyword.isdigit():
             with suppress(Exception):
-                if song := await self.from_id(int(self.keyword)):
+                if song := await self.search_from_id(int(self.keyword)):
                     return song
         return await super().get_page(page)
-
-
-songs: List[Type[BaseSong]] = []
-playlists: List[Type[BasePlaylist]] = []
-searchers: List[Type[BaseSearcher]] = []
-
-
-def song(cls: Type[_TBaseSong]) -> Type[_TBaseSong]:
-    songs.append(cls)
-    return cls
-
-
-def playlist(cls: Type[_TBasePlaylist]) -> Type[_TBasePlaylist]:
-    playlists.append(cls)
-    return cls
-
-
-def searcher(cls: Type[_TSearcher]) -> Type[_TSearcher]:
-    searchers.append(cls)
-    return cls

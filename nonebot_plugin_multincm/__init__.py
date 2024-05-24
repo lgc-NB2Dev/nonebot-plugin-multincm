@@ -1,13 +1,37 @@
-from nonebot.plugin import PluginMetadata, require
+# ruff: noqa: E402
 
+from nonebot import logger
+from nonebot.plugin import (
+    PluginMetadata,
+    get_available_plugin_names,
+    inherit_supported_adapters,
+    require,
+)
+
+require("nonebot_plugin_alconna")
 require("nonebot_plugin_htmlrender")
 
-from . import __main__ as __main__  # noqa: E402
-from .config import ConfigModel, config  # noqa: E402
+from . import __main__ as __main__
+from .config import ConfigModel, config
+from .data_source.login import login
+
+if "nonebot-plugin-ncm" in get_available_plugin_names():
+    logger.info("nonebot-plugin-ncm 已安装，本插件将依赖其全局 Session")
+    require("nonebot-plugin-ncm")
+
+else:
+    from nonebot import get_driver
+
+    driver = get_driver()
+
+    @driver.on_startup
+    async def _():
+        await login()
+
 
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"
 
-__version__ = "0.5.0.dev10"
+__version__ = "1.0.0"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",
@@ -36,9 +60,9 @@ __plugin_meta__ = PluginMetadata(
         "▶ 歌词 [回复 音乐卡片 / 链接]\n"
         "    ▷ 介绍：获取该音乐的歌词，以图片形式发送\n"
         "    ▷ 别名：`lrc`、`lyric`、`lyrics`\n"
-        "▶ 语音 [回复 音乐卡片 / 链接]\n"
-        "    ▷ 介绍：以语音的形式发送音乐\n"
-        "    ▷ 别名：`record`\n"
+        # "▶ 语音 [回复 音乐卡片 / 链接]\n"
+        # "    ▷ 介绍：以语音的形式发送音乐\n"
+        # "    ▷ 别名：`record`\n"
         " \n"
         "Tip：\n"
         f"{auto_resolve_tip if config.ncm_auto_resolve else ''}"
@@ -48,6 +72,6 @@ __plugin_meta__ = PluginMetadata(
     homepage="https://github.com/lgc-NB2Dev/nonebot-plugin-multincm",
     type="application",
     config=ConfigModel,
-    supported_adapters={"~onebot.v11"},
+    supported_adapters=inherit_supported_adapters("nonebot_plugin_alconna"),
     extra={"License": "MIT", "Author": "student_2333"},
 )

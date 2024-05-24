@@ -16,7 +16,7 @@ LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))
 LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.MULTILINE)
 
 
-def parse(
+def parse_lrc(
     lrc: str,
     ignore_empty: bool = False,
     merge_empty: bool = True,
@@ -66,7 +66,7 @@ def strip_lrc_lines(lines: List[LrcLine]) -> List[LrcLine]:
     return lines
 
 
-def merge(
+def merge_lrc(
     *lyrics: List[LrcLine],
     threshold: int = 20,
     replace_empty_line: Optional[str] = "--------",

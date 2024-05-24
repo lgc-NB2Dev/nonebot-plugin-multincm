@@ -1,42 +1,43 @@
+import math
 from contextlib import contextmanager
-from typing import List, Optional, TypeVar, cast
+from typing import List, Optional, Tuple, TypeVar, cast
 from typing_extensions import ParamSpec
 
 from nonebot import logger
 
-from . import lrc_parser
-from .config import config
-from .types import Artist, Lyric, LyricData, User
+from ..config import config
+from ..data_source import md
+from .lrc_parser import merge_lrc, parse_lrc
 
 P = ParamSpec("P")
 TR = TypeVar("TR")
 
 
 def format_time(time: int) -> str:
-    s, _ = divmod(time, 1000)
-    m, s = divmod(s, 60)
-    return f"{m:0>2d}:{s:0>2d}"
+    ss, _ = divmod(time, 1000)
+    mm, ss = divmod(ss, 60)
+    return f"{mm:0>2d}:{ss:0>2d}"
 
 
 def format_alias(name: str, alias: List[str]) -> str:
     return f'{name}（{"；".join(alias)}）' if alias else name
 
 
-def format_artists(artists: List[Artist]) -> str:
+def format_artists(artists: List[md.Artist]) -> str:
     return "、".join([x.name for x in artists])
 
 
-def format_lrc(lrc: LyricData) -> Optional[str]:
-    def fmt_usr(usr: User) -> str:
-        return f"{usr.nickname} [{usr.userid}]"
+def format_lrc(lrc: md.LyricData) -> Optional[str]:
+    def fmt_usr(usr: md.User) -> str:
+        return f"{usr.nickname} [{usr.user_id}]"
 
     raw = lrc.lrc
     if (not raw) or (not (raw_lrc := raw.lyric)):
         return None
 
     lyrics = [
-        lrc_parser.parse(x.lyric)
-        for x in cast(List[Optional[Lyric]], [raw, lrc.romalrc, lrc.tlyric])
+        parse_lrc(x.lyric)
+        for x in cast(List[Optional[md.Lyric]], [raw, lrc.roma_lrc, lrc.trans_lrc])
         if x
     ]
     lyrics = [x for x in lyrics if x]
@@ -59,17 +60,17 @@ def format_lrc(lrc: LyricData) -> Optional[str]:
             return None  # 纯音乐
 
         only_one = len(lyrics) == 1
-        for li in lrc_parser.merge(*lyrics, replace_empty_line=empty_line):
+        for li in merge_lrc(*lyrics, replace_empty_line=empty_line):
             if not only_one:
                 lines.append("")
             lines.append(f"[b]{li[0].lrc}[/b]")
             lines.extend([f"{x.lrc}" for x in li[1:]])
 
-    if lrc.lyricUser or lrc.transUser:
+    if lrc.lyric_user or lrc.trans_user:
         lines.extend(("", empty_line, ""))
-        if usr := lrc.lyricUser:
+        if usr := lrc.lyric_user:
             lines.append(f"歌词贡献者：{fmt_usr(usr)}")
-        if usr := lrc.transUser:
+        if usr := lrc.trans_user:
             lines.append(f"翻译贡献者：{fmt_usr(usr)}")
 
     return "\n".join(lines).strip()
@@ -82,3 +83,21 @@ def logged_suppress(msg: str):
     except Exception:
         logger.exception(msg)
         return None
+
+
+def calc_page_number(index: int) -> int:
+    return (index // config.ncm_list_limit) + 1
+
+
+def calc_min_index(page: int) -> int:
+    return (page - 1) * config.ncm_list_limit
+
+
+def calc_min_max_index(page: int) -> Tuple[int, int]:
+    min_index = calc_min_index(page)
+    max_index = min_index + config.ncm_list_limit
+    return min_index, max_index
+
+
+def calc_max_page(total: int) -> int:
+    return math.ceil(total / config.ncm_list_limit)
