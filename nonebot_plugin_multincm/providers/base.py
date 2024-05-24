@@ -128,6 +128,9 @@ class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
     @abstractmethod
     async def from_id(cls, arg_id: int) -> Self: ...
 
+    @abstractmethod
+    async def get_url(self) -> str: ...
+
 
 class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
     @override

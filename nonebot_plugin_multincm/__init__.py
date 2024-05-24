@@ -11,9 +11,9 @@ from nonebot.plugin import (
 require("nonebot_plugin_alconna")
 require("nonebot_plugin_htmlrender")
 
-from . import __main__ as __main__
+from . import interaction as interaction
 from .config import ConfigModel, config
-from .data_source.login import login
+from .data_source import login
 
 if "nonebot-plugin-ncm" in get_available_plugin_names():
     logger.info("nonebot-plugin-ncm 已安装，本插件将依赖其全局 Session")

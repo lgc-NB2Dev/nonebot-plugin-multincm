@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body * {
+        margin: 0;
+        padding: 0;
+      }
+      main {
+        /* width: 540px; */
+        width: max-content;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        background-color: rgb(33, 42, 62);
+        color: rgb(241, 246, 249);
+      }
+      .header {
+        text-align: center;
+      }
+      .table {
+        width: 100%;
+      }
+      .table table {
+        margin: 0 auto;
+        width: 100%;
+        border-collapse: collapse;
+        border-style: hidden;
+        border-radius: 8px;
+        box-shadow: 0 0 0 2px rgb(241, 246, 249);
+      }
+      .table td,
+      th {
+        border: 2px solid rgb(241, 246, 249);
+        padding: 4px 4px;
+      }
+      .table th {
+        white-space: nowrap;
+      }
+      {% for i, h in enumerate(heads) %}
+      .t-{{ i }} {
+        text-align: {{ h.align }};
+        {% if h.min_width %}min-width: {{ h.min_width }}px;{% endif %}
+        {% if h.max_width %}max-width: {{ h.max_width }}px;{% endif %}
+      }
+      {% endfor %}
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 class="title">{{ title }}</h1>
+      <p class="header">
+        Tip：<b>发送序号</b> 选择 | 发送 <b>P</b>+<b>数字</b> 跳到指定页数<br />
+        其他操作：<b>上一页</b>(P) | <b>下一页</b>(N) | <b>退出</b>(E)
+      </p>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              {% for i, h in enumerate(heads) %}
+              <th class="t-{{ i }}">{{ h.name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+            <tr>
+              {% for i, t in enumerate(line) %}
+              <td class="t-{{ i }}">{{ t }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="footer">
+        第 <strong>{{ current_page }}</strong> /
+        <strong>{{ max_page }}</strong> 页 | 共
+        <strong>{{ max_count }}</strong> 首
+      </p>
+    </main>
+  </body>
+</html>
