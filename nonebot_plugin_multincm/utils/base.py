@@ -1,9 +1,6 @@
 import math
-from contextlib import contextmanager
 from typing import List, Optional, Tuple, TypeVar, cast
 from typing_extensions import ParamSpec
-
-from nonebot import logger
 
 from ..config import config
 from ..data_source import md
@@ -74,15 +71,6 @@ def format_lrc(lrc: md.LyricData) -> Optional[str]:
             lines.append(f"翻译贡献者：{fmt_usr(usr)}")
 
     return "\n".join(lines).strip()
-
-
-@contextmanager
-def logged_suppress(msg: str):
-    try:
-        yield
-    except Exception:
-        logger.exception(msg)
-        return None
 
 
 def calc_page_number(index: int) -> int:
