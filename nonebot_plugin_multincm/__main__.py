@@ -3,7 +3,6 @@ import random
 import re
 from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Type, Union, cast
-from nonebot_plugin_multincm.utils import logged_suppress
 from typing_extensions import Annotated
 
 from httpx import AsyncClient
@@ -28,6 +27,7 @@ from .const import TEMP_PATH
 from .draw import TablePage, draw_table_page, str_to_pic
 from .msg_cache import SongCache, chat_last_song_cache
 from .providers import BasePlaylist, BaseSearcher, BaseSong, playlists, searchers, songs
+from .utils import logged_suppress
 
 KEY_SEARCHER_TYPE = "searcher_type"
 KEY_PLAYLIST = "playlist"
