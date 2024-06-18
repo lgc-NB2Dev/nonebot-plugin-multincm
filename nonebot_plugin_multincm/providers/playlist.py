@@ -5,7 +5,7 @@ from typing_extensions import Self, override
 from cookit.pyd import model_dump
 
 from ..data_source import (
-    MUSIC_LINK_TEMPLATE,
+    build_item_link,
     get_playlist_info,
     get_track_info,
     md,
@@ -33,7 +33,7 @@ class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
 
     @override
     async def get_url(self) -> str:
-        return MUSIC_LINK_TEMPLATE.format(type="playlist", id=self.info.id)
+        return build_item_link("playlist", self.info.id)
 
     @override
     async def _extract_resp_content(

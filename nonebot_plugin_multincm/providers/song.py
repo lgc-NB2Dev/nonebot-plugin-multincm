@@ -2,7 +2,7 @@ from typing import List
 from typing_extensions import Optional, Self, override
 
 from ..data_source import (
-    MUSIC_LINK_TEMPLATE,
+    build_item_link,
     get_track_audio,
     get_track_info,
     get_track_lrc,
@@ -29,7 +29,7 @@ class Song(BaseSong[md.Song]):
 
     @override
     async def get_url(self) -> str:
-        return MUSIC_LINK_TEMPLATE.format(type="song", id=self.id)
+        return build_item_link("song", self.info.id)
 
     @override
     async def get_playable_url(self) -> str:

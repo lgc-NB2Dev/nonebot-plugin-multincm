@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        --c-bg-0: #282c34;
+        --c-bg-1: #31353f;
+        --c-fg-pri: #abb2bf;
+        --c-fg-sec: #848b98;
+        --c-index-bg: #2b6f77;
+        --c-shadow: #5c6370;
+
+        --shadow-card: 2px 2px 8px var(--c-shadow);
+        --shadow-cover: 1px 1px 4px var(--c-shadow);
+      }
+
+      body {
+        background-color: var(--c-bg-0);
+        color: var(--c-fg-pri);
+      }
+
+      main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 16px;
+      }
+
+      main > .title {
+        font-size: 32px;
+        font-weight: bold;
+      }
+
+      main > .footer {
+        text-align: center;
+        font-size: 14px;
+        color: var(--c-fg-sec);
+      }
+
+      main > .card-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        display: flex;
+        overflow: hidden;
+        padding: 16px;
+        background-color: var(--c-bg-1);
+        border-radius: 8px;
+        box-shadow: var(--shadow-card);
+      }
+
+      .card.song {
+        width: 280px;
+        position: relative;
+        display: block;
+      }
+
+      .card.song .index {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 32px;
+        height: 32px;
+        background-color: var(--c-index-bg);
+        color: var(--c-fg-pri);
+        clip-path: polygon(100% 0, 0 0, 0 100%);
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+      }
+
+      .card.song .index span {
+        display: block;
+        transform: rotate(-45deg);
+      }
+
+      .card.song .inner {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        align-items: center;
+        height: 100%;
+      }
+
+      .card.song img.cover {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--c-shadow);
+        box-shadow: var(--shadow-cover);
+      }
+
+      .card.song .desc {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        justify-content: center;
+      }
+
+      .card.song .desc-inline {
+        display: flex;
+        flex-direction: row;
+        gap: 2px;
+      }
+
+      .card.song .desc .title {
+        font-weight: bold;
+      }
+
+      .card.song .desc .small {
+        font-size: 12px;
+        color: var(--c-fg-sec);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="title">{{ title }}</div>
+      <div class="card-grid">
+        {% for it in items -%}
+        <div class="card song">
+          <div class="index"><span>{{ loop.index + index_offset }}</span></div>
+          <div class="inner">
+            <img class="cover" src="{{ it.cover }}" />
+            <div class="desc">
+              <div class="title">{{ it.title }}</div>
+              <div>{{ it.author }}</div>
+              <div class="small">{{ it.info }}</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="footer">
+        第 {{ page_current }} 页 / 共 {{ page_max }} 页<br />
+        nonebot-plugin-multincm v1.0.0
+      </div>
+    </main>
+  </body>
+</html>

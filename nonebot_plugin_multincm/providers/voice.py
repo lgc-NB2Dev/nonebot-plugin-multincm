@@ -2,7 +2,7 @@ from typing import List, Optional
 from typing_extensions import Self, override
 
 from ..data_source import (
-    MUSIC_LINK_TEMPLATE,
+    build_item_link,
     get_track_audio,
     get_voice_info,
     md,
@@ -27,7 +27,7 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
 
     @override
     async def get_url(self) -> str:
-        return MUSIC_LINK_TEMPLATE.format(type="dj", id=self.info.id)
+        return build_item_link("voice", self.info.id)
 
     @override
     async def get_playable_url(self) -> str:

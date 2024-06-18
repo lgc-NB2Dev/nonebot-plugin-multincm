@@ -1,9 +1,9 @@
 from . import models
 from .const import (
     DATA_PATH as DATA_PATH,
-    MUSIC_LINK_TEMPLATE as MUSIC_LINK_TEMPLATE,
     RES_DIR as RES_DIR,
     TEMP_PATH as TEMP_PATH,
+    build_item_link as build_item_link,
 )
 from .login import login as login
 from .request import (
