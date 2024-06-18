@@ -4,6 +4,7 @@ from nonebot import get_driver
 from nonebot.plugin import PluginMetadata, inherit_supported_adapters, require
 
 require("nonebot_plugin_alconna")
+require("nonebot_plugin_waiter")
 require("nonebot_plugin_htmlrender")
 
 from . import interaction as interaction
@@ -54,6 +55,9 @@ __plugin_meta__ = PluginMetadata(
     homepage="https://github.com/lgc-NB2Dev/nonebot-plugin-multincm",
     type="application",
     config=ConfigModel,
-    supported_adapters=inherit_supported_adapters("nonebot_plugin_alconna"),
+    supported_adapters=inherit_supported_adapters(
+        "nonebot_plugin_alconna",
+        "nonebot_plugin_waiter",
+    ),
     extra={"License": "MIT", "Author": "student_2333"},
 )

@@ -7,7 +7,6 @@ from .base import (
     format_artists as format_artists,
     format_lrc as format_lrc,
     format_time as format_time,
-    logged_suppress as logged_suppress,
 )
 from .lrc_parser import (
     LrcLine as LrcLine,
