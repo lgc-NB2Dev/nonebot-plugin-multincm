@@ -1,12 +1,7 @@
 # ruff: noqa: E402
 
-from nonebot import logger
-from nonebot.plugin import (
-    PluginMetadata,
-    get_available_plugin_names,
-    inherit_supported_adapters,
-    require,
-)
+from nonebot import get_driver
+from nonebot.plugin import PluginMetadata, inherit_supported_adapters, require
 
 require("nonebot_plugin_alconna")
 require("nonebot_plugin_htmlrender")
@@ -15,18 +10,8 @@ from . import interaction as interaction
 from .config import ConfigModel, config
 from .data_source import login
 
-if "nonebot-plugin-ncm" in get_available_plugin_names():
-    logger.info("nonebot-plugin-ncm 已安装，本插件将依赖其全局 Session")
-    require("nonebot-plugin-ncm")
-
-else:
-    from nonebot import get_driver
-
-    driver = get_driver()
-
-    @driver.on_startup
-    async def _():
-        await login()
+driver = get_driver()
+driver.on_startup(login)
 
 
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"
@@ -60,9 +45,6 @@ __plugin_meta__ = PluginMetadata(
         "▶ 歌词 [回复 音乐卡片 / 链接]\n"
         "    ▷ 介绍：获取该音乐的歌词，以图片形式发送\n"
         "    ▷ 别名：`lrc`、`lyric`、`lyrics`\n"
-        # "▶ 语音 [回复 音乐卡片 / 链接]\n"
-        # "    ▷ 介绍：以语音的形式发送音乐\n"
-        # "    ▷ 别名：`record`\n"
         " \n"
         "Tip：\n"
         f"{auto_resolve_tip if config.ncm_auto_resolve else ''}"

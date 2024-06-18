@@ -13,9 +13,7 @@ class ConfigModel(BaseModel):
 
     ncm_list_limit: int = 20
     ncm_list_font: Optional[str] = None
-    # ncm_max_name_len: int = 600
-    # ncm_max_artist_len: int = 400
-    ncm_lrc_empty_line: Optional[str] = "--------"
+    ncm_lrc_empty_line: Optional[str] = "-"
 
     ncm_msg_cache_time: int = 43200
     ncm_auto_resolve: bool = False
@@ -24,6 +22,7 @@ class ConfigModel(BaseModel):
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_list_msg: bool = True
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
+    ncm_ob11_use_card: bool = True
 
 
 config = get_plugin_config(ConfigModel)

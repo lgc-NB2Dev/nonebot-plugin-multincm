@@ -19,6 +19,8 @@ async def render_card_list(
     page_max: int,
     index_offset: int = 0,
 ) -> bytes:
+    from ..__init__ import __version__ as version
+
     return await render_html(
         jinja_env.get_template("card_list.html.jinja").render(
             title=title,
@@ -26,5 +28,6 @@ async def render_card_list(
             page_current=page_current,
             page_max=page_max,
             index_offset=index_offset,
+            version=version,
         ),
     )
