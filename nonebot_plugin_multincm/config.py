@@ -1,4 +1,6 @@
+from pathlib import Path
 from typing import Optional, Tuple
+from urllib.parse import quote
 
 from nonebot import get_plugin_config
 from pydantic import BaseModel
@@ -23,6 +25,14 @@ class ConfigModel(BaseModel):
     ncm_delete_list_msg: bool = True
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_ob11_use_card: bool = True
+
+    @property
+    def ncm_list_font_url(self) -> Optional[str]:
+        return (
+            quote(p.as_uri())
+            if self.ncm_list_font and (p := Path(self.ncm_list_font)).exists()
+            else self.ncm_list_font
+        )
 
 
 config = get_plugin_config(ConfigModel)

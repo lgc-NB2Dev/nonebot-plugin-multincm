@@ -1,9 +1,17 @@
 from typing import List, Literal, Optional
+from typing_extensions import TypeAlias
 
 from cookit.pyd import CamelAliasModel
 from pydantic import Field
 
-BrLevelType = Literal["hires", "lossless", "exhigh", "higher", "standard", "none"]
+BrLevelType: TypeAlias = Literal[
+    "hires",
+    "lossless",
+    "exhigh",
+    "higher",
+    "standard",
+    "none",
+]
 
 
 class Artist(CamelAliasModel):

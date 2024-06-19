@@ -12,6 +12,8 @@ from .base import BaseSearcher, BaseSong
 
 
 class Voice(BaseSong[md.VoiceBaseInfo]):
+    calling = "声音"
+
     @property
     @override
     def id(self) -> int:
@@ -53,6 +55,8 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
 
 
 class VoiceSearcher(BaseSearcher[md.VoiceSearchResult, md.VoiceResource, Voice]):
+    child_calling = "声音"
+
     @staticmethod
     @override
     async def search_from_id(arg_id: int) -> Optional[Voice]:

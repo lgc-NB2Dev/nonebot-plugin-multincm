@@ -10,11 +10,20 @@ require("nonebot_plugin_htmlrender")
 from . import interaction as interaction
 from .config import ConfigModel, config
 from .data_source import login
+from .interaction.common import SEARCHER_COMMANDS
 
 driver = get_driver()
 driver.on_startup(login)
 
 
+search_commands_help = "\n".join(
+    [
+        f"▶ {cmds[0]} [{(c := s.child_calling)}名 / {c} ID]\n"
+        f"    ▷ 介绍：搜索{c}。当输入{c} ID 时会直接发送对应{c}\n"
+        f"    ▷ 别名：{'、'.join(f'`{x}`' for x in cmds[1:])}"
+        for s, cmds in SEARCHER_COMMANDS.items()
+    ],
+)
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"
 
 __version__ = "1.0.0"
@@ -23,15 +32,7 @@ __plugin_meta__ = PluginMetadata(
     description="网易云多选点歌",
     usage=(
         "搜索指令：\n"
-        "▶ 点歌 [歌曲名 / 音乐 ID]\n"
-        "    ▷ 介绍：搜索歌曲。当输入音乐 ID 时会直接发送对应音乐\n"
-        "    ▷ 别名：`网易云`、`wyy`\n"
-        "▶ 电台 [节目名 / 节目 ID]\n"
-        "    ▷ 介绍：搜索电台节目。当输入电台 ID 时会直接发送对应节目\n"
-        "    ▷ 别名：`声音`、`网易电台`、`wydt`、`wydj`\n"
-        "▶ 歌单 [歌单名 / 歌单 ID]\n"
-        "    ▷ 介绍：搜索歌单。当输入歌单 ID 时会直接发送对应歌单\n"
-        "    ▷ 别名：`声音`、`网易电台`、`wydt`、`wydj`\n"
+        f"{search_commands_help}"
         " \n"
         "操作指令：\n"
         "▶ 解析 [回复 音乐卡片 / 链接]\n"

@@ -1,17 +1,23 @@
 from abc import abstractmethod
 from contextlib import suppress
-from typing import Dict, Generic, List, Optional, TypeVar, Union
-from typing_extensions import Self, override
+from typing import ClassVar, Dict, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Any, Self, TypeAlias, override
 
 from ..config import config
+from ..data_source import md
 from ..utils import calc_max_page, calc_min_index, calc_page_number
 
+SongListInnerResp: TypeAlias = Union[md.Song, md.VoiceResource, md.PlaylistFromSearch]
+
 _TRawResp = TypeVar("_TRawResp")
-_TRawRespInner = TypeVar("_TRawRespInner")
-_TSongOrList = TypeVar("_TSongOrList", "BaseSong", "BaseSongList")
+_TRawRespInner = TypeVar("_TRawRespInner", bound=SongListInnerResp)
+_TSong = TypeVar("_TSong", bound="BaseSong")
+_TSongOrList = TypeVar("_TSongOrList", bound=Union["BaseSong", "BaseSongList"])
 
 
 class BaseSong(Generic[_TRawResp]):
+    calling: ClassVar[str] = "BaseSong"
+
     def __init__(self, info: _TRawResp) -> None:
         self.info: _TRawResp = info
 
@@ -43,16 +49,30 @@ class BaseSong(Generic[_TRawResp]):
 
 
 class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
+    child_calling: ClassVar[str] = "BaseSongList"
+
     def __init__(self) -> None:
-        self.last_page: int = 1
+        self.current_page: int = 1
         self._total_count: Optional[int] = None
         self._cache: Dict[int, _TRawRespInner] = {}
 
     @property
-    def max_page(self) -> int:
+    def total_count(self) -> int:
         if self._total_count is None:
             raise ValueError("Total count not set, please call get_page first")
-        return calc_max_page(self._total_count)
+        return self._total_count
+
+    @property
+    def max_page(self) -> int:
+        return calc_max_page(self.total_count)
+
+    @property
+    def is_first_page(self) -> bool:
+        return self.current_page == 1
+
+    @property
+    def is_last_page(self) -> bool:
+        return self.current_page == self.max_page
 
     @abstractmethod
     async def _extract_resp_content(
@@ -67,20 +87,22 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     async def _do_get_page(self, page: int) -> _TRawResp: ...
 
     @abstractmethod
-    async def _build_selection(
-        self,
-        resp: _TRawRespInner,
-    ) -> _TSongOrList: ...
+    async def _build_selection(self, resp: _TRawRespInner) -> _TSongOrList: ...
 
     def _update_cache(self, page: int, data: List[_TRawRespInner]):
         min_index = calc_min_index(page)
         self._cache.update({min_index + i: item for i, item in enumerate(data)})
 
+    def page_valid(self, page: int) -> bool:
+        return 1 <= page <= self.max_page
+
     async def get_page(
         self,
-        page: int = 1,
+        page: Optional[int] = None,
     ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
-        if not ((not self._total_count) or (1 <= page <= self._total_count)):
+        if page is None:
+            page = self.current_page
+        if not ((not self._total_count) or self.page_valid(page)):
             raise ValueError("Page out of range")
 
         min_index = calc_min_index(page)
@@ -91,6 +113,8 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
 
         resp = await self._do_get_page(page)
         content = await self._extract_resp_content(resp)
+        self._total_count = await self._extract_total_count(resp)
+        self.current_page = page
         if content is None:
             return None
         if len(content) == 1:
@@ -114,7 +138,7 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
         return await self._build_selection(content)
 
 
-class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
+class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSong]):
     @override
     def __init__(self, info: _TRawResp) -> None:
         super().__init__()
@@ -145,10 +169,20 @@ class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
     @override
     async def get_page(
         self,
-        page: int = 1,
+        page: Optional[int] = None,
     ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
         if self.keyword.isdigit():
             with suppress(Exception):
                 if song := await self.search_from_id(int(self.keyword)):
                     return song
         return await super().get_page(page)
+
+
+GeneralSong: TypeAlias = BaseSong[Any]
+GeneralSongOrList: TypeAlias = Union[
+    GeneralSong,
+    BaseSongList[Any, SongListInnerResp, "GeneralSongOrList"],
+]
+GeneralSongList: TypeAlias = BaseSongList[Any, SongListInnerResp, GeneralSongOrList]
+GeneralPlaylist: TypeAlias = BasePlaylist[Any, SongListInnerResp, GeneralSong]
+GeneralSearcher: TypeAlias = BaseSearcher[Any, SongListInnerResp, GeneralSongOrList]

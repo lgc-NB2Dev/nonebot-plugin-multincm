@@ -17,6 +17,8 @@ from .song import Song
 
 
 class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
+    child_calling = "歌曲"
+
     def __init__(self, info: md.Playlist) -> None:
         super().__init__(info)
 
@@ -62,6 +64,8 @@ class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
 class PlaylistSearcher(
     BaseSearcher[md.PlaylistSearchResult, md.PlaylistFromSearch, Playlist],
 ):
+    child_calling = "歌单"
+
     @override
     @staticmethod
     async def search_from_id(arg_id: int) -> Optional[Playlist]:

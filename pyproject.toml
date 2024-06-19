@@ -12,7 +12,7 @@ dependencies = [
     "anyio>=3.6.2",
     "httpx>=0.24.0",
     "jinja2>=3.1.2",
-    "cookit[pydantic,nonebot]>=0.5.1",
+    "cookit[pydantic,nonebot-alconna,loguru,jinja]>=0.6.0",
     "nonebot-plugin-waiter>=0.6.2",
 ]
 requires-python = ">=3.9,<4.0"

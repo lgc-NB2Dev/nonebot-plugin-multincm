@@ -1,13 +1,18 @@
 import math
-from typing import List, Optional, Tuple, TypeVar, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, cast
 from typing_extensions import ParamSpec
 
 from ..config import config
-from ..data_source import md
 from .lrc_parser import merge_lrc, parse_lrc
+
+if TYPE_CHECKING:
+    from ..data_source import md
 
 P = ParamSpec("P")
 TR = TypeVar("TR")
+
+DEV_HTML_PATH = Path.cwd() / "multincm-debug.html"
 
 
 def format_time(time: int) -> str:
@@ -20,12 +25,12 @@ def format_alias(name: str, alias: List[str]) -> str:
     return f'{name}（{"；".join(alias)}）' if alias else name
 
 
-def format_artists(artists: List[md.Artist]) -> str:
+def format_artists(artists: List["md.Artist"]) -> str:
     return "、".join([x.name for x in artists])
 
 
-def format_lrc(lrc: md.LyricData) -> Optional[str]:
-    def fmt_usr(usr: md.User) -> str:
+def format_lrc(lrc: "md.LyricData") -> Optional[str]:
+    def fmt_usr(usr: "md.User") -> str:
         return f"{usr.nickname} [{usr.user_id}]"
 
     raw = lrc.lrc
@@ -34,7 +39,7 @@ def format_lrc(lrc: md.LyricData) -> Optional[str]:
 
     lyrics = [
         parse_lrc(x.lyric)
-        for x in cast(List[Optional[md.Lyric]], [raw, lrc.roma_lrc, lrc.trans_lrc])
+        for x in cast(List[Optional["md.Lyric"]], [raw, lrc.roma_lrc, lrc.trans_lrc])
         if x
     ]
     lyrics = [x for x in lyrics if x]
@@ -89,3 +94,7 @@ def calc_min_max_index(page: int) -> Tuple[int, int]:
 
 def calc_max_page(total: int) -> int:
     return math.ceil(total / config.ncm_list_limit)
+
+
+def is_dev_mode() -> bool:
+    return DEV_HTML_PATH.exists()

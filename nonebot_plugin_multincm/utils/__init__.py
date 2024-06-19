@@ -1,4 +1,5 @@
 from .base import (
+    DEV_HTML_PATH as DEV_HTML_PATH,
     calc_max_page as calc_max_page,
     calc_min_index as calc_min_index,
     calc_min_max_index as calc_min_max_index,
@@ -7,6 +8,7 @@ from .base import (
     format_artists as format_artists,
     format_lrc as format_lrc,
     format_time as format_time,
+    is_dev_mode as is_dev_mode,
 )
 from .lrc_parser import (
     LrcLine as LrcLine,

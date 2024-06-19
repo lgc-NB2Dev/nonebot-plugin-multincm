@@ -9,11 +9,13 @@ from ..data_source import (
     md,
     search_song,
 )
-from ..utils import calc_max_page, format_alias, format_lrc
+from ..utils import format_alias, format_lrc
 from .base import BaseSearcher, BaseSong
 
 
 class Song(BaseSong[md.Song]):
+    calling = "歌曲"
+
     @property
     @override
     def id(self) -> int:
@@ -54,6 +56,8 @@ class Song(BaseSong[md.Song]):
 
 
 class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
+    child_calling = "歌曲"
+
     @override
     async def _extract_resp_content(
         self,
@@ -62,10 +66,12 @@ class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
         return resp.songs
 
     @override
+    async def _extract_total_count(self, resp: md.SongSearchResult) -> int:
+        return resp.song_count
+
+    @override
     async def _do_get_page(self, page: int) -> md.SongSearchResult:
-        resp = await search_song(self.keyword, page=page)
-        self._total_count = calc_max_page(resp.song_count)
-        return resp
+        return await search_song(self.keyword, page=page)
 
     @override
     async def _build_selection(self, resp: md.Song) -> Song:

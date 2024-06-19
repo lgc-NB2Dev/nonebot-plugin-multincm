@@ -1,9 +1,11 @@
-from typing import List
+from typing import List, TypedDict
 
-from .utils import jinja_env, render_html
+from .utils import render_html, render_template
 
 
-async def render_lyrics(groups: List[List[str]]) -> bytes:
-    return await render_html(
-        jinja_env.get_template("lyrics.html.jinja").render(groups=groups),
-    )
+class LyricsRenderParams(TypedDict):
+    groups: List[List[str]]
+
+
+async def render_lyrics(**kwargs: LyricsRenderParams) -> bytes:
+    return await render_html(await render_template("lyrics.html.jinja", **kwargs))
