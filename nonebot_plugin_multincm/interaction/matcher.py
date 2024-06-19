@@ -1,9 +1,12 @@
+import asyncio
 from typing import List, Type, Union, cast
 
 from arclet.alconna import Alconna, Args, CommandMeta, Field
 from cookit.loguru import logged_suppress
+from cookit.nonebot.alconna import RecallContext
 from nonebot import logger
 from nonebot.adapters import Event as BaseEvent
+from nonebot.exception import FinishedException
 from nonebot.matcher import current_matcher
 from nonebot.typing import T_State
 from nonebot_plugin_alconna import AlconnaMatcher, on_alconna
@@ -60,6 +63,7 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
     searcher: GeneralSongList = cast(Type[GeneralSearcher], state[KEY_SEARCHER])(
         keyword,
     )
+    recall = RecallContext(delay=config.ncm_delete_list_msg_delay)
 
     async def handle_result(
         result: Union[GeneralSongOrList, List[SongListInnerResp], None],
@@ -78,19 +82,16 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
             return
 
         try:
-            await matcher.send(
+            await recall.send(
                 UniMessage.image(raw=await render_list_resp(searcher, result)),
             )
         except Exception:
             logger.exception(f"Failed to render {type(searcher).__name__} image")
             await matcher.finish("图片渲染失败，请检查后台输出")
 
+        illegal_counter = 0
         async for msg in waiter(["message"], keep_session=True)(plaintext_extractor)(
-            retry=(
-                0
-                if config.ncm_illegal_cmd_finish
-                else (config.ncm_illegal_cmd_limit or cast(int, None))
-            ),
+            prompt=None,  # type: ignore
         ):
             if msg is None:
                 await matcher.finish()
@@ -101,45 +102,46 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
 
             if msg in PREVIOUS_COMMAND:
                 if searcher.is_first_page:
-                    await matcher.send("已经是第一页了")
-                else:
-                    searcher.current_page -= 1
-                break
+                    await recall.send("已经是第一页了")
+                    continue
+                searcher.current_page -= 1
 
             if msg in NEXT_COMMAND:
                 if searcher.is_last_page:
-                    await matcher.send("已经是最后一页了")
-                else:
-                    searcher.current_page += 1
-                break
+                    await recall.send("已经是最后一页了")
+                    continue
+                searcher.current_page += 1
 
             if prefix := next((p for p in JUMP_PAGE_PREFIX if msg.startswith(p)), None):
                 msg = msg[len(prefix) :].strip()
                 if not (msg.isdigit() and searcher.page_valid(p := int(msg))):
-                    await matcher.send("页码输入有误，请重新输入")
+                    await recall.send("页码输入有误，请重新输入")
                     continue
                 searcher.current_page = p
                 break
 
             if msg.isdigit():
-                try:
-                    resp = await searcher.select(int(msg) - 1)
-                except ValueError:
-                    await matcher.send("序号输入有误，请重新输入")
+                if not searcher.index_valid((index := int(msg) - 1)):
+                    await recall.send("序号输入有误，请重新输入")
                     continue
+                try:
+                    resp = await searcher.select(index)
+                except Exception:
+                    logger.exception(
+                        f"Error when selecting index {index} from {type(searcher).__name__}",
+                    )
+                    await matcher.finish("搜索出错，请检查后台输出")
                 await handle_result(resp)
                 return
 
-            await matcher.send(
+            if config.ncm_illegal_cmd_finish:
+                await matcher.finish("非正确指令，已退出选择")
+            if illegal_counter >= config.ncm_illegal_cmd_limit:
+                await matcher.finish("非法指令次数过多，已自动退出选择")
+            await recall.send(
                 "非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式",
             )
-
-        else:
-            await matcher.finish(
-                "非正确指令，已退出选择"
-                if config.ncm_illegal_cmd_finish
-                else "非法指令次数过多，已自动退出选择",
-            )
+            illegal_counter += 1
 
     while True:
         try:
@@ -148,8 +150,17 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
             logger.exception(
                 f"Error when using {type(searcher).__name__} to search {keyword}",
             )
-            await matcher.finish("搜索出错，请检查后台输出")
-        await handle_result(result)
+            await matcher.send("搜索出错，请检查后台输出")
+            break
+        else:
+            try:
+                await handle_result(result)
+            except FinishedException:
+                break
+
+    if config.ncm_delete_list_msg:
+        asyncio.create_task(recall.recall())
+    await matcher.finish()
 
 
 def __register_searcher_matchers():

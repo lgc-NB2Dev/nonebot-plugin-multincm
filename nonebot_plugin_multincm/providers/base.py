@@ -96,6 +96,9 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     def page_valid(self, page: int) -> bool:
         return 1 <= page <= self.max_page
 
+    def index_valid(self, index: int) -> bool:
+        return 0 <= index < self.total_count
+
     async def get_page(
         self,
         page: Optional[int] = None,

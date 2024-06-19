@@ -43,7 +43,7 @@ class Song(CamelAliasModel):
     al: Album
     dt: int
     """歌曲时长，单位 ms"""
-    privilege: Optional[Privilege]
+    privilege: Optional[Privilege] = None
 
 
 class QcReminder(CamelAliasModel):
@@ -59,10 +59,10 @@ class SearchQcReminder(CamelAliasModel):
 
 
 class SongSearchResult(CamelAliasModel):
-    search_qc_reminder: Optional[SearchQcReminder]
+    search_qc_reminder: Optional[SearchQcReminder] = None
     """搜索纠正"""
     song_count: int
-    songs: Optional[List[Song]]
+    songs: Optional[List[Song]] = None
 
 
 class TrackAudio(CamelAliasModel):
@@ -71,8 +71,8 @@ class TrackAudio(CamelAliasModel):
     br: int
     size: int
     md5: str
-    level: Optional[str]
-    encode_type: Optional[str]
+    level: Optional[str] = None
+    encode_type: Optional[str] = None
     time: int
 
 
@@ -88,11 +88,11 @@ class Lyric(CamelAliasModel):
 
 
 class LyricData(CamelAliasModel):
-    trans_user: Optional[User]
-    lyric_user: Optional[User]
-    lrc: Optional[Lyric]
-    trans_lrc: Optional[Lyric] = Field(..., alias="tlyric")
-    roma_lrc: Optional[Lyric] = Field(..., alias="romalrc")
+    trans_user: Optional[User] = None
+    lyric_user: Optional[User] = None
+    lrc: Optional[Lyric] = None
+    trans_lrc: Optional[Lyric] = Field(None, alias="tlyric")
+    roma_lrc: Optional[Lyric] = Field(None, alias="romalrc")
 
 
 class DJ(CamelAliasModel):
@@ -112,9 +112,9 @@ class Radio(CamelAliasModel):
     sub_count: int
     program_count: int
     category_id: int
-    second_category_id: Optional[int]
+    second_category_id: Optional[int] = None
     category: str
-    second_category: Optional[str]
+    second_category: Optional[str] = None
     last_program_id: int
 
 
@@ -139,9 +139,9 @@ class VoiceResource(CamelAliasModel):
 
 
 class VoiceSearchResult(CamelAliasModel):
-    resources: Optional[List[VoiceResource]]
+    resources: Optional[List[VoiceResource]] = None
     total_count: int
-    search_qc_reminder: Optional[SearchQcReminder]
+    search_qc_reminder: Optional[SearchQcReminder] = None
 
 
 class TrackId(CamelAliasModel):
@@ -161,7 +161,7 @@ class PlaylistFromSearch(CamelAliasModel):
     track_count: int
     play_count: int
     book_count: int
-    description: Optional[str]
+    description: Optional[str] = None
 
 
 class Playlist(PlaylistFromSearch):
@@ -171,6 +171,6 @@ class Playlist(PlaylistFromSearch):
 
 
 class PlaylistSearchResult(CamelAliasModel):
-    playlists: Optional[List[PlaylistFromSearch]]
+    playlists: Optional[List[PlaylistFromSearch]] = None
     playlist_count: int
-    search_qc_reminder: Optional[SearchQcReminder]
+    search_qc_reminder: Optional[SearchQcReminder] = None
