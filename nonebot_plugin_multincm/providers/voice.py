@@ -2,17 +2,18 @@ from typing import List, Optional
 from typing_extensions import Self, override
 
 from ..data_source import (
-    build_item_link,
     get_track_audio,
     get_voice_info,
     md,
     search_voice,
 )
-from .base import BaseSearcher, BaseSong
+from .base import BaseSearcher, BaseSong, link_resolvable
 
 
+@link_resolvable
 class Voice(BaseSong[md.VoiceBaseInfo]):
     calling = "声音"
+    link_types = ("program", "dj")
 
     @property
     @override
@@ -26,10 +27,6 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
         if not info:
             raise ValueError("Voice not found")
         return cls(info)
-
-    @override
-    async def get_url(self) -> str:
-        return build_item_link("voice", self.info.id)
 
     @override
     async def get_playable_url(self) -> str:

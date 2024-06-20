@@ -1,3 +1,4 @@
+import json
 from functools import partial
 from typing import (
     Any,
@@ -21,7 +22,7 @@ from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from ..config import config
-from ..utils import calc_min_index
+from ..utils import calc_min_index, is_debug_mode, write_debug_file
 from .models import (
     LyricData,
     Playlist,
@@ -39,9 +40,10 @@ TModel = TypeVar("TModel", bound=BaseModel)
 
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
+    if is_debug_mode():
+        write_debug_file(f"{api.__name__}_{{time}}.json", json.dumps(ret))
     if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
-    # logger.debug(f"{api.__name__} - {ret}")
     return ret
 
 

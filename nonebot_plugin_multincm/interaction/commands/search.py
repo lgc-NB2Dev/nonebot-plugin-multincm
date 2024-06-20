@@ -1,73 +1,136 @@
 import asyncio
-from typing import List, Type, Union, cast
+from contextlib import suppress
+from typing import List, Type, cast
 
 from arclet.alconna import Alconna, Args, CommandMeta, Field
 from cookit.loguru import logged_suppress
 from cookit.nonebot.alconna import RecallContext
 from nonebot import logger
-from nonebot.adapters import Event as BaseEvent
 from nonebot.exception import FinishedException
 from nonebot.matcher import current_matcher
 from nonebot.typing import T_State
 from nonebot_plugin_alconna import AlconnaMatcher, on_alconna
 from nonebot_plugin_alconna.uniseg import UniMessage
-from nonebot_plugin_waiter import waiter
+from nonebot_plugin_waiter import prompt
 
-from ..config import config
-from ..providers import (
+from ...config import config
+from ...providers import (
     BaseSearcher,
     BaseSong,
     BaseSongList,
+    GeneralGetPageReturn,
     GeneralSearcher,
     GeneralSongList,
-    GeneralSongOrList,
-    SongListInnerResp,
+    GeneralSongListPage,
 )
-from ..render import render_list_resp
-from .common import SEARCHER_COMMANDS, to_normal_msg
-from .ob_v11 import is_ob_v11_ev, song_to_ob_v11_card_msg
+from ...render import render_list_resp
+from ..cache import set_cache
+from ..const import (
+    EXIT_COMMAND,
+    JUMP_PAGE_PREFIX,
+    NEXT_COMMAND,
+    PREVIOUS_COMMAND,
+    SEARCHER_COMMANDS,
+)
+from ..message import construct_result_msg, get_card_sendable_ev_type, get_song_card_msg
 
 KEY_SEARCHER = "searcher"
 
-EXIT_COMMAND = (
-    "退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0",
-)  # fmt: skip
-PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
-NEXT_COMMAND = ("下一页", "xyy", "next", "n")
-JUMP_PAGE_PREFIX = ("page", "p", "跳页", "页")
-
-
-async def plaintext_extractor(ev: BaseEvent) -> str:
-    return ev.get_plaintext()
-
 
 async def send_song(song: BaseSong):
-    # event = current_event.get()
-    matcher = cast(AlconnaMatcher, current_matcher.get())
+    async def send():
+        matcher = cast(AlconnaMatcher, current_matcher.get())
 
-    async def send_card() -> bool:
-        if config.ncm_ob11_use_card and is_ob_v11_ev():
-            with logged_suppress(f"Send {type(song).__name__} card failed"):
-                await matcher.send(await song_to_ob_v11_card_msg(song))
-                return True
-        return False
+        if config.ncm_use_card:
+            ev_type = None
+            with suppress(TypeError):
+                ev_type = get_card_sendable_ev_type()
+            if ev_type:
+                with logged_suppress(f"Send {type(song).__name__} card failed"):
+                    await matcher.send(await get_song_card_msg(song, ev_type))
 
-    if not (await send_card()):
-        await matcher.send(await to_normal_msg(song))
+        await matcher.send(await construct_result_msg(song))
 
-    # TODO: cache song
-    # session_id = event.get_session_id()
+    await send()
+    await set_cache(song)
 
 
-async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: str):
+async def search_handler(matcher: AlconnaMatcher, state: T_State, keyword: str):
     searcher: GeneralSongList = cast(Type[GeneralSearcher], state[KEY_SEARCHER])(
         keyword,
     )
     recall = RecallContext(delay=config.ncm_delete_list_msg_delay)
 
-    async def handle_result(
-        result: Union[GeneralSongOrList, List[SongListInnerResp], None],
-    ):
+    async def select_result(result: GeneralSongListPage):
+        try:
+            await recall.send(UniMessage.image(raw=await render_list_resp(result)))
+        except Exception:
+            logger.exception(f"Failed to render {type(searcher).__name__} image")
+            await matcher.finish("图片渲染失败，请检查后台输出")
+
+        illegal_counter = 0
+
+        async def tip_illegal(message: str):
+            nonlocal illegal_counter
+            illegal_counter += 1
+            if config.ncm_illegal_cmd_limit and (
+                illegal_counter >= config.ncm_illegal_cmd_limit
+            ):
+                await matcher.finish("非法指令次数过多，已自动退出选择")
+            await recall.send(message)
+
+        while True:
+            msg = await prompt("")
+            if msg is None:
+                await matcher.finish()
+            msg = msg.extract_plain_text().strip().lower()
+
+            if msg in EXIT_COMMAND:
+                await matcher.finish("已退出选择")
+
+            if msg in PREVIOUS_COMMAND:
+                if searcher.is_first_page:
+                    await tip_illegal("已经是第一页了")
+                    continue
+                searcher.current_page -= 1
+                break
+
+            if msg in NEXT_COMMAND:
+                if searcher.is_last_page:
+                    await tip_illegal("已经是最后一页了")
+                    continue
+                searcher.current_page += 1
+                break
+
+            if prefix := next((p for p in JUMP_PAGE_PREFIX if msg.startswith(p)), None):
+                msg = msg[len(prefix) :].strip()
+                if not (msg.isdigit() and searcher.page_valid(p := int(msg))):
+                    await tip_illegal("页码输入有误，请重新输入")
+                    continue
+                searcher.current_page = p
+                break
+
+            if msg.isdigit():
+                if not searcher.index_valid((index := int(msg) - 1)):
+                    await tip_illegal("序号输入有误，请重新输入")
+                    continue
+                try:
+                    resp = await searcher.select(index)
+                except Exception:
+                    logger.exception(
+                        f"Error when selecting index {index} from {type(searcher).__name__}",
+                    )
+                    await matcher.finish("搜索出错，请检查后台输出")
+                await handle_result(resp)
+                break
+
+            if config.ncm_illegal_cmd_finish:
+                await matcher.finish("非正确指令，已退出选择")
+            await tip_illegal(
+                "非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式",
+            )
+
+    async def handle_result(result: GeneralGetPageReturn):
         nonlocal searcher
 
         if result is None:
@@ -81,67 +144,7 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
             searcher = result
             return
 
-        try:
-            await recall.send(
-                UniMessage.image(raw=await render_list_resp(searcher, result)),
-            )
-        except Exception:
-            logger.exception(f"Failed to render {type(searcher).__name__} image")
-            await matcher.finish("图片渲染失败，请检查后台输出")
-
-        illegal_counter = 0
-        async for msg in waiter(["message"], keep_session=True)(plaintext_extractor)(
-            prompt=None,  # type: ignore
-        ):
-            if msg is None:
-                await matcher.finish()
-            msg = msg.strip().lower()
-
-            if msg in EXIT_COMMAND:
-                await matcher.finish("已退出选择")
-
-            if msg in PREVIOUS_COMMAND:
-                if searcher.is_first_page:
-                    await recall.send("已经是第一页了")
-                    continue
-                searcher.current_page -= 1
-
-            if msg in NEXT_COMMAND:
-                if searcher.is_last_page:
-                    await recall.send("已经是最后一页了")
-                    continue
-                searcher.current_page += 1
-
-            if prefix := next((p for p in JUMP_PAGE_PREFIX if msg.startswith(p)), None):
-                msg = msg[len(prefix) :].strip()
-                if not (msg.isdigit() and searcher.page_valid(p := int(msg))):
-                    await recall.send("页码输入有误，请重新输入")
-                    continue
-                searcher.current_page = p
-                break
-
-            if msg.isdigit():
-                if not searcher.index_valid((index := int(msg) - 1)):
-                    await recall.send("序号输入有误，请重新输入")
-                    continue
-                try:
-                    resp = await searcher.select(index)
-                except Exception:
-                    logger.exception(
-                        f"Error when selecting index {index} from {type(searcher).__name__}",
-                    )
-                    await matcher.finish("搜索出错，请检查后台输出")
-                await handle_result(resp)
-                return
-
-            if config.ncm_illegal_cmd_finish:
-                await matcher.finish("非正确指令，已退出选择")
-            if illegal_counter >= config.ncm_illegal_cmd_limit:
-                await matcher.finish("非法指令次数过多，已自动退出选择")
-            await recall.send(
-                "非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式",
-            )
-            illegal_counter += 1
+        await select_result(result)
 
     while True:
         try:
@@ -152,11 +155,10 @@ async def searcher_handler_0(matcher: AlconnaMatcher, state: T_State, keyword: s
             )
             await matcher.send("搜索出错，请检查后台输出")
             break
-        else:
-            try:
-                await handle_result(result)
-            except FinishedException:
-                break
+        try:
+            await handle_result(result)
+        except FinishedException:
+            break
 
     if config.ncm_delete_list_msg:
         asyncio.create_task(recall.recall())
@@ -171,21 +173,24 @@ def __register_searcher_matchers():
             Alconna(
                 priv_cmd,
                 Args[
-                    f"keyword#搜索关键词或{calling} ID",
+                    "keyword",
                     str,
                     Field(completion=lambda: "请发送搜索内容"),
+                    "\n",
+                    f"搜索关键词或{calling} ID",
                 ],
-                separators="\n",
                 meta=CommandMeta(
                     description=f"搜索{calling}。当输入{calling} ID 时会直接发送对应{calling}",
                 ),
+                separators="\n",
             ),
             aliases=set(rest_cmds),
             comp_config={"lite": True},
             use_cmd_start=True,
+            auto_send_output=True,
             default_state={KEY_SEARCHER: searcher},
         )
-        matcher.handle()(searcher_handler_0)
+        matcher.handle()(search_handler)
 
     for k, v in SEARCHER_COMMANDS.items():
         do_reg(k, v)

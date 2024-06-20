@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Annotated, Optional, Tuple
 from urllib.parse import quote
 
 from nonebot import get_plugin_config
-from pydantic import BaseModel
+from pydantic import AnyHttpUrl, BaseModel
 
 
 class ConfigModel(BaseModel):
@@ -17,6 +17,7 @@ class ConfigModel(BaseModel):
     ncm_list_font: Optional[str] = None
     ncm_lrc_empty_line: Optional[str] = "-"
 
+    ncm_msg_cache_size: int = 1024
     ncm_msg_cache_time: int = 43200
     ncm_auto_resolve: bool = False
     ncm_resolve_playable_card: bool = False
@@ -24,7 +25,8 @@ class ConfigModel(BaseModel):
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_list_msg: bool = True
     ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
-    ncm_ob11_use_card: bool = True
+    ncm_use_card: bool = True
+    ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
 
     @property
     def ncm_list_font_url(self) -> Optional[str]:

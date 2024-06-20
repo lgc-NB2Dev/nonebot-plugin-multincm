@@ -10,11 +10,12 @@ require("nonebot_plugin_htmlrender")
 from . import interaction as interaction
 from .config import ConfigModel, config
 from .data_source import login
-from .interaction.common import SEARCHER_COMMANDS
+from .interaction import SEARCHER_COMMANDS, load_commands
 
 driver = get_driver()
 driver.on_startup(login)
 
+load_commands()
 
 search_commands_help = "\n".join(
     [

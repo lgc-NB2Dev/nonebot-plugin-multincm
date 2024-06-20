@@ -1,25 +1,44 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import ClassVar, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    ClassVar,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 from typing_extensions import Any, Self, TypeAlias, override
 
 from ..config import config
 from ..data_source import md
-from ..utils import calc_max_page, calc_min_index, calc_page_number
+from ..utils import build_item_link, calc_max_page, calc_min_index, calc_page_number
 
 SongListInnerResp: TypeAlias = Union[md.Song, md.VoiceResource, md.PlaylistFromSearch]
+ResolvableSongOrList: TypeAlias = Union["BaseSong", "BasePlaylist"]
 
 _TRawResp = TypeVar("_TRawResp")
 _TRawRespInner = TypeVar("_TRawRespInner", bound=SongListInnerResp)
-_TSong = TypeVar("_TSong", bound="BaseSong")
+# _TSong = TypeVar("_TSong", bound="BaseSong")
 _TSongOrList = TypeVar("_TSongOrList", bound=Union["BaseSong", "BaseSongList"])
 
 
-class BaseSong(Generic[_TRawResp]):
-    calling: ClassVar[str] = "BaseSong"
+registered_resolvable: Dict[str, Type[ResolvableSongOrList]] = {}
 
-    def __init__(self, info: _TRawResp) -> None:
-        self.info: _TRawResp = info
+
+def link_resolvable(cls: Type[ResolvableSongOrList]):
+    if n := next(x for x in cls.link_types if x in registered_resolvable):
+        raise ValueError(f"Duplicate link type: {n}")
+    registered_resolvable.update(dict.fromkeys(cls.link_types, cls))
+    return cls
+
+
+class ResolvableFromID(ABC):
+    link_types: ClassVar[Tuple[str, ...]]
 
     @property
     @abstractmethod
@@ -29,8 +48,22 @@ class BaseSong(Generic[_TRawResp]):
     @abstractmethod
     async def from_id(cls, arg_id: int) -> Self: ...
 
+
+class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
+    calling: ClassVar[str]
+
+    def __init__(self, info: _TRawResp) -> None:
+        self.info: _TRawResp = info
+
+    @property
     @abstractmethod
-    async def get_url(self) -> str: ...
+    @override
+    def id(self) -> int: ...
+
+    @classmethod
+    @abstractmethod
+    @override
+    async def from_id(cls, arg_id: int) -> Self: ...
 
     @abstractmethod
     async def get_playable_url(self) -> str: ...
@@ -47,9 +80,21 @@ class BaseSong(Generic[_TRawResp]):
     @abstractmethod
     async def get_lyric(self) -> Optional[str]: ...
 
+    async def get_url(self) -> str:
+        if not self.link_types:
+            raise ValueError("No link types found")
+        return build_item_link(self.link_types[0], self.id)
 
-class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
-    child_calling: ClassVar[str] = "BaseSongList"
+
+class SongListPage(List[_TRawRespInner], Generic[_TRawRespInner]):
+    @override
+    def __init__(self, content: Iterable[_TRawRespInner], father: "GeneralSongList"):
+        super().__init__(content)
+        self.father: "GeneralSongList" = father
+
+
+class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
+    child_calling: ClassVar[str]
 
     def __init__(self) -> None:
         self.current_page: int = 1
@@ -102,7 +147,7 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     async def get_page(
         self,
         page: Optional[int] = None,
-    ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
+    ) -> Union[SongListPage[_TRawRespInner], _TSongOrList, None]:
         if page is None:
             page = self.current_page
         if not ((not self._total_count) or self.page_valid(page)):
@@ -112,7 +157,10 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
         max_index = min_index + config.ncm_list_limit
         index_range = range(min_index, max_index + 1)
         if all(page in self._cache for page in index_range):
-            return [self._cache[page] for page in index_range]
+            return SongListPage(
+                (self._cache[page] for page in index_range),
+                father=self,
+            )
 
         resp = await self._do_get_page(page)
         content = await self._extract_resp_content(resp)
@@ -124,7 +172,7 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
             return await self._build_selection(content[0])
 
         self._cache.update({min_index + i: item for i, item in enumerate(content)})
-        return content
+        return SongListPage(content, father=self)
 
     async def select(self, index: int) -> _TSongOrList:
         page_num = calc_page_number(index)
@@ -141,7 +189,10 @@ class BaseSongList(Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
         return await self._build_selection(content)
 
 
-class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSong]):
+class BasePlaylist(
+    ResolvableFromID,
+    BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList],
+):
     @override
     def __init__(self, info: _TRawResp) -> None:
         super().__init__()
@@ -149,10 +200,12 @@ class BasePlaylist(BaseSongList[_TRawResp, _TRawRespInner, _TSong]):
 
     @property
     @abstractmethod
+    @override
     def id(self) -> int: ...
 
     @classmethod
     @abstractmethod
+    @override
     async def from_id(cls, arg_id: int) -> Self: ...
 
     @abstractmethod
@@ -173,7 +226,7 @@ class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
     async def get_page(
         self,
         page: Optional[int] = None,
-    ) -> Union[List[_TRawRespInner], _TSongOrList, None]:
+    ) -> Union[SongListPage[_TRawRespInner], _TSongOrList, None]:
         if self.keyword.isdigit():
             with suppress(Exception):
                 if song := await self.search_from_id(int(self.keyword)):
@@ -189,3 +242,6 @@ GeneralSongOrList: TypeAlias = Union[
 GeneralSongList: TypeAlias = BaseSongList[Any, SongListInnerResp, GeneralSongOrList]
 GeneralPlaylist: TypeAlias = BasePlaylist[Any, SongListInnerResp, GeneralSong]
 GeneralSearcher: TypeAlias = BaseSearcher[Any, SongListInnerResp, GeneralSongOrList]
+GeneralSongListPage: TypeAlias = SongListPage[SongListInnerResp]
+
+GeneralGetPageReturn = Union[SongListPage[SongListInnerResp], GeneralSongOrList, None]

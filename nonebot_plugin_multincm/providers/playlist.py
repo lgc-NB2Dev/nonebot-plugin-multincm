@@ -5,19 +5,20 @@ from typing_extensions import Self, override
 from cookit.pyd import model_dump
 
 from ..data_source import (
-    build_item_link,
     get_playlist_info,
     get_track_info,
     md,
     search_playlist,
 )
 from ..utils import calc_min_max_index
-from .base import BasePlaylist, BaseSearcher
+from .base import BasePlaylist, BaseSearcher, link_resolvable
 from .song import Song
 
 
+@link_resolvable
 class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
     child_calling = "歌曲"
+    link_types = ("playlist",)
 
     def __init__(self, info: md.Playlist) -> None:
         super().__init__(info)
@@ -32,10 +33,6 @@ class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
     async def from_id(cls, arg_id: int) -> Self:
         resp = await get_playlist_info(arg_id)
         return cls(resp)
-
-    @override
-    async def get_url(self) -> str:
-        return build_item_link("playlist", self.info.id)
 
     @override
     async def _extract_resp_content(

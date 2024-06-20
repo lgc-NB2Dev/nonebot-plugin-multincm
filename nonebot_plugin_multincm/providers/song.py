@@ -2,7 +2,6 @@ from typing import List
 from typing_extensions import Optional, Self, override
 
 from ..data_source import (
-    build_item_link,
     get_track_audio,
     get_track_info,
     get_track_lrc,
@@ -10,11 +9,13 @@ from ..data_source import (
     search_song,
 )
 from ..utils import format_alias, format_lrc
-from .base import BaseSearcher, BaseSong
+from .base import BaseSearcher, BaseSong, link_resolvable
 
 
+@link_resolvable
 class Song(BaseSong[md.Song]):
     calling = "歌曲"
+    link_types = ("song", "url")
 
     @property
     @override
@@ -28,10 +29,6 @@ class Song(BaseSong[md.Song]):
         if not info:
             raise ValueError("Song not found")
         return cls(info)
-
-    @override
-    async def get_url(self) -> str:
-        return build_item_link("song", self.info.id)
 
     @override
     async def get_playable_url(self) -> str:
@@ -57,6 +54,14 @@ class Song(BaseSong[md.Song]):
 
 class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
     child_calling = "歌曲"
+
+    @staticmethod
+    @override
+    async def search_from_id(arg_id: int) -> Optional[Song]:
+        try:
+            return await Song.from_id(arg_id)
+        except ValueError:
+            return None
 
     @override
     async def _extract_resp_content(

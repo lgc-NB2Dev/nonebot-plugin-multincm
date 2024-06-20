@@ -39,7 +39,7 @@ class Song(CamelAliasModel):
     id: int
     ar: List[Artist]
     alias: List[str] = Field(..., alias="alia")
-    pop: float
+    pop: int
     al: Album
     dt: int
     """歌曲时长，单位 ms"""

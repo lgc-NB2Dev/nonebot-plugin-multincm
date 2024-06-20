@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Literal, Optional, TypedDict
 
 import jinja2
-from cookit.jinja import register_all_filters
+from cookit.jinja import make_register_jinja_filter_deco, register_all_filters
 from nonebot_plugin_htmlrender import get_new_page
 
 from ..config import config
-from ..utils import DEV_HTML_PATH, is_dev_mode
+from ..utils import is_debug_mode, write_debug_file
 
 jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
@@ -14,6 +14,8 @@ jinja_env = jinja2.Environment(
     enable_async=True,
 )
 register_all_filters(jinja_env)
+
+register_filter = make_register_jinja_filter_deco(jinja_env)
 
 
 class RenderConfig(TypedDict):
@@ -42,8 +44,8 @@ async def render_html(
     selector: str = "main",
     image_type: Literal["jpeg", "png"] = "jpeg",
 ) -> bytes:
-    if is_dev_mode():
-        DEV_HTML_PATH.write_text(html, "u8")
+    if is_debug_mode():
+        write_debug_file("{time}.html", html)
     async with get_new_page() as page:
         await page.set_content(html)
         elem = await page.query_selector(selector)

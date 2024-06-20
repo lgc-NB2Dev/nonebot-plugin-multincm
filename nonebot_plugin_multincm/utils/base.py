@@ -1,7 +1,11 @@
+import json
 import math
+import time
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, TypeVar, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar, cast
 from typing_extensions import ParamSpec
+
+from yarl import URL
 
 from ..config import config
 from .lrc_parser import merge_lrc, parse_lrc
@@ -12,7 +16,8 @@ if TYPE_CHECKING:
 P = ParamSpec("P")
 TR = TypeVar("TR")
 
-DEV_HTML_PATH = Path.cwd() / "multincm-debug.html"
+DEBUG_DIR = Path.cwd() / "debug"
+DEBUG_OUTPUT_DIR = DEBUG_DIR / "multincm"
 
 
 def format_time(time: int) -> str:
@@ -96,5 +101,29 @@ def calc_max_page(total: int) -> int:
     return math.ceil(total / config.ncm_list_limit)
 
 
-def is_dev_mode() -> bool:
-    return DEV_HTML_PATH.exists()
+def is_debug_mode() -> bool:
+    return DEBUG_DIR.exists() and DEBUG_DIR.is_dir()
+
+
+def write_debug_file(filename: str, content: Any):
+    filename = filename.format(time=round(time.time() * 1000))
+    path = DEBUG_OUTPUT_DIR / filename
+    if isinstance(content, (bytes, bytearray)):
+        path.write_bytes(content)
+        return
+    path.write_text(
+        (
+            content
+            if isinstance(content, str)
+            else json.dumps(content, ensure_ascii=False)
+        ),
+        "u8",
+    )
+
+
+def get_thumb_url(url: str, size: int) -> str:
+    return str(URL(url).update_query(param=f"{size}y{size}"))
+
+
+def build_item_link(item_type: str, item_id: int) -> str:
+    return f"https://music.163.com/{item_type}?id={item_id}"
