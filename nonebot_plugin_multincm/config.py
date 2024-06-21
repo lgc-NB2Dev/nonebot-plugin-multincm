@@ -23,8 +23,8 @@ class ConfigModel(BaseModel):
     ncm_resolve_playable_card: bool = False
     ncm_illegal_cmd_finish: bool = False
     ncm_illegal_cmd_limit: int = 3
-    ncm_delete_list_msg: bool = True
-    ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
+    ncm_delete_msg: bool = True
+    ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_use_card: bool = True
     ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
 

@@ -157,16 +157,17 @@ async def get_song_card_msg(
         try:
             card_json = await sign_music_card(song)
         except Exception:
-            logger.exception(
-                f"Error occurred while signing music card for {type(song).__name__}",
-            )
+            logger.exception(f"Error occurred while signing music card for {song}")
 
     if card_json:
-        transformers = {"onebotv11": json_to_ob_v11_msg, "kritor": json_to_kritor_msg}
-        return await transformers[event_type](card_json)
+        transformer = {
+            "onebotv11": json_to_ob_v11_msg,
+            "kritor": json_to_kritor_msg,
+        }[event_type]
+        return await transformer(card_json)
 
-    transformers = {
+    transformer = {
         "onebotv11": song_to_ob_v11_music_msg,
         "kritor": song_to_kritor_music_msg,
-    }
-    return await transformers[event_type](song)
+    }[event_type]
+    return await transformer(song)

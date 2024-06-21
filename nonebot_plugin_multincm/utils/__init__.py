@@ -6,7 +6,6 @@ from .base import (
     calc_page_number as calc_page_number,
     format_alias as format_alias,
     format_artists as format_artists,
-    format_lrc as format_lrc,
     format_time as format_time,
     get_thumb_url as get_thumb_url,
     is_debug_mode as is_debug_mode,
@@ -15,5 +14,6 @@ from .base import (
 from .lrc_parser import (
     LrcLine as LrcLine,
     merge_lrc as merge_lrc,
+    normalize_lrc as normalize_lrc,
     parse_lrc as parse_lrc,
 )

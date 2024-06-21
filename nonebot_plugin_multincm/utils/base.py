@@ -1,14 +1,13 @@
 import json
 import math
 import time
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar, cast
+from typing import TYPE_CHECKING, Any, List, Tuple, TypeVar
 from typing_extensions import ParamSpec
 
 from yarl import URL
 
 from ..config import config
 from ..const import DEBUG_DIR, DEBUG_ROOT_DIR
-from .lrc_parser import merge_lrc, parse_lrc
 
 if TYPE_CHECKING:
     from ..data_source import md
@@ -29,55 +28,6 @@ def format_alias(name: str, alias: List[str]) -> str:
 
 def format_artists(artists: List["md.Artist"]) -> str:
     return "、".join([x.name for x in artists])
-
-
-def format_lrc(lrc: "md.LyricData") -> Optional[str]:
-    def fmt_usr(usr: "md.User") -> str:
-        return f"{usr.nickname} [{usr.user_id}]"
-
-    raw = lrc.lrc
-    if (not raw) or (not (raw_lrc := raw.lyric)):
-        return None
-
-    lyrics = [
-        parse_lrc(x.lyric)
-        for x in cast(List[Optional["md.Lyric"]], [raw, lrc.roma_lrc, lrc.trans_lrc])
-        if x
-    ]
-    lyrics = [x for x in lyrics if x]
-    empty_line = config.ncm_lrc_empty_line
-
-    lines = []
-    if not lyrics:
-        lines.extend(
-            (
-                "[i]该歌曲没有滚动歌词[/i]",
-                "",
-                empty_line,
-                "",
-                raw_lrc,
-            ),
-        )
-
-    else:
-        if lyrics[0][-1].time >= 5940000:
-            return None  # 纯音乐
-
-        only_one = len(lyrics) == 1
-        for li in merge_lrc(*lyrics, replace_empty_line=empty_line):
-            if not only_one:
-                lines.append("")
-            lines.append(f"[b]{li[0].lrc}[/b]")
-            lines.extend([f"{x.lrc}" for x in li[1:]])
-
-    if lrc.lyric_user or lrc.trans_user:
-        lines.extend(("", empty_line, ""))
-        if usr := lrc.lyric_user:
-            lines.append(f"歌词贡献者：{fmt_usr(usr)}")
-        if usr := lrc.trans_user:
-            lines.append(f"翻译贡献者：{fmt_usr(usr)}")
-
-    return "\n".join(lines).strip()
 
 
 def calc_page_number(index: int) -> int:

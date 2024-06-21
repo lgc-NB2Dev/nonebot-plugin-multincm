@@ -1,19 +1,26 @@
 from .base import (
     BasePlaylist as BasePlaylist,
+    BaseResolvable as BaseResolvable,
     BaseSearcher as BaseSearcher,
     BaseSong as BaseSong,
     BaseSongList as BaseSongList,
     GeneralGetPageReturn as GeneralGetPageReturn,
     GeneralPlaylist as GeneralPlaylist,
+    GeneralResolvable as GeneralResolvable,
     GeneralSearcher as GeneralSearcher,
     GeneralSong as GeneralSong,
     GeneralSongList as GeneralSongList,
     GeneralSongListPage as GeneralSongListPage,
     GeneralSongOrList as GeneralSongOrList,
+    GeneralSongOrPlaylist as GeneralSongOrPlaylist,
     ResolvableFromID as ResolvableFromID,
     SongListInnerResp as SongListInnerResp,
     SongListPage as SongListPage,
+    registered_playlist as registered_playlist,
     registered_resolvable as registered_resolvable,
+    registered_searcher as registered_searcher,
+    registered_song as registered_song,
+    resolve_from_link_params as resolve_from_link_params,
 )
 from .playlist import Playlist as Playlist, PlaylistSearcher as PlaylistSearcher
 from .raw import *  # noqa: F403

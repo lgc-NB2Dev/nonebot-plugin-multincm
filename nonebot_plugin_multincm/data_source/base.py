@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -19,22 +20,20 @@ from ..utils import build_item_link, calc_max_page, calc_min_index, calc_page_nu
 from .raw import md
 
 SongListInnerResp: TypeAlias = Union[md.Song, md.VoiceResource, md.PlaylistFromSearch]
-ResolvableSongOrList: TypeAlias = Union["BaseSong", "BasePlaylist"]
 
 _TRawResp = TypeVar("_TRawResp")
 _TRawRespInner = TypeVar("_TRawRespInner", bound=SongListInnerResp)
-# _TSong = TypeVar("_TSong", bound="BaseSong")
+_TSong = TypeVar("_TSong", bound="BaseSong")
+_TPlaylist = TypeVar("_TPlaylist", bound="BasePlaylist")
+_TSearcher = TypeVar("_TSearcher", bound="BaseSearcher")
 _TSongOrList = TypeVar("_TSongOrList", bound=Union["BaseSong", "BaseSongList"])
+_TResolvable = TypeVar("_TResolvable", bound="BaseResolvable")
 
 
-registered_resolvable: Dict[str, Type[ResolvableSongOrList]] = {}
-
-
-def link_resolvable(cls: Type[ResolvableSongOrList]):
-    if n := next(x for x in cls.link_types if x in registered_resolvable):
-        raise ValueError(f"Duplicate link type: {n}")
-    registered_resolvable.update(dict.fromkeys(cls.link_types, cls))
-    return cls
+registered_resolvable: Dict[str, Type["BaseResolvable"]] = {}
+registered_song: Set[Type["BaseSong"]] = set()
+registered_playlist: Set[Type["BasePlaylist"]] = set()
+registered_searcher: Dict[Type["BaseSearcher"], Tuple[str, ...]] = {}
 
 
 class ResolvableFromID(ABC):
@@ -49,11 +48,46 @@ class ResolvableFromID(ABC):
     async def from_id(cls, arg_id: int) -> Self: ...
 
 
+def link_resolvable(cls: Type[_TResolvable]):
+    if n := next((x for x in cls.link_types if x in registered_resolvable), None):
+        raise ValueError(f"Duplicate link type: {n}")
+    registered_resolvable.update(dict.fromkeys(cls.link_types, cls))
+    return cls
+
+
+def song(cls: Type[_TSong]):
+    registered_song.add(cls)
+    return link_resolvable(cls)
+
+
+def playlist(cls: Type[_TPlaylist]):
+    registered_playlist.add(cls)
+    return link_resolvable(cls)
+
+
+def searcher(cls: Type[_TSearcher]):
+    registered_searcher[cls] = cls.commands
+    return cls
+
+
+async def resolve_from_link_params(
+    link_type: str,
+    link_id: int,
+) -> "GeneralSongOrPlaylist":
+    item_class = registered_resolvable.get(link_type)
+    if not item_class:
+        raise ValueError(f"Non-resolvable link type: {link_type}")
+    return await item_class.from_id(link_id)
+
+
 class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     calling: ClassVar[str]
 
     def __init__(self, info: _TRawResp) -> None:
         self.info: _TRawResp = info
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}(id={self.id})"
 
     @property
     @abstractmethod
@@ -78,7 +112,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_cover_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyric(self) -> Optional[str]: ...
+    async def get_lyric(self) -> Optional[List[List[str]]]: ...
 
     async def get_url(self) -> str:
         if not self.link_types:
@@ -100,6 +134,12 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
         self.current_page: int = 1
         self._total_count: Optional[int] = None
         self._cache: Dict[int, _TRawRespInner] = {}
+
+    def __str__(self) -> str:
+        return (
+            f"{type(self).__name__}"
+            f"(current_page={self.current_page}, total_count={self.total_count})"
+        )
 
     @property
     def total_count(self) -> int:
@@ -198,6 +238,10 @@ class BasePlaylist(
         super().__init__()
         self.info: _TRawResp = info
 
+    @override
+    def __str__(self) -> str:
+        return f"{super().__str__()[:-1]}, id={self.id})"
+
     @property
     @abstractmethod
     @override
@@ -213,10 +257,16 @@ class BasePlaylist(
 
 
 class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
+    commands: Tuple[str, ...]
+
     @override
     def __init__(self, keyword: str) -> None:
         super().__init__()
         self.keyword: str = keyword
+
+    @override
+    def __str__(self) -> str:
+        return f"{super().__str__()[:-1]}, keyword={self.keyword})"
 
     @staticmethod
     @abstractmethod
@@ -234,6 +284,8 @@ class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
         return await super().get_page(page)
 
 
+BaseResolvable: TypeAlias = Union[BaseSong, BasePlaylist]
+
 GeneralSong: TypeAlias = BaseSong[Any]
 GeneralSongOrList: TypeAlias = Union[
     GeneralSong,
@@ -243,5 +295,7 @@ GeneralSongList: TypeAlias = BaseSongList[Any, SongListInnerResp, GeneralSongOrL
 GeneralPlaylist: TypeAlias = BasePlaylist[Any, SongListInnerResp, GeneralSong]
 GeneralSearcher: TypeAlias = BaseSearcher[Any, SongListInnerResp, GeneralSongOrList]
 GeneralSongListPage: TypeAlias = SongListPage[SongListInnerResp]
+GeneralSongOrPlaylist: TypeAlias = Union[GeneralSong, GeneralPlaylist]
+GeneralResolvable: TypeAlias = GeneralSongOrPlaylist
 
 GeneralGetPageReturn = Union[SongListPage[SongListInnerResp], GeneralSongOrList, None]

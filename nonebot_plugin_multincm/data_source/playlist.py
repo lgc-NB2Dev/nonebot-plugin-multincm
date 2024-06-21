@@ -5,12 +5,12 @@ from typing_extensions import Self, override
 from cookit.pyd import model_dump
 
 from ..utils import calc_min_max_index
-from .base import BasePlaylist, BaseSearcher, link_resolvable
+from .base import BasePlaylist, BaseSearcher, playlist, searcher
 from .raw import get_playlist_info, get_track_info, md, search_playlist
 from .song import Song
 
 
-@link_resolvable
+@playlist
 class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
     child_calling = "歌曲"
     link_types = ("playlist",)
@@ -53,10 +53,12 @@ class Playlist(BasePlaylist[md.Playlist, md.Song, Song]):
         return Song(info=resp)
 
 
+@searcher
 class PlaylistSearcher(
     BaseSearcher[md.PlaylistSearchResult, md.PlaylistFromSearch, Playlist],
 ):
     child_calling = "歌单"
+    commands = ("网易歌单", "wygd", "wypli")
 
     @override
     @staticmethod

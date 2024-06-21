@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Optional, Type, TypeVar, Union
+from typing import Generic, Optional, Tuple, Type, TypeVar, Union
 from typing_extensions import Self, TypeAlias, override
 
 from cachetools import TTLCache
+from cookit.loguru import logged_suppress
 from nonebot.adapters import Event as BaseEvent
 from nonebot.matcher import current_event
 
@@ -37,7 +38,8 @@ class IDCache(BaseCache, Generic[TID]):
         return cls(id=item.id, original=type(item))
 
     @override
-    async def restore(self) -> TID: ...
+    async def restore(self) -> TID:
+        return await self.original.from_id(self.id)
 
 
 cache: TTLCache[str, CacheItemType] = TTLCache(
@@ -49,10 +51,30 @@ cache: TTLCache[str, CacheItemType] = TTLCache(
 async def set_cache(item: CacheableItemType, event: Optional[BaseEvent] = None):
     if not event:
         event = current_event.get()
-    cache[event.get_session_id()] = await IDCache.build(item)
+    session = event.get_session_id()
+    with logged_suppress(f"Failed to set cache for session {session}"):
+        cache[session] = await IDCache.build(item)
 
 
-async def get_cache(event: Optional[BaseEvent] = None) -> Optional[CacheableItemType]:
+async def get_cache(
+    event: Optional[BaseEvent] = None,
+    expected_type: Optional[
+        Union[Type[ResolvableFromID], Tuple[Type[ResolvableFromID], ...]]
+    ] = None,
+) -> Optional[CacheableItemType]:
     if not event:
         event = current_event.get()
-    return await cache[event.get_session_id()].restore()
+
+    session = event.get_session_id()
+    cache_item = cache.get(session)
+    if (not cache_item) or (
+        expected_type
+        and (
+            (not isinstance(cache_item, IDCache))
+            or (not issubclass(cache_item.original, expected_type))
+        )
+    ):
+        return None
+
+    with logged_suppress(f"Failed to get cache for session {session}"):
+        return await cache_item.restore()

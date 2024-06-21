@@ -1,12 +1,12 @@
 from typing import List
 from typing_extensions import Optional, Self, override
 
-from ..utils import format_alias, format_lrc
-from .base import BaseSearcher, BaseSong, link_resolvable
+from ..utils import format_alias, normalize_lrc
+from .base import BaseSearcher, BaseSong, searcher, song
 from .raw import get_track_audio, get_track_info, get_track_lrc, md, search_song
 
 
-@link_resolvable
+@song
 class Song(BaseSong[md.Song]):
     calling = "歌曲"
     link_types = ("song", "url")
@@ -42,12 +42,14 @@ class Song(BaseSong[md.Song]):
         return self.info.al.pic_url
 
     @override
-    async def get_lyric(self) -> Optional[str]:
-        return format_lrc(await get_track_lrc(self.info.id))
+    async def get_lyric(self) -> Optional[List[List[str]]]:
+        return normalize_lrc(await get_track_lrc(self.info.id))
 
 
+@searcher
 class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
     child_calling = "歌曲"
+    commands = ("点歌", "网易云", "wyy", "网易点歌", "wydg", "wysong")
 
     @staticmethod
     @override

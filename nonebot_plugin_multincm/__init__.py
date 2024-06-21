@@ -9,8 +9,8 @@ require("nonebot_plugin_htmlrender")
 
 from . import interaction as interaction
 from .config import ConfigModel, config
-from .data_source import login
-from .interaction import SEARCHER_COMMANDS, load_commands
+from .data_source import login, registered_searcher
+from .interaction import load_commands
 
 driver = get_driver()
 driver.on_startup(login)
@@ -22,7 +22,7 @@ search_commands_help = "\n".join(
         f"▶ {cmds[0]} [{(c := s.child_calling)}名 / {c} ID]\n"
         f"    ▷ 介绍：搜索{c}。当输入{c} ID 时会直接发送对应{c}\n"
         f"    ▷ 别名：{'、'.join(f'`{x}`' for x in cmds[1:])}"
-        for s, cmds in SEARCHER_COMMANDS.items()
+        for s, cmds in registered_searcher.items()
     ],
 )
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n"

@@ -1,15 +1,15 @@
 import asyncio
 from contextlib import suppress
-from typing import List, Type, cast
+from typing import Tuple, Type, cast
 
-from arclet.alconna import Alconna, Args, CommandMeta, Field
 from cookit.loguru import logged_suppress
 from cookit.nonebot.alconna import RecallContext
-from nonebot import logger
+from nonebot import logger, on_command
+from nonebot.adapters import Message as BaseMessage
 from nonebot.exception import FinishedException
-from nonebot.matcher import current_matcher
+from nonebot.matcher import Matcher, current_matcher
+from nonebot.params import CommandArg
 from nonebot.typing import T_State
-from nonebot_plugin_alconna import AlconnaMatcher, on_alconna
 from nonebot_plugin_alconna.uniseg import UniMessage
 from nonebot_plugin_waiter import prompt
 
@@ -22,50 +22,59 @@ from ...data_source import (
     GeneralSearcher,
     GeneralSongList,
     GeneralSongListPage,
+    registered_searcher,
 )
 from ...render import render_list_resp
 from ..cache import set_cache
-from ..const import (
-    EXIT_COMMAND,
-    JUMP_PAGE_PREFIX,
-    NEXT_COMMAND,
-    PREVIOUS_COMMAND,
-    SEARCHER_COMMANDS,
-)
 from ..message import construct_result_msg, get_card_sendable_ev_type, get_song_card_msg
 
 KEY_SEARCHER = "searcher"
 
+EXIT_COMMAND = (
+    "退出", "tc", "取消", "qx", "quit", "q", "exit", "e", "cancel", "c", "0",
+)  # fmt: skip
+PREVIOUS_COMMAND = ("上一页", "syy", "previous", "p")
+NEXT_COMMAND = ("下一页", "xyy", "next", "n")
+JUMP_PAGE_PREFIX = ("page", "p", "跳页", "页")
+
 
 async def send_song(song: BaseSong):
     async def send():
-        matcher = cast(AlconnaMatcher, current_matcher.get())
+        matcher = current_matcher.get()
 
         if config.ncm_use_card:
             ev_type = None
             with suppress(TypeError):
                 ev_type = get_card_sendable_ev_type()
             if ev_type:
-                with logged_suppress(f"Send {type(song).__name__} card failed"):
+                with logged_suppress(
+                    f"Send {type(song).__name__} {song.id} card failed",
+                ):
                     await matcher.send(await get_song_card_msg(song, ev_type))
+                    return
 
-        await matcher.send(await construct_result_msg(song))
+        await (await construct_result_msg(song)).send()
 
     await send()
     await set_cache(song)
 
 
-async def search_handler(matcher: AlconnaMatcher, state: T_State, keyword: str):
+async def search_handler(
+    matcher: Matcher,
+    state: T_State,
+    arg: BaseMessage = CommandArg(),
+):
+    keyword = arg.extract_plain_text().strip()
     searcher: GeneralSongList = cast(Type[GeneralSearcher], state[KEY_SEARCHER])(
         keyword,
     )
-    recall = RecallContext(delay=config.ncm_delete_list_msg_delay)
+    recall = RecallContext(delay=config.ncm_delete_msg_delay)
 
     async def select_result(result: GeneralSongListPage):
         try:
             await recall.send(UniMessage.image(raw=await render_list_resp(result)))
         except Exception:
-            logger.exception(f"Failed to render {type(searcher).__name__} image")
+            logger.exception(f"Failed to render page image for {result}")
             await matcher.finish("图片渲染失败，请检查后台输出")
 
         illegal_counter = 0
@@ -118,7 +127,7 @@ async def search_handler(matcher: AlconnaMatcher, state: T_State, keyword: str):
                     resp = await searcher.select(index)
                 except Exception:
                     logger.exception(
-                        f"Error when selecting index {index} from {type(searcher).__name__}",
+                        f"Error when selecting index {index} from {searcher}",
                     )
                     await matcher.finish("搜索出错，请检查后台输出")
                 await handle_result(resp)
@@ -150,9 +159,7 @@ async def search_handler(matcher: AlconnaMatcher, state: T_State, keyword: str):
         try:
             result = await searcher.get_page()
         except Exception:
-            logger.exception(
-                f"Error when using {type(searcher).__name__} to search {keyword}",
-            )
+            logger.exception(f"Error when using {searcher} to search")
             await matcher.send("搜索出错，请检查后台输出")
             break
         try:
@@ -160,39 +167,22 @@ async def search_handler(matcher: AlconnaMatcher, state: T_State, keyword: str):
         except FinishedException:
             break
 
-    if config.ncm_delete_list_msg:
+    if config.ncm_delete_msg:
         asyncio.create_task(recall.recall())
     await matcher.finish()
 
 
 def __register_searcher_matchers():
-    def do_reg(searcher: Type[BaseSearcher], commands: List[str]):
+    def do_reg(searcher: Type[BaseSearcher], commands: Tuple[str, ...]):
         priv_cmd, *rest_cmds = commands
-        calling = searcher.child_calling
-        matcher = on_alconna(
-            Alconna(
-                priv_cmd,
-                Args[
-                    "keyword",
-                    str,
-                    Field(completion=lambda: "请发送搜索内容"),
-                    "\n",
-                    f"搜索关键词或{calling} ID",
-                ],
-                meta=CommandMeta(
-                    description=f"搜索{calling}。当输入{calling} ID 时会直接发送对应{calling}",
-                ),
-                separators="\n",
-            ),
+        matcher = on_command(
+            priv_cmd,
             aliases=set(rest_cmds),
-            comp_config={"lite": True},
-            use_cmd_start=True,
-            auto_send_output=True,
-            default_state={KEY_SEARCHER: searcher},
+            state={KEY_SEARCHER: searcher},
         )
         matcher.handle()(search_handler)
 
-    for k, v in SEARCHER_COMMANDS.items():
+    for k, v in registered_searcher.items():
         do_reg(k, v)
 
 

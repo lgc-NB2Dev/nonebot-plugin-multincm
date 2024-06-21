@@ -1,11 +1,11 @@
 from typing import List, Optional
 from typing_extensions import Self, override
 
-from .base import BaseSearcher, BaseSong, link_resolvable
+from .base import BaseSearcher, BaseSong, searcher, song
 from .raw import get_track_audio, get_voice_info, md, search_voice
 
 
-@link_resolvable
+@song
 class Voice(BaseSong[md.VoiceBaseInfo]):
     calling = "声音"
     link_types = ("program", "dj")
@@ -42,12 +42,14 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
         return self.info.cover_url
 
     @override
-    async def get_lyric(self) -> Optional[str]:
+    async def get_lyric(self) -> None:
         return None
 
 
+@searcher
 class VoiceSearcher(BaseSearcher[md.VoiceSearchResult, md.VoiceResource, Voice]):
     child_calling = "声音"
+    commands = ("网易电台", "wydt", "wydj")
 
     @staticmethod
     @override
