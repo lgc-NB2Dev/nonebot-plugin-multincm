@@ -16,10 +16,10 @@ from pyncm.apis.login import (
     LoginViaEmail,
 )
 
-from ..config import config
-from .const import DATA_PATH
+from ...config import config
+from ...const import DATA_DIR
 
-SESSION_FILE = DATA_PATH / "session.cache"
+SESSION_FILE = DATA_DIR / "session.cache"
 
 
 async def do_login(retry: bool = True):

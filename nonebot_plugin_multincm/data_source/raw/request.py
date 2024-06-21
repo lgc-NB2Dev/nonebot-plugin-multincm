@@ -21,8 +21,8 @@ from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
-from ..config import config
-from ..utils import calc_min_index, is_debug_mode, write_debug_file
+from ...config import config
+from ...utils import calc_min_index, is_debug_mode, write_debug_file
 from .models import (
     LyricData,
     Playlist,

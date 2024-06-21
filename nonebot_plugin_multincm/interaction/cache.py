@@ -8,7 +8,7 @@ from nonebot.adapters import Event as BaseEvent
 from nonebot.matcher import current_event
 
 from ..config import config
-from ..providers import BasePlaylist, BaseSong, ResolvableFromID
+from ..data_source import BasePlaylist, BaseSong, ResolvableFromID
 
 CacheableItemType: TypeAlias = Union[BaseSong, BasePlaylist]
 CacheItemType: TypeAlias = "IDCache"

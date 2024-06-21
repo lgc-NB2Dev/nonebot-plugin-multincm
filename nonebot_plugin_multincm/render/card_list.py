@@ -4,8 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, TypedDict
 from typing_extensions import NotRequired, Unpack, override
 
-from ..data_source import md
-from ..providers import GeneralSongListPage
+from ..data_source import GeneralSongListPage, md
 from ..utils import calc_min_index, format_artists, format_time, get_thumb_url
 from .utils import render_html, render_template
 

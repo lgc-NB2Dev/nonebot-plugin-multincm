@@ -1,15 +1,9 @@
 from typing import List
 from typing_extensions import Optional, Self, override
 
-from ..data_source import (
-    get_track_audio,
-    get_track_info,
-    get_track_lrc,
-    md,
-    search_song,
-)
 from ..utils import format_alias, format_lrc
 from .base import BaseSearcher, BaseSong, link_resolvable
+from .raw import get_track_audio, get_track_info, get_track_lrc, md, search_song
 
 
 @link_resolvable

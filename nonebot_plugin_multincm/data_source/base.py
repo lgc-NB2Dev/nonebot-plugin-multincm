@@ -15,8 +15,8 @@ from typing import (
 from typing_extensions import Any, Self, TypeAlias, override
 
 from ..config import config
-from ..data_source import md
 from ..utils import build_item_link, calc_max_page, calc_min_index, calc_page_number
+from .raw import md
 
 SongListInnerResp: TypeAlias = Union[md.Song, md.VoiceResource, md.PlaylistFromSearch]
 ResolvableSongOrList: TypeAlias = Union["BaseSong", "BasePlaylist"]

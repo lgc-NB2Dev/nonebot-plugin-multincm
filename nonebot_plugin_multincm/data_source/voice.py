@@ -1,13 +1,8 @@
 from typing import List, Optional
 from typing_extensions import Self, override
 
-from ..data_source import (
-    get_track_audio,
-    get_voice_info,
-    md,
-    search_voice,
-)
 from .base import BaseSearcher, BaseSong, link_resolvable
+from .raw import get_track_audio, get_voice_info, md, search_voice
 
 
 @link_resolvable

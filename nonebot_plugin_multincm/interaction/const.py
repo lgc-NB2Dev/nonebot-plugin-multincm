@@ -1,6 +1,6 @@
 from typing import Dict, List, Type
 
-from ..providers import (
+from ..data_source import (
     BaseSearcher,
     PlaylistSearcher,
     SongSearcher,

@@ -1,13 +1,13 @@
 import json
 import math
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar, cast
 from typing_extensions import ParamSpec
 
 from yarl import URL
 
 from ..config import config
+from ..const import DEBUG_DIR, DEBUG_ROOT_DIR
 from .lrc_parser import merge_lrc, parse_lrc
 
 if TYPE_CHECKING:
@@ -15,9 +15,6 @@ if TYPE_CHECKING:
 
 P = ParamSpec("P")
 TR = TypeVar("TR")
-
-DEBUG_DIR = Path.cwd() / "debug"
-DEBUG_OUTPUT_DIR = DEBUG_DIR / "multincm"
 
 
 def format_time(time: int) -> str:
@@ -102,12 +99,12 @@ def calc_max_page(total: int) -> int:
 
 
 def is_debug_mode() -> bool:
-    return DEBUG_DIR.exists() and DEBUG_DIR.is_dir()
+    return DEBUG_ROOT_DIR.exists() and DEBUG_ROOT_DIR.is_dir()
 
 
 def write_debug_file(filename: str, content: Any):
     filename = filename.format(time=round(time.time() * 1000))
-    path = DEBUG_OUTPUT_DIR / filename
+    path = DEBUG_DIR / filename
     if isinstance(content, (bytes, bytearray)):
         path.write_bytes(content)
         return

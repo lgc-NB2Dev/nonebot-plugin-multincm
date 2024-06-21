@@ -1,5 +1,4 @@
 from .base import (
-    DEBUG_OUTPUT_DIR as DEBUG_OUTPUT_DIR,
     build_item_link as build_item_link,
     calc_max_page as calc_max_page,
     calc_min_index as calc_min_index,

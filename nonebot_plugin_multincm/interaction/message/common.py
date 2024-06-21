@@ -2,7 +2,7 @@ import asyncio as aio
 
 from nonebot_plugin_alconna.uniseg import UniMessage
 
-from ...providers import BaseSong, GeneralSongOrList, Playlist, Voice
+from ...data_source import BaseSong, GeneralSongOrList, Playlist, Voice
 
 
 async def construct_song_msg(it: BaseSong) -> UniMessage:

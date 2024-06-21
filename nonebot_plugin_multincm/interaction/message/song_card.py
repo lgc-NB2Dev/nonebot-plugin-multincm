@@ -9,7 +9,7 @@ from nonebot.adapters import Event as BaseEvent, Message as BaseMessage
 from nonebot.matcher import current_event
 
 from ...config import config
-from ...providers import BaseSong
+from ...data_source import BaseSong
 
 if TYPE_CHECKING:
     from nonebot.adapters.kritor import (

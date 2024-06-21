@@ -4,14 +4,9 @@ from typing_extensions import Self, override
 
 from cookit.pyd import model_dump
 
-from ..data_source import (
-    get_playlist_info,
-    get_track_info,
-    md,
-    search_playlist,
-)
 from ..utils import calc_min_max_index
 from .base import BasePlaylist, BaseSearcher, link_resolvable
+from .raw import get_playlist_info, get_track_info, md, search_playlist
 from .song import Song
 
 

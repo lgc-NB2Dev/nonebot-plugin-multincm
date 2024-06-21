@@ -14,7 +14,7 @@ from nonebot_plugin_alconna.uniseg import UniMessage
 from nonebot_plugin_waiter import prompt
 
 from ...config import config
-from ...providers import (
+from ...data_source import (
     BaseSearcher,
     BaseSong,
     BaseSongList,
