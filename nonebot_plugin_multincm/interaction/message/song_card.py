@@ -54,25 +54,18 @@ async def song_to_ob_v11_music_msg(song: BaseSong) -> "OB11Msg":
         MessageSegment as OB11MsgSeg,
     )
 
-    url, playable_url, name, artists, cover_url = await aio.gather(
-        song.get_url(),
-        song.get_playable_url(),
-        song.get_name(),
-        song.get_artists(),
-        song.get_cover_url(),
-    )
-    content = "、".join(artists)
+    info, url = await aio.gather(song.get_info(), song.get_url())
     seg = OB11MsgSeg(
         "music",
         {
             "type": "custom",
             "url": url,
-            "audio": playable_url,
-            "title": name,
-            "content": content,
-            "image": cover_url,
+            "audio": info.playable_url,
+            "title": info.display_name,
+            "content": info.display_artists,
+            "image": info.cover_url,
             "subtype": "163",  # gocq
-            "voice": playable_url,  # gocq
+            "voice": info.playable_url,  # gocq
             "jumpUrl": url,  # icqq
         },
     )
@@ -85,46 +78,35 @@ async def song_to_kritor_music_msg(song: BaseSong) -> "KritorMsg":
         MessageSegment as KritorMsgSeg,
     )
 
-    url, playable_url, name, artists, cover_url = await aio.gather(
-        song.get_url(),
-        song.get_playable_url(),
-        song.get_name(),
-        song.get_artists(),
-        song.get_cover_url(),
+    info, url = await aio.gather(song.get_info(), song.get_url())
+    seg = KritorMsgSeg.music(
+        "custom",
+        url,
+        info.playable_url,
+        info.display_name,
+        info.display_artists,
+        info.cover_url,
     )
-    content = "、".join(artists)
-    seg = KritorMsgSeg.music("custom", url, playable_url, name, content, cover_url)
     return KritorMsg(seg)
 
 
 async def sign_music_card(song: BaseSong) -> str:
     assert config.ncm_card_sign_url
-    url, playable_url, name, artists, cover_url = await aio.gather(
-        song.get_url(),
-        song.get_playable_url(),
-        song.get_name(),
-        song.get_artists(),
-        song.get_cover_url(),
-    )
-    content = "、".join(artists)
+    info, url = await aio.gather(song.get_info(), song.get_url())
     async with AsyncClient(
         follow_redirects=True,
         timeout=config.ncm_card_sign_timeout,
     ) as cli:
+        body = {
+            "type": "custom",
+            "url": url,
+            "audio": info.playable_url,
+            "title": info.display_name,
+            "image": info.cover_url,
+            "singer": info.display_artists,
+        }
         return (
-            (
-                await cli.post(
-                    config.ncm_card_sign_url,
-                    json={
-                        "type": "custom",
-                        "url": url,
-                        "audio": playable_url,
-                        "title": name,
-                        "image": cover_url,
-                        "singer": content,
-                    },
-                )
-            )
+            (await cli.post(config.ncm_card_sign_url, json=body))
             .raise_for_status()
             .text
         )

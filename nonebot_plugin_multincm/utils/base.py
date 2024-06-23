@@ -1,7 +1,7 @@
 import json
 import math
 import time
-from typing import TYPE_CHECKING, Any, List, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar
 from typing_extensions import ParamSpec
 
 from yarl import URL
@@ -22,7 +22,7 @@ def format_time(time: int) -> str:
     return f"{mm:0>2d}:{ss:0>2d}"
 
 
-def format_alias(name: str, alias: List[str]) -> str:
+def format_alias(name: str, alias: Optional[List[str]] = None) -> str:
     return f'{name}（{"；".join(alias)}）' if alias else name
 
 

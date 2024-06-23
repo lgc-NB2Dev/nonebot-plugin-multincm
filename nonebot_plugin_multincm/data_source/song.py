@@ -1,7 +1,7 @@
 from typing import List
 from typing_extensions import Optional, Self, override
 
-from ..utils import format_alias, normalize_lrc
+from ..utils import normalize_lrc
 from .base import BaseSearcher, BaseSong, searcher, song
 from .raw import get_track_audio, get_track_info, get_track_lrc, md, search_song
 
@@ -25,13 +25,12 @@ class Song(BaseSong[md.Song]):
         return cls(info)
 
     @override
-    async def get_playable_url(self) -> str:
-        info = (await get_track_audio([self.info.id]))[0]
-        return info.url
+    async def get_name(self) -> str:
+        return self.info.name
 
     @override
-    async def get_name(self) -> str:
-        return format_alias(self.info.name, self.info.alias)
+    async def get_alias(self) -> List[str]:
+        return self.info.alias
 
     @override
     async def get_artists(self) -> List[str]:
@@ -42,7 +41,12 @@ class Song(BaseSong[md.Song]):
         return self.info.al.pic_url
 
     @override
-    async def get_lyric(self) -> Optional[List[List[str]]]:
+    async def get_playable_url(self) -> str:
+        info = (await get_track_audio([self.info.id]))[0]
+        return info.url
+
+    @override
+    async def get_lyrics(self) -> Optional[List[List[str]]]:
         return normalize_lrc(await get_track_lrc(self.info.id))
 
 

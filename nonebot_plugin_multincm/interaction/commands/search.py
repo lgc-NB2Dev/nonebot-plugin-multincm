@@ -2,10 +2,10 @@ import asyncio
 from contextlib import suppress
 from typing import Any, Optional, Tuple, Type, cast
 
+from cookit.loguru.common import logged_suppress
 from cookit.nonebot.alconna import RecallContext
 from nonebot import logger, on_command, on_regex
 from nonebot.adapters import Message as BaseMessage
-from nonebot.consts import REGEX_MATCHED
 from nonebot.exception import FinishedException
 from nonebot.matcher import Matcher, current_matcher
 from nonebot.params import ArgPlainText, CommandArg
@@ -13,13 +13,12 @@ from nonebot.typing import T_State
 from nonebot_plugin_alconna.uniseg import UniMessage
 from nonebot_plugin_waiter import prompt
 
-from nonebot_plugin_multincm.data_source.base import BaseSongList
-
 from ...config import config
 from ...const import SHORT_URL_REGEX, URL_REGEX
 from ...data_source import (
     BaseSearcher,
     BaseSong,
+    BaseSongList,
     GeneralGetPageReturn,
     GeneralSearcher,
     GeneralSongList,
@@ -29,8 +28,9 @@ from ...data_source import (
     registered_searcher,
 )
 from ...render import render_list_resp
-from ..message import send_song
-from ..resolver import ResolvedItem
+from ..cache import set_cache
+from ..message import construct_info_msg, send_song
+from ..resolver import IsAutoResolve, ResolvedItem
 
 KEY_SEARCHER = "searcher"
 KEY_KEYWORD = "keyword"
@@ -46,6 +46,7 @@ JUMP_PAGE_PREFIX = ("page", "p", "跳页", "页")
 async def handle_song_or_list(
     result: GeneralSongOrList,
     matcher: Optional[Matcher] = None,
+    send_init_info: bool = False,
 ):
     if not matcher:
         matcher = current_matcher.get()
@@ -140,8 +141,16 @@ async def handle_song_or_list(
             return await select(song_list, result)
         return await handle(result)
 
+    async def send_info(song_list: GeneralSongList):
+        with logged_suppress(f"Failed to send info for {song_list}"):
+            await recall.send(
+                await construct_info_msg(song_list, tip_command=False),
+            )
+
     async def main():
         song_list = await handle_page(None, result)
+        if send_init_info:
+            await send_info(song_list)
         while True:
             try:
                 get_page_result = await song_list.get_page()
@@ -149,6 +158,7 @@ async def handle_song_or_list(
                 logger.exception(f"Error when using {song_list} to search")
                 await matcher.finish("搜索出错，请检查后台输出")
             song_list = await handle_page(song_list, get_page_result)
+            await send_info(song_list)
 
     with suppress(FinishedException):
         await main()
@@ -189,11 +199,17 @@ def __register_searcher_matchers():
         do_reg(k, v)
 
 
-async def resolve_handler(matcher: Matcher, state: T_State, result: ResolvedItem):
-    regex_matched = state.get(REGEX_MATCHED)
-    if regex_matched and isinstance(result, BaseSongList):
-        return
-    await handle_song_or_list(cast(Any, result), matcher)
+async def resolve_handler(
+    matcher: Matcher,
+    result: ResolvedItem,
+    is_auto_resolve: IsAutoResolve,
+):
+    result_it: Any = cast(Any, result)  # fuck that annoying weak type annotation
+    if is_auto_resolve and isinstance(result, BaseSongList):
+        await (await construct_info_msg(result_it, tip_command=True)).send()
+    else:
+        await handle_song_or_list(result_it, matcher, send_init_info=True)
+    await set_cache(result_it)
 
 
 def __register_resolve_matchers():

@@ -230,6 +230,10 @@ async def dependency_resolve_playlist_from_ev(
     )
 
 
+async def dependency_is_auto_resolve(state: T_State) -> bool:
+    return bool(state.get(REGEX_MATCHED))
+
+
 ResolvedItem = Annotated[
     GeneralSongOrPlaylist,
     Depends(dependency_resolve_from_ev, use_cache=False),
@@ -242,3 +246,4 @@ ResolvedPlaylist = Annotated[
     GeneralPlaylist,
     Depends(dependency_resolve_playlist_from_ev, use_cache=False),
 ]
+IsAutoResolve = Annotated[bool, Depends(dependency_is_auto_resolve)]

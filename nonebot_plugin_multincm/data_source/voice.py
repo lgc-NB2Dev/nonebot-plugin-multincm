@@ -24,14 +24,12 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
         return cls(info)
 
     @override
-    async def get_playable_url(self) -> str:
-        song_id = self.info.main_track_id
-        info = (await get_track_audio([song_id]))[0]
-        return info.url
-
-    @override
     async def get_name(self) -> str:
         return self.info.name
+
+    @override
+    async def get_alias(self) -> Optional[List[str]]:
+        return None
 
     @override
     async def get_artists(self) -> List[str]:
@@ -42,7 +40,13 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
         return self.info.cover_url
 
     @override
-    async def get_lyric(self) -> None:
+    async def get_playable_url(self) -> str:
+        song_id = self.info.main_track_id
+        info = (await get_track_audio([song_id]))[0]
+        return info.url
+
+    @override
+    async def get_lyrics(self) -> None:
         return None
 
 

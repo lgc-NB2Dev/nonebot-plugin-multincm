@@ -11,7 +11,7 @@ matcher_lyric = on_command("歌词", aliases={"lrc", "lyric", "lyrics"})
 @matcher_lyric.handle()
 async def _(matcher: Matcher, song: ResolvedSong):
     try:
-        lrc = await song.get_lyric()
+        lrc = await song.get_lyrics()
     except Exception:
         logger.exception(f"Failed to get lyric for {song}")
         await matcher.finish("获取歌词失败，请检查后台输出")

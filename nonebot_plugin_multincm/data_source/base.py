@@ -1,5 +1,7 @@
+import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import (
     ClassVar,
     Dict,
@@ -16,7 +18,13 @@ from typing import (
 from typing_extensions import Any, Self, TypeAlias, override
 
 from ..config import config
-from ..utils import build_item_link, calc_max_page, calc_min_index, calc_page_number
+from ..utils import (
+    build_item_link,
+    calc_max_page,
+    calc_min_index,
+    calc_page_number,
+    format_alias,
+)
 from .raw import md
 
 SongListInnerResp: TypeAlias = Union[md.Song, md.VoiceResource, md.PlaylistFromSearch]
@@ -46,6 +54,11 @@ class ResolvableFromID(ABC):
     @classmethod
     @abstractmethod
     async def from_id(cls, arg_id: int) -> Self: ...
+
+    async def get_url(self) -> str:
+        if not self.link_types:
+            raise ValueError("No link types found")
+        return build_item_link(self.link_types[0], self.id)
 
 
 def link_resolvable(cls: Type[_TResolvable]):
@@ -80,6 +93,23 @@ async def resolve_from_link_params(
     return await item_class.from_id(link_id)
 
 
+@dataclass
+class SongInfo:
+    name: str
+    alias: Optional[List[str]]
+    artists: List[str]
+    cover_url: str
+    playable_url: str
+
+    @property
+    def display_artists(self) -> str:
+        return "、".join(self.artists)
+
+    @property
+    def display_name(self) -> str:
+        return format_alias(self.name, self.alias)
+
+
 class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     calling: ClassVar[str]
 
@@ -100,10 +130,10 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def from_id(cls, arg_id: int) -> Self: ...
 
     @abstractmethod
-    async def get_playable_url(self) -> str: ...
+    async def get_name(self) -> str: ...
 
     @abstractmethod
-    async def get_name(self) -> str: ...
+    async def get_alias(self) -> Optional[List[str]]: ...
 
     @abstractmethod
     async def get_artists(self) -> List[str]: ...
@@ -112,12 +142,26 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_cover_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyric(self) -> Optional[List[List[str]]]: ...
+    async def get_playable_url(self) -> str: ...
 
-    async def get_url(self) -> str:
-        if not self.link_types:
-            raise ValueError("No link types found")
-        return build_item_link(self.link_types[0], self.id)
+    @abstractmethod
+    async def get_lyrics(self) -> Optional[List[List[str]]]: ...
+
+    async def get_info(self) -> SongInfo:
+        name, alias, artists, cover_url, playable_url = await asyncio.gather(
+            self.get_name(),
+            self.get_alias(),
+            self.get_artists(),
+            self.get_cover_url(),
+            self.get_playable_url(),
+        )
+        return SongInfo(
+            name=name,
+            alias=alias,
+            artists=artists,
+            cover_url=cover_url,
+            playable_url=playable_url,
+        )
 
 
 class SongListPage(List[_TRawRespInner], Generic[_TRawRespInner]):
@@ -251,9 +295,6 @@ class BasePlaylist(
     @abstractmethod
     @override
     async def from_id(cls, arg_id: int) -> Self: ...
-
-    @abstractmethod
-    async def get_url(self) -> str: ...
 
 
 class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
