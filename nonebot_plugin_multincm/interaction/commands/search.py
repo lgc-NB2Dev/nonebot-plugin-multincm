@@ -160,12 +160,11 @@ async def handle_song_or_list(
             song_list = await handle_page(song_list, get_page_result)
             await send_info(song_list)
 
-    with suppress(FinishedException):
+    try:
         await main()
-
-    if config.ncm_delete_msg:
-        asyncio.create_task(recall.recall())
-    await matcher.finish()
+    finally:
+        if config.ncm_delete_msg:
+            asyncio.create_task(recall.recall())
 
 
 async def search_handler_0(matcher: Matcher, arg: BaseMessage = CommandArg()):
