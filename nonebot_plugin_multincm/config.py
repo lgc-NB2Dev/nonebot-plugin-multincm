@@ -19,6 +19,8 @@ class ConfigModel(BaseModel):
 
     ncm_msg_cache_size: int = 1024
     ncm_msg_cache_time: int = 43200
+    ncm_resolve_cool_down: int = 30
+    ncm_resolve_cool_down_cache_size: int = 1024
     ncm_auto_resolve: bool = False
     ncm_resolve_playable_card: bool = False
     ncm_illegal_cmd_finish: bool = False
@@ -27,6 +29,7 @@ class ConfigModel(BaseModel):
     ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
     ncm_use_card: bool = True
     ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
+    ncm_card_sign_timeout: int = 5
 
     @property
     def ncm_list_font_url(self) -> Optional[str]:

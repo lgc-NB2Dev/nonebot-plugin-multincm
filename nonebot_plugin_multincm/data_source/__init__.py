@@ -6,7 +6,6 @@ from .base import (
     BaseSongList as BaseSongList,
     GeneralGetPageReturn as GeneralGetPageReturn,
     GeneralPlaylist as GeneralPlaylist,
-    GeneralResolvable as GeneralResolvable,
     GeneralSearcher as GeneralSearcher,
     GeneralSong as GeneralSong,
     GeneralSongList as GeneralSongList,

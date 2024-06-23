@@ -1,8 +1,14 @@
 import asyncio as aio
+from contextlib import suppress
 
+from cookit.loguru.common import logged_suppress
+from nonebot.matcher import current_matcher
 from nonebot_plugin_alconna.uniseg import UniMessage
 
+from ...config import config
 from ...data_source import BaseSong, GeneralSongOrList, Playlist, Voice
+from ..cache import set_cache
+from .song_card import get_card_sendable_ev_type, get_song_card_msg
 
 
 async def construct_song_msg(it: BaseSong) -> UniMessage:
@@ -44,3 +50,24 @@ async def construct_result_msg(it: GeneralSongOrList) -> UniMessage:
         BaseSong: construct_song_msg,
     }
     return await next((func(it) for t, func in type_map.items() if isinstance(it, t)))
+
+
+async def send_song(song: BaseSong):
+    async def send():
+        matcher = current_matcher.get()
+
+        if config.ncm_use_card:
+            ev_type = None
+            with suppress(TypeError):
+                ev_type = get_card_sendable_ev_type()
+            if ev_type:
+                with logged_suppress(
+                    f"Send {type(song).__name__} {song.id} card failed",
+                ):
+                    await matcher.send(await get_song_card_msg(song, ev_type))
+                    return
+
+        await (await construct_result_msg(song)).send()
+
+    await send()
+    await set_cache(song)

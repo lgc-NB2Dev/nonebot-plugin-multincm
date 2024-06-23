@@ -138,7 +138,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     def __str__(self) -> str:
         return (
             f"{type(self).__name__}"
-            f"(current_page={self.current_page}, total_count={self.total_count})"
+            f"(current_page={self.current_page}, total_count={self._total_count})"
         )
 
     @property
@@ -296,6 +296,10 @@ GeneralPlaylist: TypeAlias = BasePlaylist[Any, SongListInnerResp, GeneralSong]
 GeneralSearcher: TypeAlias = BaseSearcher[Any, SongListInnerResp, GeneralSongOrList]
 GeneralSongListPage: TypeAlias = SongListPage[SongListInnerResp]
 GeneralSongOrPlaylist: TypeAlias = Union[GeneralSong, GeneralPlaylist]
-GeneralResolvable: TypeAlias = GeneralSongOrPlaylist
+# GeneralResolvable: TypeAlias = GeneralSongOrPlaylist
 
-GeneralGetPageReturn = Union[SongListPage[SongListInnerResp], GeneralSongOrList, None]
+GeneralGetPageReturn: TypeAlias = Union[
+    SongListPage[SongListInnerResp],
+    GeneralSongOrList,
+    None,
+]

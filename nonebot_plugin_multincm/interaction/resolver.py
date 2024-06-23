@@ -1,8 +1,11 @@
 import re
+import time
+from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 from typing_extensions import Annotated, TypeAlias
 
-from cookit import flatten
+from cachetools import TTLCache
+from cookit import flatten, queued
 from cookit.loguru import logged_suppress
 from httpx import AsyncClient
 from nonebot.adapters import Message as BaseMessage
@@ -13,11 +16,12 @@ from nonebot.typing import T_State
 from nonebot_plugin_alconna import UniMsg
 from nonebot_plugin_alconna.uniseg import Hyper, Reply, UniMessage
 
+from ..config import config
 from ..const import SHORT_URL_BASE, SHORT_URL_REGEX, URL_REGEX
 from ..data_source import (
     GeneralPlaylist,
-    GeneralResolvable,
     GeneralSong,
+    GeneralSongOrPlaylist,
     registered_playlist,
     registered_song,
     resolve_from_link_params,
@@ -25,9 +29,33 @@ from ..data_source import (
 from .cache import get_cache
 
 ExpectedTypeType: TypeAlias = Union[
-    Type[GeneralResolvable],
-    Tuple[Type[GeneralResolvable], ...],
+    Type[GeneralSongOrPlaylist],
+    Tuple[Type[GeneralSongOrPlaylist], ...],
 ]
+
+resolved_cache: TTLCache[float, "ResolveCache"] = TTLCache(
+    config.ncm_resolve_cool_down_cache_size,
+    config.ncm_resolve_cool_down,
+)
+
+
+@dataclass(eq=True)
+class ResolveCache:
+    link_type: str
+    link_id: int
+
+
+@queued
+async def resolve_from_link_params_cool_down(link_type: str, link_id: int):
+    cache = ResolveCache(link_type=link_type, link_id=link_id)
+    for k in resolved_cache:
+        if resolved_cache[k] == cache:
+            resolved_cache[k] = cache  # flush ttl
+            return None
+
+    result = await resolve_from_link_params(link_type, link_id)
+    resolved_cache[time.time()] = cache
+    return result
 
 
 def check_is_expected_type(
@@ -48,7 +76,7 @@ def check_is_expected_type(
 async def resolve_short_url(
     suffix: str,
     expected_type: Optional[ExpectedTypeType] = None,
-) -> GeneralResolvable:
+) -> GeneralSongOrPlaylist:
     async with AsyncClient(base_url=SHORT_URL_BASE) as client:
         resp = await client.get(suffix, follow_redirects=False)
 
@@ -76,7 +104,7 @@ async def resolve_short_url(
 async def resolve_from_matched(
     matched: re.Match[str],
     expected_type: Optional[ExpectedTypeType] = None,
-) -> Optional[GeneralResolvable]:
+) -> Optional[GeneralSongOrPlaylist]:
     groups = matched.groupdict()
 
     if "suffix" in groups:
@@ -90,7 +118,7 @@ async def resolve_from_matched(
             return None
         link_id = groups["id"]
         with logged_suppress(f"Failed to resolve url {link_type}/{link_id}"):
-            return await resolve_from_link_params(link_type, int(link_id))
+            return await resolve_from_link_params_cool_down(link_type, int(link_id))
 
     else:
         raise ValueError("Unknown regex match result passed in")
@@ -101,7 +129,7 @@ async def resolve_from_matched(
 async def resolve_from_plaintext(
     text: str,
     expected_type: Optional[ExpectedTypeType] = None,
-) -> Optional[GeneralResolvable]:
+) -> Optional[GeneralSongOrPlaylist]:
     for regex in (SHORT_URL_REGEX, URL_REGEX):
         if m := re.search(regex, text, re.IGNORECASE):
             return await resolve_from_matched(m, expected_type)
@@ -112,7 +140,7 @@ async def resolve_from_card(
     card: Hyper,
     resolve_playable: bool = True,
     expected_type: Optional[ExpectedTypeType] = None,
-) -> Optional[GeneralResolvable]:
+) -> Optional[GeneralSongOrPlaylist]:
     if not (raw := card.raw):
         return None
 
@@ -127,7 +155,7 @@ async def resolve_from_msg(
     msg: UniMessage,
     resolve_playable_card: bool = False,
     expected_type: Optional[ExpectedTypeType] = None,
-) -> Optional[GeneralResolvable]:
+) -> Optional[GeneralSongOrPlaylist]:
     if (Hyper in msg) and (
         it := await resolve_from_card(
             msg[Hyper, 0],
@@ -144,7 +172,7 @@ async def resolve_from_ev_msg(
     state: T_State,
     matcher: Matcher,
     expected_type: Optional[ExpectedTypeType] = None,
-) -> GeneralResolvable:
+) -> GeneralSongOrPlaylist:
     regex_matched: Optional[re.Match[str]] = state.get(REGEX_MATCHED)
     if regex_matched:
         if it := await resolve_from_matched(regex_matched):
@@ -203,7 +231,7 @@ async def dependency_resolve_playlist_from_ev(
 
 
 ResolvedItem = Annotated[
-    GeneralResolvable,
+    GeneralSongOrPlaylist,
     Depends(dependency_resolve_from_ev, use_cache=False),
 ]
 ResolvedSong = Annotated[

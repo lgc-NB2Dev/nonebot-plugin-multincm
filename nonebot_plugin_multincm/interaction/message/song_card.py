@@ -107,7 +107,10 @@ async def sign_music_card(song: BaseSong) -> str:
         song.get_cover_url(),
     )
     content = "、".join(artists)
-    async with AsyncClient(follow_redirects=True) as cli:
+    async with AsyncClient(
+        follow_redirects=True,
+        timeout=config.ncm_card_sign_timeout,
+    ) as cli:
         return (
             (
                 await cli.post(
