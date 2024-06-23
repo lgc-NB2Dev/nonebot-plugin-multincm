@@ -1,12 +1,10 @@
 import asyncio
-from contextlib import suppress
 from typing import Any, Optional, Tuple, Type, cast
 
 from cookit.loguru.common import logged_suppress
 from cookit.nonebot.alconna import RecallContext
 from nonebot import logger, on_command, on_regex
 from nonebot.adapters import Message as BaseMessage
-from nonebot.exception import FinishedException
 from nonebot.matcher import Matcher, current_matcher
 from nonebot.params import ArgPlainText, CommandArg
 from nonebot.typing import T_State
