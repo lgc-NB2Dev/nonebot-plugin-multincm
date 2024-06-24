@@ -1,49 +1,41 @@
 import asyncio as aio
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union, cast
 from typing_extensions import TypeAlias, TypeGuard
 
 from httpx import AsyncClient
 from nonebot import logger
-from nonebot.adapters import Event as BaseEvent, Message as BaseMessage
-from nonebot.matcher import current_event
+from nonebot.adapters import Bot as BaseBot, Message as BaseMessage
+from nonebot.matcher import current_bot
 
 from ...config import config
 from ...data_source import BaseSong
 
 if TYPE_CHECKING:
-    from nonebot.adapters.kritor import (
-        Event as KritorEv,
-        Message as KritorMsg,
-    )
-    from nonebot.adapters.onebot.v11 import Event as OB11Ev, Message as OB11Msg
+    from nonebot.adapters.kritor import Bot as KritorBot, Message as KritorMsg
+    from nonebot.adapters.onebot.v11 import Bot as OB11Bot, Message as OB11Msg
 
-CardSendableEvent: TypeAlias = Union["OB11Ev", "KritorEv"]
-CardSendableEventType: TypeAlias = Literal["onebotv11", "kritor"]
+CardSendableBot: TypeAlias = Union["OB11Bot", "KritorBot"]
+CardSendableEventType: TypeAlias = Literal["OneBot V11", "Kritor"]
 
-
-def get_card_sendable_ev_type(ev: Optional[BaseEvent] = None) -> CardSendableEventType:
-    if ev is None:
-        ev = current_event.get()
-
-    with suppress(ImportError):
-        from nonebot.adapters.onebot.v11 import Event as OB11Ev
-
-        if isinstance(ev, OB11Ev):
-            return "onebotv11"
-
-    with suppress(ImportError):
-        from nonebot.adapters.kritor import Event as KritorEv
-
-        if isinstance(ev, KritorEv):
-            return "kritor"
-
-    raise TypeError("This event is not supported")
+CARD_SENDABLE_ADAPTERS = ["OneBot V11", "Kritor"]
 
 
-def is_card_sendable_ev(ev: Optional[BaseEvent] = None) -> TypeGuard[CardSendableEvent]:
+def get_card_sendable_adapter_type(
+    bot: Optional[BaseBot] = None,
+) -> CardSendableEventType:
+    if bot is None:
+        bot = current_bot.get()
+    if (n := bot.adapter.get_name()) in CARD_SENDABLE_ADAPTERS:
+        return cast(CardSendableEventType, n)
+    raise TypeError("This adapter is not supported")
+
+
+def is_card_sendable_adapter(
+    bot: Optional[BaseBot] = None,
+) -> TypeGuard[CardSendableBot]:
     with suppress(TypeError):
-        get_card_sendable_ev_type(ev)
+        get_card_sendable_adapter_type(bot)
         return True
     return False
 
@@ -135,7 +127,7 @@ async def get_song_card_msg(
     event_type: Optional[CardSendableEventType] = None,
 ) -> BaseMessage:
     if not event_type:
-        event_type = get_card_sendable_ev_type()
+        event_type = get_card_sendable_adapter_type()
 
     card_json = None
     if config.ncm_card_sign_url:
@@ -146,13 +138,13 @@ async def get_song_card_msg(
 
     if card_json:
         transformer = {
-            "onebotv11": json_to_ob_v11_msg,
-            "kritor": json_to_kritor_msg,
+            "OneBot V11": json_to_ob_v11_msg,
+            "Kritor": json_to_kritor_msg,
         }[event_type]
         return await transformer(card_json)
 
     transformer = {
-        "onebotv11": song_to_ob_v11_music_msg,
-        "kritor": song_to_kritor_music_msg,
+        "OneBot V11": song_to_ob_v11_music_msg,
+        "Kritor": song_to_kritor_music_msg,
     }[event_type]
     return await transformer(song)

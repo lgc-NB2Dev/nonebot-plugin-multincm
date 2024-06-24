@@ -24,5 +24,4 @@ async def _(matcher: Matcher, song: ResolvedSong):
     except Exception:
         logger.exception(f"Failed to render lyrics for {song}")
         await matcher.finish("渲染歌词失败，请检查后台输出")
-    await UniMessage.image(raw=img).send()
-    await matcher.finish()
+    await UniMessage.image(raw=img).finish()

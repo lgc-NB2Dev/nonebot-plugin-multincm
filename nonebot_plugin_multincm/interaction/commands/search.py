@@ -1,12 +1,12 @@
 import asyncio
 from typing import Optional, Tuple, Type, cast
 
-from cookit.loguru.common import logged_suppress
+from cookit.loguru import warning_suppress
 from cookit.nonebot.alconna import RecallContext
 from nonebot import logger, on_command
 from nonebot.adapters import Message as BaseMessage
 from nonebot.matcher import Matcher, current_matcher
-from nonebot.params import ArgPlainText, CommandArg
+from nonebot.params import ArgPlainText, CommandArg, EventMessage
 from nonebot.typing import T_State
 from nonebot_plugin_alconna.uniseg import UniMessage
 from nonebot_plugin_waiter import prompt
@@ -136,7 +136,7 @@ async def handle_song_or_list(
         return await handle(result)
 
     async def send_info(song_list: GeneralSongList):
-        with logged_suppress(f"Failed to send info for {song_list}"):
+        with warning_suppress(f"Failed to send info for {song_list}"):
             await recall.send(
                 await construct_info_msg(song_list, tip_command=False),
             )
@@ -164,9 +164,22 @@ async def handle_song_or_list(
 async def search_handler_0(matcher: Matcher, arg: BaseMessage = CommandArg()):
     if arg.extract_plain_text().strip():
         matcher.set_arg(KEY_KEYWORD, arg)
+    else:
+        await matcher.pause("请发送你要搜索的内容，或发送 0 退出搜索")
 
 
-async def search_handler_1(
+async def search_handler_1(matcher: Matcher, message: BaseMessage = EventMessage()):
+    if matcher.get_arg(KEY_KEYWORD):
+        return
+    arg_str = message.extract_plain_text().strip()
+    if arg_str in EXIT_COMMAND:
+        await matcher.finish("已退出搜索")
+    if not arg_str:
+        await matcher.finish("输入无效，退出搜索")
+    matcher.set_arg(KEY_KEYWORD, message)
+
+
+async def search_handler_2(
     matcher: Matcher,
     state: T_State,
     keyword: str = ArgPlainText(KEY_KEYWORD),
@@ -186,7 +199,8 @@ def __register_searcher_matchers():
             state={KEY_SEARCHER: searcher},
         )
         matcher.handle()(search_handler_0)
-        matcher.got(KEY_KEYWORD, "请发送你要搜索的内容")(search_handler_1)
+        matcher.handle()(search_handler_1)
+        matcher.handle()(search_handler_2)
 
     for k, v in registered_searcher.items():
         do_reg(k, v)

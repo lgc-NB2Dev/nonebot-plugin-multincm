@@ -13,6 +13,7 @@ from .base import (
     GeneralSongOrList as GeneralSongOrList,
     GeneralSongOrPlaylist as GeneralSongOrPlaylist,
     ResolvableFromID as ResolvableFromID,
+    SongInfo as SongInfo,
     SongListInnerResp as SongListInnerResp,
     SongListPage as SongListPage,
     registered_playlist as registered_playlist,

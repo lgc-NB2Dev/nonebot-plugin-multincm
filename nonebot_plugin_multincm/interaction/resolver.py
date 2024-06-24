@@ -6,7 +6,7 @@ from typing_extensions import Annotated, TypeAlias
 
 from cachetools import TTLCache
 from cookit import flatten, queued
-from cookit.loguru import logged_suppress
+from cookit.loguru import warning_suppress
 from httpx import AsyncClient
 from nonebot.adapters import Message as BaseMessage
 from nonebot.consts import REGEX_MATCHED
@@ -109,7 +109,7 @@ async def resolve_from_matched(
 
     if "suffix" in groups:
         suffix = groups["suffix"]
-        with logged_suppress(f"Failed to resolve short url {suffix}"):
+        with warning_suppress(f"Failed to resolve short url {suffix}"):
             return await resolve_short_url(suffix, expected_type)
 
     elif "type" in groups and "id" in groups:
@@ -117,7 +117,7 @@ async def resolve_from_matched(
         if not check_is_expected_type(link_type, expected_type):
             return None
         link_id = groups["id"]
-        with logged_suppress(f"Failed to resolve url {link_type}/{link_id}"):
+        with warning_suppress(f"Failed to resolve url {link_type}/{link_id}"):
             return await resolve_from_link_params_cool_down(link_type, int(link_id))
 
     else:

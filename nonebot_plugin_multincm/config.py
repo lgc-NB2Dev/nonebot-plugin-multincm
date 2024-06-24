@@ -27,9 +27,11 @@ class ConfigModel(BaseModel):
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_msg: bool = True
     ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
-    ncm_use_card: bool = True
+    ncm_send_as_card: bool = True
+    ncm_send_as_file: bool = False
     ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
     ncm_card_sign_timeout: int = 5
+    ncm_ob_v11_local_mode: bool = False
 
     @property
     def ncm_list_font_url(self) -> Optional[str]:

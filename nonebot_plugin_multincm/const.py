@@ -1,8 +1,9 @@
 from pathlib import Path
 
 DATA_DIR = Path.cwd() / "data" / "multincm"
-if not DATA_DIR.exists():
-    DATA_DIR.mkdir(parents=True)
+SONG_CACHE_DIR = DATA_DIR / "song_cache"
+for _p in (DATA_DIR, SONG_CACHE_DIR):
+    _p.mkdir(parents=True, exist_ok=True)
 
 DEBUG_ROOT_DIR = Path.cwd() / "debug"
 DEBUG_DIR = DEBUG_ROOT_DIR / "multincm"

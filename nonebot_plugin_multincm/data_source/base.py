@@ -95,11 +95,16 @@ async def resolve_from_link_params(
 
 @dataclass
 class SongInfo:
+    father: "BaseSong"
     name: str
     alias: Optional[List[str]]
     artists: List[str]
     cover_url: str
     playable_url: str
+
+    @property
+    def id(self) -> int:
+        return self.father.id
 
     @property
     def display_artists(self) -> str:
@@ -108,6 +113,22 @@ class SongInfo:
     @property
     def display_name(self) -> str:
         return format_alias(self.name, self.alias)
+
+    @property
+    def file_suffix(self) -> Optional[str]:
+        with suppress(Exception):
+            return self.playable_url.rsplit("/", 1)[-1].rsplit(".", 1)[-1]
+        return None
+
+    @property
+    def display_filename(self) -> str:
+        return (
+            f"{self.display_name} - {self.display_artists}.{self.file_suffix or 'mp3'}"
+        )
+
+    @property
+    def download_filename(self) -> str:
+        return f"{type(self.father).__name__}_{self.id}.{self.file_suffix or 'mp3'}"
 
 
 class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
@@ -156,6 +177,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
             self.get_playable_url(),
         )
         return SongInfo(
+            father=self,
             name=name,
             alias=alias,
             artists=artists,
