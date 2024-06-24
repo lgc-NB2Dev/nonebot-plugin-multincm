@@ -249,7 +249,21 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 - UI 大改
 - 新增一些支持的搜索与解析项
 - 自动解析对同一歌曲有冷却了，防多 Bot 刷屏
-- 配置项变动，懒得写，详见文档
+- 配置项变动
+  <details>
+    <summary>查看配置项详细变动</summary>
+
+  - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`
+    - 现使用 `playwright` 进行图片渲染
+  - 增加配置项 `NCM_RESOLVE_COOL_DOWN`
+    - 按需更改，默认为 `30`，可防止恶意刷屏
+  - 增加配置项 `NCM_SEND_AS_CARD`、`NCM_SEND_AS_FILE`
+    - 如 `NCM_SEND_AS_CARD` 为 `True`，将先尝试在受支持的平台发送 Card 消息，发送失败则依据 `NCM_SEND_AS_FILE` 的值尝试发送音乐文件，最后尝试发送图文消息
+  - 增加配置项 `NCM_RESOLVE_COOL_DOWN_CACHE_SIZE`
+  - 增加配置项 `NCM_CARD_SIGN_URL`、`NCM_CARD_SIGN_TIMEOUT`
+    - 可自行寻找 Card 签名服务填写于此
+  - 修改配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
+  </details>
 
 其他的变动懒得写了
 
