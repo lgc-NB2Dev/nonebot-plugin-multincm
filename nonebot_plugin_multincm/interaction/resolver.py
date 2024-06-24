@@ -178,7 +178,7 @@ async def resolve_from_ev_msg(
         if Hyper in msg:
             if it := await resolve_from_card(
                 msg[Hyper, 0],
-                resolve_playable=False,
+                resolve_playable=config.ncm_resolve_playable_card,
                 expected_type=expected_type,
             ):
                 return it
