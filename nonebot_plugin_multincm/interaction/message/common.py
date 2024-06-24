@@ -22,7 +22,7 @@ async def send_song(song: BaseSong):
         with warning_suppress(f"Send {song} file failed"):
             receipt = await send_song_media(song)
         await (await construct_info_msg(song, tip_command=(receipt is ...))).send(
-            reply_to=receipt.get_reply() if receipt else None,
+            reply_to=receipt.get_reply() if receipt and (receipt is not ...) else None,
         )
 
     await send()

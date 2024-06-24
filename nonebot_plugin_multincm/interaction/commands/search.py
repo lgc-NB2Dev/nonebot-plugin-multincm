@@ -8,7 +8,7 @@ from nonebot.adapters import Message as BaseMessage
 from nonebot.matcher import Matcher, current_matcher
 from nonebot.params import ArgPlainText, CommandArg, EventMessage
 from nonebot.typing import T_State
-from nonebot_plugin_alconna.uniseg import UniMessage
+from nonebot_plugin_alconna.uniseg import Reply, UniMessage, UniMsg
 from nonebot_plugin_waiter import prompt
 
 from ...config import config
@@ -161,8 +161,21 @@ async def handle_song_or_list(
             asyncio.create_task(recall.recall())
 
 
-async def search_handler_0(matcher: Matcher, arg: BaseMessage = CommandArg()):
-    if arg.extract_plain_text().strip():
+async def search_handler_0(
+    matcher: Matcher,
+    uni_msg: UniMsg,
+    arg: BaseMessage = CommandArg(),
+):
+    arg_ok = arg.extract_plain_text().strip()
+    if (
+        (not arg_ok)
+        and (Reply in uni_msg)
+        and isinstance((r_raw := uni_msg[Reply, 0].msg), BaseMessage)
+        and (r_raw.extract_plain_text().strip())
+    ):
+        arg = r_raw
+        arg_ok = True
+    if arg_ok:
         matcher.set_arg(KEY_KEYWORD, arg)
     else:
         await matcher.pause("请发送你要搜索的内容，或发送 0 退出搜索")

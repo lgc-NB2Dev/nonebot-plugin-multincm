@@ -53,7 +53,7 @@ class Voice(BaseSong[md.VoiceBaseInfo]):
 @searcher
 class VoiceSearcher(BaseSearcher[md.VoiceSearchResult, md.VoiceResource, Voice]):
     child_calling = "声音"
-    commands = ("网易电台", "wydt", "wydj")
+    commands = ("网易声音", "wysy", "wyvo")
 
     @staticmethod
     @override
