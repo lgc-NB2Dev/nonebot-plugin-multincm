@@ -1,8 +1,9 @@
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import Annotated, Optional, Tuple
+from urllib.parse import quote
 
-from cookit.pyd import field_validator
 from nonebot import get_plugin_config
-from pydantic import BaseModel
+from pydantic import AnyHttpUrl, BaseModel
 
 
 class ConfigModel(BaseModel):
@@ -14,29 +15,31 @@ class ConfigModel(BaseModel):
 
     ncm_list_limit: int = 20
     ncm_list_font: Optional[str] = None
-    ncm_max_name_len: int = 600
-    ncm_max_artist_len: int = 400
-    ncm_use_playwright: bool = False
-    ncm_lrc_empty_line: Optional[str] = "--------"
+    ncm_lrc_empty_line: Optional[str] = "-"
 
+    ncm_msg_cache_size: int = 1024
     ncm_msg_cache_time: int = 43200
+    ncm_resolve_cool_down: int = 30
+    ncm_resolve_cool_down_cache_size: int = 1024
     ncm_auto_resolve: bool = False
     ncm_resolve_playable_card: bool = False
     ncm_illegal_cmd_finish: bool = False
     ncm_illegal_cmd_limit: int = 3
-    ncm_delete_list_msg: bool = True
-    ncm_delete_list_msg_delay: Tuple[float, float] = (0.5, 2.0)
-    ncm_upload_folder_name: str = "MultiNCM"
-    ncm_enable_record: bool = False
-    ncm_download_locally: bool = False
-    ncm_use_json_segment: bool = False
+    ncm_delete_msg: bool = True
+    ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
+    ncm_send_as_card: bool = True
+    ncm_send_as_file: bool = False
+    ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
+    ncm_card_sign_timeout: int = 5
+    ncm_ob_v11_local_mode: bool = False
 
-    @field_validator("ncm_upload_folder_name")
-    def validate_upload_folder_name(cls, v: str) -> str:  # noqa: N805
-        v = v.strip("/")
-        if "/" in v:
-            raise ValueError("Upload folder name cannot contain `/`")
-        return v
+    @property
+    def ncm_list_font_url(self) -> Optional[str]:
+        return (
+            quote(p.as_uri())
+            if self.ncm_list_font and (p := Path(self.ncm_list_font)).exists()
+            else self.ncm_list_font
+        )
 
 
 config = get_plugin_config(ConfigModel)

@@ -1,14 +1,13 @@
 from pathlib import Path
 
-MUSIC_LINK_TEMPLATE = "https://music.163.com/{type}?id={id}"  # noqa: RUF027
-
-
-DATA_PATH = Path().cwd() / "data" / "multincm"
-for _p in (DATA_PATH,):
+DATA_DIR = Path.cwd() / "data" / "multincm"
+SONG_CACHE_DIR = DATA_DIR / "song_cache"
+for _p in (DATA_DIR, SONG_CACHE_DIR):
     _p.mkdir(parents=True, exist_ok=True)
 
-TEMP_PATH = DATA_PATH / "temp" / "multincm"
-for _p in (TEMP_PATH,):
-    _p.mkdir(parents=True, exist_ok=True)
+DEBUG_ROOT_DIR = Path.cwd() / "debug"
+DEBUG_DIR = DEBUG_ROOT_DIR / "multincm"
 
-RES_DIR = Path(__file__).parent / "res"
+URL_REGEX = r"music\.163\.com/(.*?)(?P<type>[a-zA-Z]+)(/?\?id=|/)(?P<id>[0-9]+)&?"
+SHORT_URL_BASE = "https://163cn.tv"
+SHORT_URL_REGEX = r"163cn\.tv/(?P<suffix>[a-zA-Z0-9]+)"

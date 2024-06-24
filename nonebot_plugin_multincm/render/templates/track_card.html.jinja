@@ -1,0 +1,13 @@
+<div class="card song">
+  <div class="index">
+    <span>{{ index }}</span>
+  </div>
+  <div class="inner">
+    <img class="cover" src="{{ cover }}" />
+    <div class="desc">
+      <div class="title">{{ title }}{% if alias %}<span>（{{ alias }}）</span>{% endif %}</div>
+      {% for x in extras %}<div>{{ x }}</div>{% endfor %}
+      {% for x in small_extras %}<div class="small">{{ x }}</div>{% endfor %}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --c-bg-0: #24273a;
+      --c-bg-1: #1e2030;
+      --c-fg-pri: #a5adcb;
+      --c-fg-sec: #8087a2;
+      --c-index-bg: #8aadf460;
+      --c-shadow: #939ab740;
+
+      --shadow-card: 2px 2px 8px var(--c-shadow);
+      --shadow-cover: 1px 1px 4px var(--c-shadow);
+
+      --font-family: sans-serif;
+    }
+
+    body {
+      background-color: var(--c-bg-0);
+      color: var(--c-fg-pri);
+      font-family: var(--font-family);
+    }
+
+    main {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    main>.title {
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    main>.footer {
+      text-align: center;
+      font-size: 14px;
+      color: var(--c-fg-sec);
+    }
+
+    main>.card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .line-height-1 {
+      line-height: 1;
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <main>{% block main %}{% endblock %}</main>
+</body>
+{% if config.font_family -%}
+<script>
+  const fontFamily = '{{ config.font_family | escape_single_quotes }}';
+  const css = fontFamily.includes('://')
+    ? `@font-face { font-family: 'Custom'; src: url('${fontFamily}'); }\n` +
+    `:root { --font-family: 'Custom'; }`
+    : `:root { --font-family: '${fontFamily}'; }`;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+</script>
+{%- endif %}
+
+{% block addition %}{% endblock %}
+
+</html>

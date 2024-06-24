@@ -1,6 +1,11 @@
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional, cast
+
+from ..config import config
+
+if TYPE_CHECKING:
+    from ..data_source import md
 
 
 @dataclass
@@ -16,7 +21,7 @@ LRC_TIME_REGEX = r"(?P<min>\d+):(?P<sec>\d+)([\.:](?P<mili>\d+))?(-(?P<meta>\d))
 LRC_LINE_REGEX = re.compile(rf"^((\[{LRC_TIME_REGEX}\])+)(?P<lrc>.*)$", re.MULTILINE)
 
 
-def parse(
+def parse_lrc(
     lrc: str,
     ignore_empty: bool = False,
     merge_empty: bool = True,
@@ -66,10 +71,10 @@ def strip_lrc_lines(lines: List[LrcLine]) -> List[LrcLine]:
     return lines
 
 
-def merge(
+def merge_lrc(
     *lyrics: List[LrcLine],
     threshold: int = 20,
-    replace_empty_line: Optional[str] = "--------",
+    replace_empty_line: Optional[str] = None,
 ) -> List[List[LrcLine]]:
     lyrics = tuple(x.copy() for x in lyrics)
 
@@ -107,3 +112,39 @@ def merge(
         merged[-1].extend(sub_lrc)
 
     return merged
+
+
+def normalize_lrc(lrc: "md.LyricData") -> Optional[List[List[str]]]:
+    def fmt_usr(usr: "md.User") -> str:
+        return f"{usr.nickname} [{usr.user_id}]"
+
+    raw = lrc.lrc
+    if (not raw) or (not (raw_lrc := raw.lyric)):
+        return None
+
+    lyrics = [
+        parse_lrc(x.lyric)
+        for x in cast(List[Optional["md.Lyric"]], [raw, lrc.roma_lrc, lrc.trans_lrc])
+        if x
+    ]
+    lyrics = [x for x in lyrics if x]
+    empty_line = config.ncm_lrc_empty_line
+
+    if not lyrics:
+        lines = [[x or empty_line or ""] for x in raw_lrc.split("\n")]
+
+    else:
+        if lyrics[0][-1].time >= 5940000:
+            return None  # 纯音乐
+        lines = [
+            [y.lrc for y in x]
+            for x in merge_lrc(*lyrics, replace_empty_line=empty_line)
+        ]
+
+    if lrc.lyric_user or lrc.trans_user:
+        if usr := lrc.lyric_user:
+            lines.append(["", f"歌词贡献者：{fmt_usr(usr)}"])
+        if usr := lrc.trans_user:
+            lines.append(["", f"翻译贡献者：{fmt_usr(usr)}"])
+
+    return lines

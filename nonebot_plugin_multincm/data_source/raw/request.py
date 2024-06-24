@@ -1,3 +1,4 @@
+import json
 from functools import partial
 from typing import (
     Any,
@@ -13,30 +14,16 @@ from typing import (
     overload,
 )
 
-import anyio
-from nonebot import get_available_plugin_names, logger, require
 from nonebot.utils import run_sync
 from pydantic import BaseModel
-from pyncm import (
-    DumpSessionAsString,
-    GetCurrentSession,
-    LoadSessionFromString,
-    SetCurrentSession,
-)
 from pyncm.apis import WeapiCryptoRequest, cloudsearch as search
 from pyncm.apis.cloudsearch import GetSearchResult
-from pyncm.apis.login import (
-    GetCurrentLoginStatus,
-    LoginViaAnonymousAccount,
-    LoginViaCellphone,
-    LoginViaEmail,
-)
 from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
-from .config import config
-from .const import DATA_PATH
-from .types import (
+from ...config import config
+from ...utils import calc_min_index, is_debug_mode, write_debug_file
+from .models import (
     LyricData,
     Playlist,
     PlaylistSearchResult,
@@ -50,18 +37,13 @@ from .types import (
 
 TModel = TypeVar("TModel", bound=BaseModel)
 
-SESSION_FILE = DATA_PATH / "session.cache"
-
-
-def get_offset_by_page_num(page: int, limit: int = config.ncm_list_limit) -> int:
-    return limit * (page - 1)
-
 
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
+    if is_debug_mode():
+        write_debug_file(f"{api.__name__}_{{time}}.json", json.dumps(ret))
     if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
-    # logger.debug(f"{api.__name__} - {ret}")
     return ret
 
 
@@ -92,7 +74,7 @@ async def get_search_result(
     search_type: int = search.SONG,
     **kwargs,
 ) -> Union[Dict[str, Any], TModel]:
-    offset = get_offset_by_page_num(page)
+    offset = calc_min_index(page)
     res = await ncm_request(
         GetSearchResult,
         keyword=keyword,
@@ -132,7 +114,7 @@ async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
             },
         )
 
-    offset = get_offset_by_page_num(page)
+    offset = calc_min_index(page)
     res = await ncm_request(SearchVoice)
     return VoiceSearchResult(**res["data"])
 
@@ -179,77 +161,3 @@ async def get_voice_info(program_id: int) -> VoiceBaseInfo:
 async def get_playlist_info(playlist_id: int) -> Any:
     res = await ncm_request(GetPlaylistInfo, playlist_id)
     return Playlist(**res["playlist"])
-
-
-async def login(retry: bool = True):
-    if SESSION_FILE.exists():
-        logger.info(f"使用缓存登录态 ({SESSION_FILE})")
-        SetCurrentSession(
-            LoadSessionFromString(
-                (await anyio.Path(SESSION_FILE).read_text(encoding="u8")),
-            ),
-        )
-
-    elif (config.ncm_phone or config.ncm_email) and (
-        config.ncm_password or config.ncm_password_hash
-    ):
-        retry = False
-
-        if config.ncm_phone:
-            logger.info("使用手机号登录")
-            await run_sync(LoginViaCellphone)(
-                ctcode=config.ncm_ctcode,
-                phone=config.ncm_phone,
-                password=config.ncm_password or "",
-                passwordHash=config.ncm_password_hash or "",
-            )
-
-        else:
-            logger.info("使用邮箱登录")
-            await run_sync(LoginViaEmail)(
-                email=config.ncm_email or "",
-                password=config.ncm_password or "",
-                passwordHash=config.ncm_password_hash or "",
-            )
-
-        await anyio.Path(SESSION_FILE).write_text(
-            DumpSessionAsString(GetCurrentSession()),
-            encoding="u8",
-        )
-
-    else:
-        retry = False
-        logger.warning("账号或密码未填写，使用游客账号登录")
-        await run_sync(LoginViaAnonymousAccount)()
-
-    try:
-        ret = cast(dict, await run_sync(GetCurrentLoginStatus)())
-        assert ret["code"] == 200
-        assert ret["account"]
-    except Exception as e:
-        if await (pth := anyio.Path(SESSION_FILE)).exists():
-            await pth.unlink()
-
-        if retry:
-            logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
-            await login(retry=False)
-            return
-
-        raise RuntimeError("登录态异常，请重新登录") from e
-
-    session = GetCurrentSession()
-    logger.info(f"登录成功，欢迎您，{session.nickname} [{session.uid}]")
-
-
-if "nonebot-plugin-ncm" in get_available_plugin_names():
-    logger.info("nonebot-plugin-ncm 已安装，本插件将依赖其全局 Session")
-    require("nonebot-plugin-ncm")
-
-else:
-    from nonebot import get_driver
-
-    driver = get_driver()
-
-    @driver.on_startup
-    async def _():
-        await login()
