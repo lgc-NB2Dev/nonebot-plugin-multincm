@@ -50,21 +50,14 @@ _✨ 网易云多选点歌 ✨_
 <details>
 <summary>歌曲列表效果图（点击展开）</summary>
 
-![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230515025601.jpg)
-
-</details>
-
-<details>
-<summary>电台列表效果图（点击展开）</summary>
-
-![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230519034438.jpg)
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/song.jpg)
 
 </details>
 
 <details>
 <summary>歌词效果图（点击展开）</summary>
 
-![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/QQ图片20230519034757.png)
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/lyrics.png)
 
 </details>
 

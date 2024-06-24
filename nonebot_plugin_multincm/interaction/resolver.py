@@ -153,7 +153,7 @@ async def resolve_from_card(
 
 async def resolve_from_msg(
     msg: UniMessage,
-    resolve_playable_card: bool = False,
+    resolve_playable_card: bool = True,
     expected_type: Optional[ExpectedTypeType] = None,
 ) -> Optional[GeneralSongOrPlaylist]:
     if (Hyper in msg) and (
@@ -174,7 +174,15 @@ async def resolve_from_ev_msg(
     expected_type: Optional[ExpectedTypeType] = None,
 ) -> GeneralSongOrPlaylist:
     regex_matched: Optional[re.Match[str]] = state.get(REGEX_MATCHED)
-    if regex_matched:
+    if regex_matched:  # auto resolve
+        if Hyper in msg:
+            if it := await resolve_from_card(
+                msg[Hyper, 0],
+                resolve_playable=False,
+                expected_type=expected_type,
+            ):
+                return it
+            await matcher.finish()
         if it := await resolve_from_matched(regex_matched):
             return it
         await matcher.finish()
@@ -183,11 +191,11 @@ async def resolve_from_ev_msg(
         Reply in msg
         and isinstance((reply_raw := msg[Reply, 0].msg), BaseMessage)
         and (reply_msg := await UniMessage.generate(message=reply_raw))
-        and (it := await resolve_from_msg(reply_msg))
+        and (it := await resolve_from_msg(reply_msg, expected_type=expected_type))
     ):
         return it
 
-    if it := await resolve_from_msg(msg):
+    if it := await resolve_from_msg(msg, expected_type=expected_type):
         return it
 
     if it := await get_cache(expected_type=expected_type):
