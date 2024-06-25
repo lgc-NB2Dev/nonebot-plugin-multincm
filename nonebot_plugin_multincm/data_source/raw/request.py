@@ -1,4 +1,3 @@
-import json
 from functools import partial
 from typing import (
     Any,
@@ -28,11 +27,14 @@ from .models import (
     Playlist,
     PlaylistSearchResult,
     Privilege,
+    ProgramBaseInfo,
+    ProgramSearchResult,
+    Radio,
+    RadioProgramList,
+    RadioSearchResult,
     Song,
     SongSearchResult,
     TrackAudio,
-    VoiceBaseInfo,
-    VoiceSearchResult,
 )
 
 TModel = TypeVar("TModel", bound=BaseModel)
@@ -41,7 +43,7 @@ TModel = TypeVar("TModel", bound=BaseModel)
 async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
     if is_debug_mode():
-        write_debug_file(f"{api.__name__}_{{time}}.json", json.dumps(ret))
+        write_debug_file(f"{api.__name__}_{{time}}.json", ret)
     if ret.get("code", 200) != 200:
         raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
     return ret
@@ -99,9 +101,14 @@ search_playlist = partial(
     search_type=search.PLAYLIST,
     return_model=PlaylistSearchResult,
 )
+search_radio = partial(
+    get_search_result,
+    search_type=search.DJ,
+    return_model=RadioSearchResult,
+)
 
 
-async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
+async def search_program(keyword: str, page: int = 1) -> ProgramSearchResult:
     @WeapiCryptoRequest  # type: ignore
     def SearchVoice():  # noqa: N802
         return (
@@ -116,7 +123,7 @@ async def search_voice(keyword: str, page: int = 1) -> VoiceSearchResult:
 
     offset = calc_min_index(page)
     res = await ncm_request(SearchVoice)
-    return VoiceSearchResult(**res["data"])
+    return ProgramSearchResult(**res["data"])
 
 
 async def get_track_audio(
@@ -149,15 +156,49 @@ async def get_track_lrc(song_id: int) -> LyricData:
     return LyricData(**res)
 
 
-async def get_voice_info(program_id: int) -> VoiceBaseInfo:
+async def get_radio_info(radio_id: int):
+    @WeapiCryptoRequest  # type: ignore
+    def GetRadioInfo():  # noqa: N802
+        return ("/api/djradio/v2/get", {"id": radio_id})
+
+    res = await ncm_request(GetRadioInfo)
+    return Radio(**res["data"])
+
+
+async def get_radio_programs(radio_id: int, page: int = 1):
+    @WeapiCryptoRequest  # type: ignore
+    def GetRadioPrograms():  # noqa: N802
+        offset = calc_min_index(page)
+        return (
+            "/weapi/dj/program/byradio",
+            {"radioId": radio_id, "limit": config.ncm_list_limit, "offset": offset},
+        )
+
+    res = await ncm_request(GetRadioPrograms)
+    return RadioProgramList(**res)
+
+
+async def get_program_info(program_id: int) -> ProgramBaseInfo:
     @WeapiCryptoRequest  # type: ignore
     def GetProgramDetail():  # noqa: N802
         return ("/api/dj/program/detail", {"id": program_id})
 
     res = await ncm_request(GetProgramDetail)
-    return VoiceBaseInfo(**res["program"])
+    return ProgramBaseInfo(**res["program"])
 
 
 async def get_playlist_info(playlist_id: int) -> Any:
     res = await ncm_request(GetPlaylistInfo, playlist_id)
     return Playlist(**res["playlist"])
+
+
+# from nonebot import get_driver
+
+# driver = get_driver()
+
+
+# @driver.on_startup
+# async def _():
+#     # await search_dj("节奏医生")
+#     # await get_radio_programs(960201591)
+#     await get_radio_info(960201591)

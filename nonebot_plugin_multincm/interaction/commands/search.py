@@ -13,14 +13,15 @@ from nonebot_plugin_waiter import prompt
 
 from ...config import config
 from ...data_source import (
+    BasePlaylist,
     BaseSearcher,
     BaseSong,
+    BaseSongListPage,
     GeneralGetPageReturn,
     GeneralSearcher,
     GeneralSongList,
     GeneralSongListPage,
     GeneralSongOrList,
-    SongListPage,
     registered_searcher,
 )
 from ...render import render_list_resp
@@ -130,29 +131,37 @@ async def handle_song_or_list(
     ) -> GeneralSongList:
         if result is None:
             await matcher.finish("没有搜索到任何内容")
-        if isinstance(result, SongListPage):
+
+        if isinstance(result, BaseSongListPage):
             assert song_list
             return await select(song_list, result)
+
         return await handle(result)
 
     async def send_info(song_list: GeneralSongList):
-        with warning_suppress(f"Failed to send info for {song_list}"):
-            await recall.send(
-                await construct_info_msg(song_list, tip_command=False),
-            )
+        if not isinstance(song_list, BasePlaylist):
+            return
+        with warning_suppress(f"Failed to construct info for {song_list}"):
+            msg = await construct_info_msg(song_list, tip_command=False)
+            with warning_suppress(f"Failed to send info for {song_list}"):
+                await recall.send(msg)
 
     async def main():
         song_list = await handle_page(None, result)
         if send_init_info:
             await send_info(song_list)
+
         while True:
             try:
                 get_page_result = await song_list.get_page()
             except Exception:
                 logger.exception(f"Error when using {song_list} to search")
                 await matcher.finish("搜索出错，请检查后台输出")
-            song_list = await handle_page(song_list, get_page_result)
-            await send_info(song_list)
+
+            new_list = await handle_page(song_list, get_page_result)
+            if new_list != song_list:
+                song_list = new_list
+                await send_info(song_list)
 
     try:
         await main()

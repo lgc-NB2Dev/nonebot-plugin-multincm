@@ -1,4 +1,3 @@
-import asyncio as aio
 from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, Optional, Union, cast
 from typing_extensions import TypeAlias, TypeGuard
@@ -46,19 +45,19 @@ async def song_to_ob_v11_music_msg(song: BaseSong) -> "OB11Msg":
         MessageSegment as OB11MsgSeg,
     )
 
-    info, url = await aio.gather(song.get_info(), song.get_url())
+    info = await song.get_info()
     seg = OB11MsgSeg(
         "music",
         {
             "type": "custom",
-            "url": url,
+            "url": info.url,
             "audio": info.playable_url,
             "title": info.display_name,
             "content": info.display_artists,
             "image": info.cover_url,
             "subtype": "163",  # gocq
             "voice": info.playable_url,  # gocq
-            "jumpUrl": url,  # icqq
+            "jumpUrl": info.url,  # icqq
         },
     )
     return OB11Msg(seg)
@@ -70,10 +69,10 @@ async def song_to_kritor_music_msg(song: BaseSong) -> "KritorMsg":
         MessageSegment as KritorMsgSeg,
     )
 
-    info, url = await aio.gather(song.get_info(), song.get_url())
+    info = await song.get_info()
     seg = KritorMsgSeg.music(
         "custom",
-        url,
+        info.url,
         info.playable_url,
         info.display_name,
         info.display_artists,
@@ -84,14 +83,14 @@ async def song_to_kritor_music_msg(song: BaseSong) -> "KritorMsg":
 
 async def sign_music_card(song: BaseSong) -> str:
     assert config.ncm_card_sign_url
-    info, url = await aio.gather(song.get_info(), song.get_url())
+    info = await song.get_info()
     async with AsyncClient(
         follow_redirects=True,
         timeout=config.ncm_card_sign_timeout,
     ) as cli:
         body = {
             "type": "custom",
-            "url": url,
+            "url": info.url,
             "audio": info.playable_url,
             "title": info.display_name,
             "image": info.cover_url,

@@ -1,9 +1,32 @@
-from typing import List
+from typing import Generic, Iterable, List, TypeVar
 from typing_extensions import Optional, Self, override
 
-from ..utils import normalize_lrc
-from .base import BaseSearcher, BaseSong, searcher, song
+from ..utils import format_artists, format_time, get_thumb_url, normalize_lrc
+from .base import (
+    BaseSearcher,
+    BaseSong,
+    BaseSongList,
+    BaseSongListPage,
+    ListPageCard,
+    searcher,
+    song,
+)
 from .raw import get_track_audio, get_track_info, get_track_lrc, md, search_song
+
+_TSongList = TypeVar("_TSongList", bound=BaseSongList)
+
+
+class SongListPage(BaseSongListPage[md.Song, _TSongList], Generic[_TSongList]):
+    @override
+    @classmethod
+    async def transform_resp_to_list_card(cls, resp: md.Song) -> ListPageCard:
+        return ListPageCard(
+            cover=get_thumb_url(resp.al.pic_url),
+            title=resp.name,
+            alias="；".join(resp.alias),
+            extras=[format_artists(resp.ar)],
+            small_extras=[f"{format_time(resp.dt)} | 热度 {resp.pop}"],
+        )
 
 
 @song
@@ -30,11 +53,15 @@ class Song(BaseSong[md.Song]):
 
     @override
     async def get_alias(self) -> List[str]:
-        return self.info.alias
+        return self.info.alias + (self.info.tns or [])
 
     @override
     async def get_artists(self) -> List[str]:
         return [x.name for x in self.info.ar]
+
+    @override
+    async def get_duration(self) -> int:
+        return self.info.dt
 
     @override
     async def get_cover_url(self) -> str:
@@ -52,7 +79,7 @@ class Song(BaseSong[md.Song]):
 
 @searcher
 class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
-    child_calling = "歌曲"
+    child_calling = Song.calling
     commands = ("点歌", "网易云", "wyy", "网易点歌", "wydg", "wysong")
 
     @staticmethod
@@ -81,3 +108,10 @@ class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
     @override
     async def _build_selection(self, resp: md.Song) -> Song:
         return Song(info=resp)
+
+    @override
+    async def _build_list_page(
+        self,
+        resp: Iterable[md.Song],
+    ) -> SongListPage[Self]:
+        return SongListPage(resp, self)

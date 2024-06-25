@@ -25,15 +25,6 @@ search_commands_help = "\n".join(
         for s, cmds in registered_searcher.items()
     ],
 )
-upload_help = (
-    (
-        "▶ 上传 [回复 音乐卡片 / 链接]\n"
-        "    ▷ 介绍：下载该音乐并上传到群文件\n"
-        "    ▷ 别名：`upload`\n"
-    )
-    if not config.ncm_send_as_file
-    else ""
-)
 auto_resolve_tip = (
     "▶ Bot 会自动解析你发送的网易云链接\n" if config.ncm_auto_resolve else ""
 )
@@ -53,7 +44,9 @@ __plugin_meta__ = PluginMetadata(
         "▶ 直链 [回复 音乐卡片 / 链接]\n"
         "    ▷ 介绍：获取该音乐的下载链接\n"
         "    ▷ 别名：`direct`\n"
-        f"{upload_help}"
+        "▶ 上传 [回复 音乐卡片 / 链接]\n"
+        "    ▷ 介绍：下载该音乐并上传到群文件\n"
+        "    ▷ 别名：`upload`\n"
         "▶ 歌词 [回复 音乐卡片 / 链接]\n"
         "    ▷ 介绍：获取该音乐的歌词，以图片形式发送\n"
         "    ▷ 别名：`lrc`、`lyric`、`lyrics`\n"

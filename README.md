@@ -132,35 +132,35 @@ plugins = [
 
 在 nonebot2 项目的 `.env` 文件中添加下表中的必填配置
 
-|               配置项               | 必填 |    默认值    |                                                          说明                                                          |
-| :--------------------------------: | :--: | :----------: | :--------------------------------------------------------------------------------------------------------------------: |
-|            **登录相关**            |      |              |                                                                                                                        |
-|            `NCM_CTCODE`            |  否  |     `86`     |                                               手机号登录用，登录手机区号                                               |
-|            `NCM_PHONE`             |  否  |      无      |                                                手机号登录用，登录手机号                                                |
-|            `NCM_EMAIL`             |  否  |      无      |                                                  邮箱登录用，登录邮箱                                                  |
-|           `NCM_PASSWORD`           |  否  |      无      |                                           帐号明文密码，邮箱登录时为邮箱密码                                           |
-|        `NCM_PASSWORD_HASH`         |  否  |      无      |                                        帐号密码 MD5 哈希，邮箱登录时为邮箱密码                                         |
-|            **UI 相关**             |      |              |                                                                                                                        |
-|          `NCM_LIST_LIMIT`          |  否  |     `20`     |                                                 歌曲列表每页的最大数量                                                 |
-|          `NCM_LIST_FONT`           |  否  |      无      |                                                 渲染歌曲列表使用的字体                                                 |
-|        `NCM_LRC_EMPTY_LINE`        |  否  |     `-`      |                                                   填充歌词空行的字符                                                   |
-|            **行为相关**            |      |              |                                                                                                                        |
-|         `NCM_AUTO_RESOLVE`         |  否  |   `False`    |                                    当用户发送音乐链接时，是否自动解析并发送音乐卡片                                    |
-|      `NCM_RESOLVE_COOL_DOWN`       |  否  |     `30`     |                                          自动解析同一链接的冷却时间（单位秒）                                          |
-|    `NCM_RESOLVE_PLAYABLE_CARD`     |  否  |   `False`    |                                          开启自动解析时，是否解析可播放的卡片                                          |
-|      `NCM_ILLEGAL_CMD_FINISH`      |  否  |   `False`    |                                     当用户在点歌时输入了非法指令，是否直接退出点歌                                     |
-|      `NCM_ILLEGAL_CMD_LIMIT`       |  否  |     `3`      |       当未启用 `NCM_ILLEGAL_CMD_FINISH` 时，用户在点歌时输入了多少次非法指令后直接退出点歌，填 `0` 以禁用此功能        |
-|          `NCM_DELETE_MSG`          |  否  |    `True`    |                                   是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                                   |
-|       `NCM_DELETE_MSG_DELAY`       |  否  | `[0.5, 2.0]` |                                             自动撤回消息间隔时间（单位秒）                                             |
-|         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                           在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11` 与 `Kritor`）                            |
-|         `NCM_SEND_AS_FILE`         |  否  |   `False`    | 当无法发送卡片或卡片发送失败时，会回退到使用语音发送<br />启用此配置项将会换成发送歌曲文件，同时 `上传` 指令将不会注册 |
-|            **其他配置**            |      |              |                                                                                                                        |
-|        `NCM_MSG_CACHE_TIME`        |  否  |   `43200`    |                                           缓存 用户最近一次操作 的时长（秒）                                           |
-|        `NCM_MSG_CACHE_SIZE`        |  否  |    `1024`    |                                          缓存所有 用户最近一次操作 的总计数量                                          |
-| `NCM_RESOLVE_COOL_DOWN_CACHE_SIZE` |  否  |    `1024`    |                                           缓存 歌曲解析的冷却时间 的总计数量                                           |
-|        `NCM_CARD_SIGN_URL`         |  否  |    `None`    |                音卡签名地址（与 LLOneBot 或 NapCat 共用），填写此 URL 后将会把音卡的签名工作交给本插件                 |
-|      `NCM_CARD_SIGN_TIMEOUT`       |  否  |     `5`      |                                               请求音卡签名地址的超时时间                                               |
-|      `NCM_OB_V11_LOCAL_MODE`       |  否  |   `False`    |                             在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                             |
+|               配置项               | 必填 |    默认值    |                                                   说明                                                    |
+| :--------------------------------: | :--: | :----------: | :-------------------------------------------------------------------------------------------------------: |
+|            **登录相关**            |      |              |                                                                                                           |
+|            `NCM_CTCODE`            |  否  |     `86`     |                                        手机号登录用，登录手机区号                                         |
+|            `NCM_PHONE`             |  否  |      无      |                                         手机号登录用，登录手机号                                          |
+|            `NCM_EMAIL`             |  否  |      无      |                                           邮箱登录用，登录邮箱                                            |
+|           `NCM_PASSWORD`           |  否  |      无      |                                    帐号明文密码，邮箱登录时为邮箱密码                                     |
+|        `NCM_PASSWORD_HASH`         |  否  |      无      |                                  帐号密码 MD5 哈希，邮箱登录时为邮箱密码                                  |
+|            **UI 相关**             |      |              |                                                                                                           |
+|          `NCM_LIST_LIMIT`          |  否  |     `20`     |                                          歌曲列表每页的最大数量                                           |
+|          `NCM_LIST_FONT`           |  否  |      无      |                                          渲染歌曲列表使用的字体                                           |
+|        `NCM_LRC_EMPTY_LINE`        |  否  |     `-`      |                                            填充歌词空行的字符                                             |
+|            **行为相关**            |      |              |                                                                                                           |
+|         `NCM_AUTO_RESOLVE`         |  否  |   `False`    |                             当用户发送音乐链接时，是否自动解析并发送音乐卡片                              |
+|      `NCM_RESOLVE_COOL_DOWN`       |  否  |     `30`     |                                   自动解析同一链接的冷却时间（单位秒）                                    |
+|    `NCM_RESOLVE_PLAYABLE_CARD`     |  否  |   `False`    |                                   开启自动解析时，是否解析可播放的卡片                                    |
+|      `NCM_ILLEGAL_CMD_FINISH`      |  否  |   `False`    |                              当用户在点歌时输入了非法指令，是否直接退出点歌                               |
+|      `NCM_ILLEGAL_CMD_LIMIT`       |  否  |     `3`      | 当未启用 `NCM_ILLEGAL_CMD_FINISH` 时，用户在点歌时输入了多少次非法指令后直接退出点歌，填 `0` 以禁用此功能 |
+|          `NCM_DELETE_MSG`          |  否  |    `True`    |                            是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                             |
+|       `NCM_DELETE_MSG_DELAY`       |  否  | `[0.5, 2.0]` |                                      自动撤回消息间隔时间（单位秒）                                       |
+|         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                     在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11` 与 `Kritor`）                     |
+|         `NCM_SEND_AS_FILE`         |  否  |   `False`    |       当无法发送卡片或卡片发送失败时，会回退到使用语音发送，启用此配置项将会换成回退到发送歌曲文件        |
+|            **其他配置**            |      |              |                                                                                                           |
+|        `NCM_MSG_CACHE_TIME`        |  否  |   `43200`    |                                    缓存 用户最近一次操作 的时长（秒）                                     |
+|        `NCM_MSG_CACHE_SIZE`        |  否  |    `1024`    |                                   缓存所有 用户最近一次操作 的总计数量                                    |
+| `NCM_RESOLVE_COOL_DOWN_CACHE_SIZE` |  否  |    `1024`    |                                    缓存 歌曲解析的冷却时间 的总计数量                                     |
+|        `NCM_CARD_SIGN_URL`         |  否  |    `None`    |          音卡签名地址（与 LLOneBot 或 NapCat 共用），填写此 URL 后将会把音卡的签名工作交给本插件          |
+|      `NCM_CARD_SIGN_TIMEOUT`       |  否  |     `5`      |                                        请求音卡签名地址的超时时间                                         |
+|      `NCM_OB_V11_LOCAL_MODE`       |  否  |   `False`    |                      在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                       |
 
 ## 🎉 使用
 
@@ -173,7 +173,7 @@ plugins = [
   - 别名：`网易云`、`wyy`、`网易点歌`、`wydg`、`wysong`
 - 网易声音 [声音名 / 节目 ID]
   - 介绍：搜索声音。当输入声音 ID 时会直接发送对应声音
-  - 别名：`wysy`、`wyvo`
+  - 别名：`wysy`、`wyprog`
 - 网易歌单 [歌单名 / 歌单 ID]
   - 介绍：搜索歌单。当输入歌单 ID 时会直接发送对应歌单
   - 别名：`wygd`、`wypli`
@@ -186,7 +186,7 @@ plugins = [
 - 直链 [回复 音乐卡片 / 链接]
   - 介绍：获取该音乐的下载链接
   - 别名：`direct`
-- 上传 [回复 音乐卡片 / 链接] **仅当 `NCM_SEND_AS_FILE` 为 `False` 时有效，因为与 `解析` 命令功能重合**
+- 上传 [回复 音乐卡片 / 链接]
   - 介绍：下载该音乐并上传到群文件
   - 别名：`upload`
 - 歌词 [回复 音乐卡片 / 链接]
@@ -243,22 +243,18 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 - 新增一些支持的搜索与解析项
 - 自动解析对同一歌曲有冷却了，防多 Bot 刷屏
 - 配置项变动
-  <details>
-    <summary>查看配置项详细变动</summary>
-
-  - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`
-    - 现使用 `playwright` 进行图片渲染
-  - 增加配置项 `NCM_RESOLVE_COOL_DOWN`
-    - 按需更改，默认为 `30`，可防止恶意刷屏
-  - 增加配置项 `NCM_SEND_AS_CARD`、`NCM_SEND_AS_FILE`
-    - 如 `NCM_SEND_AS_CARD` 为 `True`，将先尝试在受支持的平台发送 Card 消息，发送失败则依据 `NCM_SEND_AS_FILE` 的值尝试发送音乐文件，最后尝试发送图文消息
+  - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`  
+    现使用 `playwright` 进行图片渲染
+  - 增加配置项 `NCM_RESOLVE_COOL_DOWN`  
+    按需更改，默认为 `30`，可防止恶意刷屏
+  - 增加配置项 `NCM_SEND_AS_CARD`、`NCM_SEND_AS_FILE`  
+    如 `NCM_SEND_AS_CARD` 为 `True`，将先尝试在受支持的平台发送卡片消息，发送失败则依据 `NCM_SEND_AS_FILE` 的值尝试发送音乐文件，最后尝试发送图文消息
   - 增加配置项 `NCM_RESOLVE_COOL_DOWN_CACHE_SIZE`
-  - 增加配置项 `NCM_CARD_SIGN_URL`、`NCM_CARD_SIGN_TIMEOUT`
-    - 可自行寻找 Card 签名服务填写于此
+  - 增加配置项 `NCM_CARD_SIGN_URL`、`NCM_CARD_SIGN_TIMEOUT`  
+    可自行寻找音卡签名服务填写于此
   - 修改配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
-  </details>
 
-其他的变动懒得写了
+~~其他的变动懒得写了~~
 
 ### 0.5.0
 

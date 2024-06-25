@@ -1,12 +1,35 @@
+from typing import Union
+
 from cookit.loguru import warning_suppress
 from nonebot.matcher import current_matcher
+from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
-from ...data_source import BaseSong
+from ...data_source import BasePlaylist, BaseSong
 from ..cache import set_cache
-from .info import construct_info_msg
 from .song_card import get_song_card_msg, is_card_sendable_adapter
 from .song_file import send_song_media
+
+SONG_TIP = "\n使用指令 `direct` 获取播放链接"
+PLAYLIST_TIP = "\n使用指令 `resolve` 选择内容播放"
+
+
+async def construct_info_msg(
+    it: Union[BaseSong, BasePlaylist],
+    tip_command: bool = True,
+) -> UniMessage:
+    tip = (
+        next(
+            v
+            for k, v in {BaseSong: SONG_TIP, BasePlaylist: PLAYLIST_TIP}.items()
+            if isinstance(it, k)
+        )
+        if tip_command
+        else ""
+    )
+    info = await it.get_info()
+    desc = await info.get_description()
+    return UniMessage.image(info.cover_url) + f"{desc}\n{info.url}{tip}"
 
 
 async def send_song(song: BaseSong):

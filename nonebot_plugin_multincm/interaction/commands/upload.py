@@ -1,7 +1,6 @@
 from nonebot import logger, on_command
 from nonebot.matcher import Matcher
 
-from ...config import config
 from ..message import send_song_media
 from ..resolver import ResolvedSong
 
@@ -19,5 +18,4 @@ def __register_upload_matcher():
     matcher_lyric.handle()(upload_handler_0)
 
 
-if not config.ncm_send_as_file:
-    __register_upload_matcher()
+__register_upload_matcher()

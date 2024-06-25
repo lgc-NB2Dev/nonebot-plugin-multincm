@@ -43,6 +43,7 @@ class Song(CamelAliasModel):
     al: Album
     dt: int
     """歌曲时长，单位 ms"""
+    tns: Optional[List[str]] = None
     privilege: Optional[Privilege] = None
 
 
@@ -104,13 +105,17 @@ class DJ(CamelAliasModel):
     background_url: str
 
 
-class Radio(CamelAliasModel):
+class BaseRadio(CamelAliasModel):
     id: int
     name: str
     pic_url: str
     desc: str
     sub_count: int
     program_count: int
+    play_count: int
+    share_count: int
+    liked_count: int
+    comment_count: int
     category_id: int
     second_category_id: Optional[int] = None
     category: str
@@ -118,14 +123,18 @@ class Radio(CamelAliasModel):
     last_program_id: int
 
 
-class VoiceBaseInfo(CamelAliasModel):
+class Radio(BaseRadio):
+    dj: DJ
+
+
+class ProgramBaseInfo(CamelAliasModel):
     id: int
     main_track_id: int
     name: str
     cover_url: str
     description: str
     dj: DJ
-    radio: Radio
+    radio: BaseRadio
     duration: int
     listener_count: int
     share_count: int
@@ -134,12 +143,12 @@ class VoiceBaseInfo(CamelAliasModel):
     comment_thread_id: str
 
 
-class VoiceResource(CamelAliasModel):
-    base_info: VoiceBaseInfo
+class ProgramResource(CamelAliasModel):
+    base_info: ProgramBaseInfo
 
 
-class VoiceSearchResult(CamelAliasModel):
-    resources: Optional[List[VoiceResource]] = None
+class ProgramSearchResult(CamelAliasModel):
+    resources: Optional[List[ProgramResource]] = None
     total_count: int
     search_qc_reminder: Optional[SearchQcReminder] = None
 
@@ -153,7 +162,7 @@ class PlaylistCreator(CamelAliasModel):
     nickname: str
 
 
-class PlaylistFromSearch(CamelAliasModel):
+class BasePlaylist(CamelAliasModel):
     id: int
     name: str
     cover_img_url: str
@@ -164,13 +173,26 @@ class PlaylistFromSearch(CamelAliasModel):
     description: Optional[str] = None
 
 
-class Playlist(PlaylistFromSearch):
-    book_count: int = Field(alias="subscribedCount")
-    tracks: List[Song]
+class Playlist(BasePlaylist):
+    # tracks: List[Song]
     track_ids: List[TrackId]
+    book_count: int = Field(alias="subscribedCount")
+    share_count: int
+    comment_count: int
 
 
 class PlaylistSearchResult(CamelAliasModel):
-    playlists: Optional[List[PlaylistFromSearch]] = None
+    playlists: Optional[List[BasePlaylist]] = None
     playlist_count: int
     search_qc_reminder: Optional[SearchQcReminder] = None
+
+
+class RadioSearchResult(CamelAliasModel):
+    dj_radios: Optional[List[Radio]] = None
+    dj_radios_count: int
+    search_qc_reminder: Optional[SearchQcReminder] = None
+
+
+class RadioProgramList(CamelAliasModel):
+    count: int
+    programs: List[ProgramBaseInfo]

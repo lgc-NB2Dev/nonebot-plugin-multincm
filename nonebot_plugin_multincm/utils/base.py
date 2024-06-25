@@ -68,9 +68,15 @@ def write_debug_file(filename: str, content: Any):
     )
 
 
-def get_thumb_url(url: str, size: int) -> str:
+def get_thumb_url(url: str, size: int = 64) -> str:
     return str(URL(url).update_query(param=f"{size}y{size}"))
 
 
 def build_item_link(item_type: str, item_id: int) -> str:
     return f"https://music.163.com/{item_type}?id={item_id}"
+
+
+def cut_string(text: str, length: int = 50) -> str:
+    if len(text) <= length:
+        return text
+    return text[: length - 1] + "…"
