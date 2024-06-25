@@ -1,5 +1,4 @@
 import re
-import time
 from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 from typing_extensions import Annotated, TypeAlias
@@ -33,13 +32,13 @@ ExpectedTypeType: TypeAlias = Union[
     Tuple[Type[GeneralSongOrPlaylist], ...],
 ]
 
-resolved_cache: TTLCache[float, "ResolveCache"] = TTLCache(
+resolved_cache: TTLCache[int, "ResolveCache"] = TTLCache(
     config.ncm_resolve_cool_down_cache_size,
     config.ncm_resolve_cool_down,
 )
 
 
-@dataclass(eq=True)
+@dataclass(eq=True, unsafe_hash=True)
 class ResolveCache:
     link_type: str
     link_id: int
@@ -48,13 +47,14 @@ class ResolveCache:
 @queued
 async def resolve_from_link_params_cool_down(link_type: str, link_id: int):
     cache = ResolveCache(link_type=link_type, link_id=link_id)
-    for k in resolved_cache:
-        if resolved_cache[k] == cache:
-            resolved_cache[k] = cache  # flush ttl
-            return None
+    cache_hash = hash(cache)
+
+    if cache_hash in resolved_cache:
+        resolved_cache[cache_hash] = cache  # flush ttl
+        return None
 
     result = await resolve_from_link_params(link_type, link_id)
-    resolved_cache[time.time()] = cache
+    resolved_cache[cache_hash] = cache
     return result
 
 
