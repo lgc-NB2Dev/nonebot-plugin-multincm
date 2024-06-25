@@ -507,5 +507,5 @@ GeneralGetPageReturn: TypeAlias = Union[
     GeneralSongOrList,
     None,
 ]
-GenericSongInfo: TypeAlias = SongInfo[GeneralSong]
-GenericPlaylistInfo: TypeAlias = PlaylistInfo[GeneralPlaylist]
+GeneralSongInfo: TypeAlias = SongInfo[GeneralSong]
+GeneralPlaylistInfo: TypeAlias = PlaylistInfo[GeneralPlaylist]
