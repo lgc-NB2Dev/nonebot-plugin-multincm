@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import (
+    Any,
     ClassVar,
     Dict,
     Generic,
@@ -15,7 +16,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Any, Self, TypeAlias, TypeGuard, override
+from typing_extensions import Self, TypeAlias, TypeGuard, override
 
 from ..config import config
 from ..utils import (

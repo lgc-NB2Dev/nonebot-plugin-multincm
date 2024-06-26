@@ -1,5 +1,5 @@
-from typing import Generic, Iterable, List, TypeVar
-from typing_extensions import Optional, Self, override
+from typing import Generic, Iterable, List, Optional, TypeVar
+from typing_extensions import Self, override
 
 from ..utils import format_artists, format_time, get_thumb_url, normalize_lrc
 from .base import (
