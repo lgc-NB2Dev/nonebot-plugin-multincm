@@ -246,6 +246,10 @@ class BaseSongListPage(Generic[_TRawRespInner, _TSongList]):
     content: Iterable[_TRawRespInner]
     father: _TSongList
 
+    @override
+    def __str__(self) -> str:
+        return f"{type(self).__name__}(father={self.father})"
+
     @classmethod
     @abstractmethod
     async def transform_resp_to_list_card(
