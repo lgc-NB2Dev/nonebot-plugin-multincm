@@ -249,16 +249,17 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 - 支持电台与专辑的搜索与解析
 - 自动解析对同一歌曲有冷却了，防多 Bot 刷屏
 - 配置项变动
-  - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`  
-    现使用 `playwright` 进行图片渲染
-  - 增加配置项 `NCM_RESOLVE_COOL_DOWN`  
-    按需更改，默认为 `30`，可防止恶意刷屏
-  - 增加配置项 `NCM_SEND_AS_CARD`、`NCM_SEND_AS_FILE`  
-    如 `NCM_SEND_AS_CARD` 为 `True`，将先尝试在受支持的平台发送卡片消息，发送失败则依据 `NCM_SEND_AS_FILE` 的值尝试发送音乐文件，最后尝试发送图文消息
-  - 增加配置项 `NCM_RESOLVE_COOL_DOWN_CACHE_SIZE`
+  - 增加配置项 `NCM_RESOLVE_COOL_DOWN`、`NCM_RESOLVE_COOL_DOWN_CACHE_SIZE`  
+    按需更改，可防止多 Bot 刷屏
+  - 增加配置项 `NCM_SEND_MEDIA`、`NCM_SEND_AS_CARD`、`NCM_SEND_AS_FILE`  
+    控制插件发送音乐的方式，现在不止支持卡片了
   - 增加配置项 `NCM_CARD_SIGN_URL`、`NCM_CARD_SIGN_TIMEOUT`  
-    可自行寻找音卡签名服务填写于此
-  - 修改配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
+    可以把音卡的签名工作交给插件而不是协议端，自行寻找音卡签名服务填写于此
+  - 增加配置项 `NCM_FFMPEG_EXECUTABLE`  
+    发送语音时可以将 silk 的编码工作交给插件而不是协议端
+  - 重命名配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
+  - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`  
+    现始终使用 `playwright` 进行图片渲染
 
 ### 0.5.0
 
