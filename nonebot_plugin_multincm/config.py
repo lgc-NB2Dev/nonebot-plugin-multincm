@@ -1,6 +1,4 @@
-from pathlib import Path
 from typing import Annotated, Optional, Tuple
-from urllib.parse import quote
 
 from nonebot import get_plugin_config
 from pydantic import AnyHttpUrl, BaseModel
@@ -27,6 +25,7 @@ class ConfigModel(BaseModel):
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_msg: bool = True
     ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
+    ncm_send_media: bool = True
     ncm_send_as_card: bool = True
     ncm_send_as_file: bool = False
 
@@ -37,14 +36,7 @@ class ConfigModel(BaseModel):
     ncm_card_sign_url: Optional[Annotated[str, AnyHttpUrl]] = None
     ncm_card_sign_timeout: int = 5
     ncm_ob_v11_local_mode: bool = False
-
-    @property
-    def ncm_list_font_url(self) -> Optional[str]:
-        return (
-            quote(p.as_uri())
-            if self.ncm_list_font and (p := Path(self.ncm_list_font)).exists()
-            else self.ncm_list_font
-        )
+    ncm_ffmpeg_executable: str = "ffmpeg"
 
 
 config = get_plugin_config(ConfigModel)

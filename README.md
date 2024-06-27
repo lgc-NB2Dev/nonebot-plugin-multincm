@@ -152,6 +152,7 @@ plugins = [
 |      `NCM_ILLEGAL_CMD_LIMIT`       |  否  |     `3`      | 当未启用 `NCM_ILLEGAL_CMD_FINISH` 时，用户在点歌时输入了多少次非法指令后直接退出点歌，填 `0` 以禁用此功能 |
 |          `NCM_DELETE_MSG`          |  否  |    `True`    |                            是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                             |
 |       `NCM_DELETE_MSG_DELAY`       |  否  | `[0.5, 2.0]` |                                      自动撤回消息间隔时间（单位秒）                                       |
+|          `NCM_SEND_MEDIA`          |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
 |         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                     在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11` 与 `Kritor`）                     |
 |         `NCM_SEND_AS_FILE`         |  否  |   `False`    |       当无法发送卡片或卡片发送失败时，会回退到使用语音发送，启用此配置项将会换成回退到发送歌曲文件        |
 |            **其他配置**            |      |              |                                                                                                           |
@@ -161,6 +162,7 @@ plugins = [
 |        `NCM_CARD_SIGN_URL`         |  否  |    `None`    |          音卡签名地址（与 LLOneBot 或 NapCat 共用），填写此 URL 后将会把音卡的签名工作交给本插件          |
 |      `NCM_CARD_SIGN_TIMEOUT`       |  否  |     `5`      |                                        请求音卡签名地址的超时时间                                         |
 |      `NCM_OB_V11_LOCAL_MODE`       |  否  |   `False`    |                      在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                       |
+|      `NCM_FFMPEG_EXECUTABLE`       |  否  |   `ffmpeg`   |        FFmpeg 可执行文件路径，已经加进环境变量可以不用配置，在 OneBot V11 适配器下发送语音需要使用        |
 
 ## 🎉 使用
 
@@ -241,9 +243,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 项目重构
 
-- 支持多平台
+- 支持多平台  
+  目前多平台发歌逻辑还不是很完善，如果有建议欢迎提出
 - UI 大改
-- 新增一些支持的搜索与解析项
+- 支持电台与专辑的搜索与解析
 - 自动解析对同一歌曲有冷却了，防多 Bot 刷屏
 - 配置项变动
   - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`  
@@ -256,8 +259,6 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
   - 增加配置项 `NCM_CARD_SIGN_URL`、`NCM_CARD_SIGN_TIMEOUT`  
     可自行寻找音卡签名服务填写于此
   - 修改配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
-
-~~其他的变动懒得写了~~
 
 ### 0.5.0
 

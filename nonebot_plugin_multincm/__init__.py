@@ -29,7 +29,7 @@ auto_resolve_tip = (
     "▶ Bot 会自动解析你发送的网易云链接\n" if config.ncm_auto_resolve else ""
 )
 
-__version__ = "1.0.0a3"
+__version__ = "1.0.0a4"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",

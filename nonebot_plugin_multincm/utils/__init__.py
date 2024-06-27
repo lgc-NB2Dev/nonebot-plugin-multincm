@@ -5,6 +5,8 @@ from .base import (
     calc_min_max_index as calc_min_max_index,
     calc_page_number as calc_page_number,
     cut_string as cut_string,
+    encode_silk as encode_silk,
+    ffmpeg_exists as ffmpeg_exists,
     format_alias as format_alias,
     format_artists as format_artists,
     format_time as format_time,

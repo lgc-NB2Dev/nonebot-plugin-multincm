@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from cookit.loguru import warning_suppress
 from httpx import AsyncClient
+from nonebot import logger
 from nonebot.matcher import current_bot, current_event
 from nonebot_plugin_alconna.uniseg import Receipt, UniMessage, get_exporter
 
 from ...config import config
 from ...const import SONG_CACHE_DIR
 from ...data_source import BaseSong, SongInfo
+from ...utils import encode_silk, ffmpeg_exists
 
 
 async def download_song(info: SongInfo):
@@ -58,39 +60,50 @@ async def send_song_media_telegram(info: SongInfo, as_file: bool = False):  # no
 
 
 async def send_song_media_onebot_v11(info: SongInfo, as_file: bool = False):
-    if not as_file:
-        raise TypeError("Should fallback using UniMessage")
+    async def send_voice():
+        if not await ffmpeg_exists():
+            logger.warning(
+                "FFmpeg 无法使用，插件将不会把音乐文件转为 silk 格式提交给协议端",
+            )
+            raise TypeError("FFmpeg unavailable, fallback to UniMessage")
 
-    from nonebot.adapters.onebot.v11 import (
-        Bot as OB11Bot,
-        GroupMessageEvent,
-        MessageEvent,
-        PrivateMessageEvent,
-    )
+        return await UniMessage.voice(
+            raw=(await encode_silk(await download_song(info))).read_bytes(),
+        ).send()
 
-    bot = cast(OB11Bot, current_bot.get())
-    event = cast(MessageEvent, current_event.get())
-
-    file = (
-        (await download_song(info))
-        if config.ncm_ob_v11_local_mode
-        else cast(str, (await bot.download_file(url=info.playable_url))["file"])
-    )
-
-    if isinstance(event, PrivateMessageEvent):
-        await bot.upload_private_file(
-            user_id=event.user_id,
-            file=file,
-            name=info.display_filename,
+    async def send_file():
+        from nonebot.adapters.onebot.v11 import (
+            Bot as OB11Bot,
+            GroupMessageEvent,
+            PrivateMessageEvent,
         )
-    elif isinstance(event, GroupMessageEvent):
-        await bot.upload_group_file(
-            group_id=event.group_id,
-            file=file,
-            name=info.display_filename,
+
+        bot = cast(OB11Bot, current_bot.get())
+        event = current_event.get()
+
+        if not isinstance(event, (GroupMessageEvent, PrivateMessageEvent)):
+            raise TypeError("Event not supported")
+
+        file = (
+            (await download_song(info))
+            if config.ncm_ob_v11_local_mode
+            else cast(str, (await bot.download_file(url=info.playable_url))["file"])
         )
-    else:
-        raise TypeError("Event not supported")
+
+        if isinstance(event, PrivateMessageEvent):
+            await bot.upload_private_file(
+                user_id=event.user_id,
+                file=file,
+                name=info.display_filename,
+            )
+        else:
+            await bot.upload_group_file(
+                group_id=event.group_id,
+                file=file,
+                name=info.display_filename,
+            )
+
+    return (await send_file()) if as_file else (await send_voice())
 
 
 async def send_song_media_platform_specific(
@@ -119,7 +132,7 @@ async def send_song_media(song: BaseSong, as_file: bool = config.ncm_send_as_fil
 
     path = await download_song(info)
     with warning_suppress(
-        f"Failed to send {song} use file path, will try to send using raw bytes",
+        f"Failed to send {song} using file path, fallback using raw bytes",
     ):
         if not TYPE_CHECKING:
             return await send_song_media_uni_msg(path, info, raw=False, as_file=as_file)

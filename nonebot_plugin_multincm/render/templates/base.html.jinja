@@ -70,8 +70,8 @@
   const fontFamily = '{{ config.font_family | escape_single_quotes }}';
   const css = fontFamily.includes('://')
     ? `@font-face { font-family: 'Custom'; src: url('${fontFamily}'); }\n` +
-    `:root { --font-family: 'Custom'; }`
-    : `:root { --font-family: '${fontFamily}'; }`;
+    `:root { --font-family: 'Custom', sans-serif; }`
+    : `:root { --font-family: '${fontFamily}', sans-serif; }`;
   const style = document.createElement('style');
   style.textContent = css;
   document.head.appendChild(style);

@@ -1,9 +1,12 @@
+import asyncio
 import json
 import math
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar
 from typing_extensions import ParamSpec
 
+from nonebot.utils import run_sync
 from yarl import URL
 
 from ..config import config
@@ -80,3 +83,46 @@ def cut_string(text: str, length: int = 50) -> str:
     if len(text) <= length:
         return text
     return text[: length - 1] + "…"
+
+
+async def ffmpeg_exists() -> bool:
+    proc = await asyncio.create_subprocess_exec(
+        config.ncm_ffmpeg_executable,
+        "-version",
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    code = await proc.wait()
+    return code == 0
+
+
+async def encode_silk(path: Path, rate: int = 24000) -> Path:
+    silk_path = path.with_suffix(".silk")
+    if silk_path.exists():
+        return silk_path
+
+    pcm_path = path.with_suffix(".pcm")
+    proc = await asyncio.create_subprocess_exec(
+        config.ncm_ffmpeg_executable,
+        "-y",
+        "-i", str(path),
+        "-f", "s16le", "-ar", f"{rate}", "-ac", "1", str(pcm_path),
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )  # fmt: skip
+    code = await proc.wait()
+    if code != 0:
+        raise RuntimeError(
+            f"Failed to use ffmpeg to convert {path} to pcm, return code {code}",
+        )
+
+    try:
+        from pysilk import encode
+
+        await run_sync(encode)(pcm_path.open("rb"), silk_path.open("wb"), rate, rate)
+    finally:
+        pcm_path.unlink(missing_ok=True)
+
+    return silk_path

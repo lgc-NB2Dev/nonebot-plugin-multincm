@@ -15,6 +15,7 @@ dependencies = [
     "nonebot-plugin-waiter>=0.6.2",
     "cachetools>=5.3.3",
     "yarl>=1.9.4",
+    "silk-python>=0.2.6",
 ]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
