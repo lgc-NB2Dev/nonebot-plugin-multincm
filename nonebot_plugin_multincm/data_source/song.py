@@ -1,7 +1,13 @@
 from typing import Generic, Iterable, List, Optional, TypeVar
 from typing_extensions import Self, override
 
-from ..utils import format_artists, format_time, get_thumb_url, normalize_lrc
+from ..utils import (
+    format_artists,
+    format_time,
+    get_thumb_url,
+    merge_alias,
+    normalize_lrc,
+)
 from .base import (
     BaseSearcher,
     BaseSong,
@@ -23,7 +29,7 @@ class SongListPage(BaseSongListPage[md.Song, _TSongList], Generic[_TSongList]):
         return ListPageCard(
             cover=get_thumb_url(resp.al.pic_url),
             title=resp.name,
-            alias="；".join(resp.alias),
+            alias="；".join(merge_alias(resp)),
             extras=[format_artists(resp.ar)],
             small_extras=[f"{format_time(resp.dt)} | 热度 {resp.pop}"],
         )
@@ -53,7 +59,7 @@ class Song(BaseSong[md.Song]):
 
     @override
     async def get_alias(self) -> List[str]:
-        return self.info.alias + (self.info.tns or [])
+        return merge_alias(self.info)
 
     @override
     async def get_artists(self) -> List[str]:

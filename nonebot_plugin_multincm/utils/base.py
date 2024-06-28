@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar
 from typing_extensions import ParamSpec
 
+from cookit import flatten
 from nonebot.utils import run_sync
 from yarl import URL
 
@@ -126,3 +127,11 @@ async def encode_silk(path: Path, rate: int = 24000) -> Path:
         pcm_path.unlink(missing_ok=True)
 
     return silk_path
+
+
+def merge_alias(song: "md.Song") -> List[str]:
+    alias = song.tns.copy() if song.tns else []
+    alias.extend(
+        x for x in flatten(x.split("；") for x in song.alias) if x not in alias
+    )
+    return alias

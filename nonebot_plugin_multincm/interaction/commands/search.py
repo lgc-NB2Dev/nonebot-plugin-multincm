@@ -78,7 +78,7 @@ async def handle_song_or_list(
         while True:
             msg = await prompt("")
             if msg is None:
-                await matcher.finish()
+                await matcher.finish("等待超时，已退出选择")
             msg = msg.extract_plain_text().strip().lower()
 
             if msg in EXIT_COMMAND:
