@@ -33,7 +33,8 @@ SongListInnerResp: TypeAlias = Union[
     md.Song,
     md.ProgramBaseInfo,
     md.BasePlaylist,
-    md.Radio,
+    md.RadioBaseInfo,
+    md.Album,
 ]
 
 _TRawInfo = TypeVar("_TRawInfo")

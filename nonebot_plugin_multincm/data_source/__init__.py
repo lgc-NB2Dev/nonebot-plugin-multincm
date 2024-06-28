@@ -1,3 +1,8 @@
+from .album import (
+    Album as Album,
+    AlbumListPage as AlbumListPage,
+    AlbumSearcher as AlbumSearcher,
+)
 from .base import (
     BasePlaylist as BasePlaylist,
     BaseResolvable as BaseResolvable,

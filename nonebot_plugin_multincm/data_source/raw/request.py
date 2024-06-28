@@ -15,7 +15,8 @@ from typing import (
 
 from nonebot.utils import run_sync
 from pydantic import BaseModel
-from pyncm.apis import WeapiCryptoRequest, cloudsearch as search
+from pyncm.apis import EapiCryptoRequest, WeapiCryptoRequest, cloudsearch as search
+from pyncm.apis.album import GetAlbumInfo
 from pyncm.apis.cloudsearch import GetSearchResult
 from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
@@ -23,6 +24,8 @@ from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 from ...config import config
 from ...utils import calc_min_index, is_debug_mode, write_debug_file
 from .models import (
+    AlbumInfo,
+    AlbumSearchResult,
     LyricData,
     Playlist,
     PlaylistSearchResult,
@@ -101,14 +104,35 @@ search_playlist = partial(
     search_type=search.PLAYLIST,
     return_model=PlaylistSearchResult,
 )
-search_radio = partial(
+search_album = partial(
     get_search_result,
-    search_type=search.DJ,
-    return_model=RadioSearchResult,
+    search_type=search.ALBUM,
+    return_model=AlbumSearchResult,
 )
 
 
-async def search_program(keyword: str, page: int = 1) -> ProgramSearchResult:
+async def search_radio(keyword: str, page: int = 1):
+    offset = calc_min_index(page)
+
+    @EapiCryptoRequest  # type: ignore
+    def SearchRadio():  # noqa: N802
+        return (
+            "/eapi/search/voicelist/get",
+            {
+                "keyword": keyword,
+                "scene": "normal",
+                "limit": config.ncm_list_limit,
+                "offset": offset or 0,
+            },
+        )
+
+    res = await ncm_request(SearchRadio)
+    return RadioSearchResult(**res["data"])
+
+
+async def search_program(keyword: str, page: int = 1):
+    offset = calc_min_index(page)
+
     @WeapiCryptoRequest  # type: ignore
     def SearchVoice():  # noqa: N802
         return (
@@ -121,7 +145,6 @@ async def search_program(keyword: str, page: int = 1) -> ProgramSearchResult:
             },
         )
 
-    offset = calc_min_index(page)
     res = await ncm_request(SearchVoice)
     return ProgramSearchResult(**res["data"])
 
@@ -151,7 +174,7 @@ async def get_track_info(ids: List[int], **kwargs) -> List[Song]:
     ]
 
 
-async def get_track_lrc(song_id: int) -> LyricData:
+async def get_track_lrc(song_id: int):
     res = await ncm_request(GetTrackLyrics, song_id)
     return LyricData(**res)
 
@@ -178,7 +201,7 @@ async def get_radio_programs(radio_id: int, page: int = 1):
     return RadioProgramList(**res)
 
 
-async def get_program_info(program_id: int) -> ProgramBaseInfo:
+async def get_program_info(program_id: int):
     @WeapiCryptoRequest  # type: ignore
     def GetProgramDetail():  # noqa: N802
         return ("/api/dj/program/detail", {"id": program_id})
@@ -187,18 +210,11 @@ async def get_program_info(program_id: int) -> ProgramBaseInfo:
     return ProgramBaseInfo(**res["program"])
 
 
-async def get_playlist_info(playlist_id: int) -> Any:
+async def get_playlist_info(playlist_id: int):
     res = await ncm_request(GetPlaylistInfo, playlist_id)
     return Playlist(**res["playlist"])
 
 
-# from nonebot import get_driver
-
-# driver = get_driver()
-
-
-# @driver.on_startup
-# async def _():
-#     # await search_dj("节奏医生")
-#     # await get_radio_programs(960201591)
-#     await get_radio_info(960201591)
+async def get_album_info(album_id: int):
+    res = await ncm_request(GetAlbumInfo, album_id)
+    return AlbumInfo(**res)

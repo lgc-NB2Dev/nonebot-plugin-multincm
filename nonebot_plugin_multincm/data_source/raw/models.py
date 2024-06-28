@@ -17,15 +17,19 @@ BrLevelType: TypeAlias = Literal[
 class Artist(CamelAliasModel):
     id: int
     name: str
-    tns: List[str]
-    alias: List[str]
+    tns: Optional[List[str]] = None
+    alias: Optional[List[str]] = None
 
 
-class Album(CamelAliasModel):
+class BaseAlbum(CamelAliasModel):
     id: int
     name: str
     pic_url: str
-    tns: List[str]
+
+
+class Album(BaseAlbum):
+    size: int
+    artists: List[Artist]
 
 
 class Privilege(CamelAliasModel):
@@ -40,7 +44,7 @@ class Song(CamelAliasModel):
     ar: List[Artist]
     alias: List[str] = Field(..., alias="alia")
     pop: int
-    al: Album
+    al: BaseAlbum
     dt: int
     """歌曲时长，单位 ms"""
     tns: Optional[List[str]] = None
@@ -113,9 +117,6 @@ class BaseRadio(CamelAliasModel):
     sub_count: int
     program_count: int
     play_count: int
-    share_count: int
-    liked_count: int
-    comment_count: int
     category_id: int
     second_category_id: Optional[int] = None
     category: str
@@ -123,8 +124,14 @@ class BaseRadio(CamelAliasModel):
     last_program_id: int
 
 
-class Radio(BaseRadio):
+class RadioBaseInfo(BaseRadio):
     dj: DJ
+
+
+class Radio(RadioBaseInfo):
+    share_count: int
+    liked_count: int
+    comment_count: int
 
 
 class ProgramBaseInfo(CamelAliasModel):
@@ -187,12 +194,26 @@ class PlaylistSearchResult(CamelAliasModel):
     search_qc_reminder: Optional[SearchQcReminder] = None
 
 
+class RadioResource(CamelAliasModel):
+    base_info: RadioBaseInfo
+
+
 class RadioSearchResult(CamelAliasModel):
-    dj_radios: Optional[List[Radio]] = None
-    dj_radios_count: int
+    resources: Optional[List[RadioResource]] = None
+    total_count: int
     search_qc_reminder: Optional[SearchQcReminder] = None
 
 
 class RadioProgramList(CamelAliasModel):
     count: int
     programs: List[ProgramBaseInfo]
+
+
+class AlbumSearchResult(CamelAliasModel):
+    albums: Optional[List[Album]] = None
+    album_count: int
+
+
+class AlbumInfo(CamelAliasModel):
+    album: Album
+    songs: List[Song]

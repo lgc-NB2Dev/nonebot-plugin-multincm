@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Literal, Optional, TypedDict
+from urllib.parse import quote
 
 import jinja2
 from cookit.jinja import make_register_jinja_filter_deco, register_all_filters
@@ -23,11 +24,17 @@ class RenderConfig(TypedDict):
     plugin_version: str
 
 
+def format_font_url(url: str) -> Optional[str]:
+    return quote(p.as_uri()) if url and (p := Path(url)).exists() else url
+
+
 def get_config() -> RenderConfig:
     from ..__init__ import __version__ as plugin_version
 
     return {
-        "font_family": config.ncm_list_font_url,
+        "font_family": (
+            format_font_url(config.ncm_list_font) if config.ncm_list_font else None
+        ),
         "plugin_version": plugin_version,
     }
 

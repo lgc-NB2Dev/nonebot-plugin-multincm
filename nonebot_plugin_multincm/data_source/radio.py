@@ -19,10 +19,16 @@ from .raw import get_radio_info, get_radio_programs, md, search_radio
 _TSongList = TypeVar("_TSongList", bound=BaseSongList)
 
 
-class RadioListPage(BaseSongListPage[md.Radio, _TSongList], Generic[_TSongList]):
+class RadioListPage(
+    BaseSongListPage[md.RadioBaseInfo, _TSongList],
+    Generic[_TSongList],
+):
     @override
     @classmethod
-    async def transform_resp_to_list_card(cls, resp: md.Radio) -> ListPageCard:
+    async def transform_resp_to_list_card(
+        cls,
+        resp: md.RadioBaseInfo,
+    ) -> ListPageCard:
         return ListPageCard(
             cover=get_thumb_url(resp.pic_url),
             title=resp.name,
@@ -111,7 +117,7 @@ class Radio(BasePlaylist[md.Radio, md.RadioProgramList, md.ProgramBaseInfo, Prog
 
 
 @searcher
-class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.Radio, Radio]):
+class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.RadioBaseInfo, Radio]):
     child_calling = Radio.calling
     commands = ("网易电台", "wydt", "wydj")
 
@@ -126,21 +132,24 @@ class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.Radio, Radio]):
     async def _extract_resp_content(
         self,
         resp: md.RadioSearchResult,
-    ) -> Optional[List[md.Radio]]:
-        return resp.dj_radios
+    ) -> Optional[List[md.RadioBaseInfo]]:
+        return [x.base_info for x in resp.resources] if resp.resources else None
 
     @override
     async def _extract_total_count(self, resp: md.RadioSearchResult) -> int:
-        return resp.dj_radios_count
+        return resp.total_count
 
     @override
     async def _do_get_page(self, page: int) -> md.RadioSearchResult:
         return await search_radio(self.keyword, page=page)
 
     @override
-    async def _build_selection(self, resp: md.Radio) -> Radio:
-        return Radio(info=resp)
+    async def _build_selection(self, resp: md.RadioBaseInfo) -> Radio:
+        return await Radio.from_id(resp.id)
 
     @override
-    async def _build_list_page(self, resp: Iterable[md.Radio]) -> RadioListPage[Self]:
+    async def _build_list_page(
+        self,
+        resp: Iterable[md.RadioBaseInfo],
+    ) -> RadioListPage[Self]:
         return RadioListPage(resp, self)
