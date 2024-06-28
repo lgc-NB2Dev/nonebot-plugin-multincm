@@ -228,11 +228,7 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ### [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
 
-项目电台相关 API 来源
-
-### [MeetWq/pil-utils](https://github.com/MeetWq/pil-utils)
-
-超好用的 Pillow 辅助库
+项目一些相关 API 来源
 
 ## 💰 赞助
 
