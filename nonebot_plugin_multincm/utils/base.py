@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar
 from typing_extensions import ParamSpec
 
 from cookit import flatten
-from nonebot.adapters import Bot as BaseBot
+from nonebot.adapters import Bot as BaseBot, Event as BaseEvent
 from nonebot.matcher import current_bot
 from nonebot.utils import run_sync
+from nonebot_plugin_alconna.uniseg import SupportScope, UniMessage
 from yarl import URL
 
 from ..config import config
-from ..const import DEBUG_DIR, DEBUG_ROOT_DIR, MUSIC_CARD_SUPPORT_ADAPTERS
+from ..const import DEBUG_DIR, DEBUG_ROOT_DIR
 
 if TYPE_CHECKING:
     from ..data_source import md
@@ -139,7 +140,11 @@ def merge_alias(song: "md.Song") -> List[str]:
     return alias
 
 
-def is_song_card_supported(bot: Optional[BaseBot] = None) -> bool:
+def is_song_card_supported(
+    bot: Optional[BaseBot] = None,
+    event: Optional[BaseEvent] = None,
+) -> bool:
     if bot is None:
         bot = current_bot.get()
-    return bot.adapter.get_name() in MUSIC_CARD_SUPPORT_ADAPTERS
+    s = UniMessage.get_target(event, bot).scope
+    return bool(s and s == SupportScope.qq_client.value)

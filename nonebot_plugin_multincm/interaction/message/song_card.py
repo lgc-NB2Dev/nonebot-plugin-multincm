@@ -1,3 +1,4 @@
+from cookit.loguru import warning_suppress
 from httpx import AsyncClient
 from nonebot_plugin_alconna.builtins.uniseg.music_share import (
     MusicShare,
@@ -33,7 +34,12 @@ async def sign_music_card(song: BaseSong) -> str:
 
 async def send_song_card_msg(song: BaseSong):
     if config.ncm_card_sign_url:
-        return await UniMessage.hyper("json", await sign_music_card(song)).send()
+        with warning_suppress(
+            f"Failed to send signed card for song {song}, fallback to MusicShare seg",
+        ):
+            return await UniMessage.hyper("json", await sign_music_card(song)).send(
+                fallback=False,
+            )
     info = await song.get_info()
     return await UniMessage(
         MusicShare(
@@ -45,4 +51,4 @@ async def send_song_card_msg(song: BaseSong):
             audio=info.playable_url,
             brief=info.display_artists,
         ),
-    ).send()
+    ).send(fallback=False)
