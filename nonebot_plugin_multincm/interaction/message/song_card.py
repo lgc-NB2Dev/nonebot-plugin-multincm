@@ -7,12 +7,11 @@ from nonebot_plugin_alconna.builtins.uniseg.music_share import (
 from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
-from ...data_source import BaseSong
+from ...data_source import BaseSong, SongInfo
 
 
-async def sign_music_card(song: BaseSong) -> str:
+async def sign_music_card(info: SongInfo) -> str:
     assert config.ncm_card_sign_url
-    info = await song.get_info()
     async with AsyncClient(
         follow_redirects=True,
         timeout=config.ncm_card_sign_timeout,
@@ -33,14 +32,14 @@ async def sign_music_card(song: BaseSong) -> str:
 
 
 async def send_song_card_msg(song: BaseSong):
+    info = await song.get_info()
     if config.ncm_card_sign_url:
         with warning_suppress(
             f"Failed to send signed card for song {song}, fallback to MusicShare seg",
         ):
-            return await UniMessage.hyper("json", await sign_music_card(song)).send(
+            return await UniMessage.hyper("json", await sign_music_card(info)).send(
                 fallback=False,
             )
-    info = await song.get_info()
     return await UniMessage(
         MusicShare(
             kind=MusicShareKind.NeteaseCloudMusic,
