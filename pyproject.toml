@@ -6,7 +6,7 @@ authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
 dependencies = [
     "nonebot2>=2.2.0",
     "nonebot-plugin-htmlrender>=0.2.0.3",
-    "nonebot-plugin-alconna>=0.46.2",
+    "nonebot-plugin-alconna>=0.48.0",
     "pyncm>=1.6.8.9.1",
     "typing-extensions>=4.5.0",
     "httpx>=0.24.0",

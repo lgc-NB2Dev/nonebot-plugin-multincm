@@ -1,84 +1,12 @@
-from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, Optional, Union, cast
-from typing_extensions import TypeAlias, TypeGuard
-
 from httpx import AsyncClient
-from nonebot import logger
-from nonebot.adapters import Bot as BaseBot, Message as BaseMessage
-from nonebot.matcher import current_bot
+from nonebot_plugin_alconna.builtins.uniseg.music_share import (
+    MusicShare,
+    MusicShareKind,
+)
+from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
 from ...data_source import BaseSong
-
-if TYPE_CHECKING:
-    from nonebot.adapters.kritor import Bot as KritorBot, Message as KritorMsg
-    from nonebot.adapters.onebot.v11 import Bot as OB11Bot, Message as OB11Msg
-
-CardSendableBot: TypeAlias = Union["OB11Bot", "KritorBot"]
-CardSendableEventType: TypeAlias = Literal["OneBot V11", "Kritor"]
-
-CARD_SENDABLE_ADAPTERS = ["OneBot V11", "Kritor"]
-
-
-def get_card_sendable_adapter_type(
-    bot: Optional[BaseBot] = None,
-) -> CardSendableEventType:
-    if bot is None:
-        bot = current_bot.get()
-    if (n := bot.adapter.get_name()) in CARD_SENDABLE_ADAPTERS:
-        return cast(CardSendableEventType, n)
-    raise TypeError("This adapter is not supported")
-
-
-def is_card_sendable_adapter(
-    bot: Optional[BaseBot] = None,
-) -> TypeGuard[CardSendableBot]:
-    with suppress(TypeError):
-        get_card_sendable_adapter_type(bot)
-        return True
-    return False
-
-
-async def song_to_ob_v11_music_msg(song: BaseSong) -> "OB11Msg":
-    from nonebot.adapters.onebot.v11 import (
-        Message as OB11Msg,
-        MessageSegment as OB11MsgSeg,
-    )
-
-    info = await song.get_info()
-    seg = OB11MsgSeg(
-        "music",
-        {
-            "type": "custom",
-            "url": info.url,
-            "audio": info.playable_url,
-            "title": info.display_name,
-            "content": info.display_artists,
-            "image": info.cover_url,
-            "subtype": "163",  # gocq
-            "voice": info.playable_url,  # gocq
-            "jumpUrl": info.url,  # icqq
-        },
-    )
-    return OB11Msg(seg)
-
-
-async def song_to_kritor_music_msg(song: BaseSong) -> "KritorMsg":
-    from nonebot.adapters.kritor import (
-        Message as KritorMsg,
-        MessageSegment as KritorMsgSeg,
-    )
-
-    info = await song.get_info()
-    seg = KritorMsgSeg.music(
-        "custom",
-        info.url,
-        info.playable_url,
-        info.display_name,
-        info.display_artists,
-        info.cover_url,
-    )
-    return KritorMsg(seg)
 
 
 async def sign_music_card(song: BaseSong) -> str:
@@ -103,47 +31,18 @@ async def sign_music_card(song: BaseSong) -> str:
         )
 
 
-async def json_to_ob_v11_msg(content: str) -> "OB11Msg":
-    from nonebot.adapters.onebot.v11 import (
-        Message as OB11Msg,
-        MessageSegment as OB11MsgSeg,
-    )
-
-    return OB11Msg(OB11MsgSeg.json(content))
-
-
-async def json_to_kritor_msg(content: str) -> "KritorMsg":
-    from nonebot.adapters.kritor import (
-        Message as KritorMsg,
-        MessageSegment as KritorMsgSeg,
-    )
-
-    return KritorMsg(KritorMsgSeg.json(content))
-
-
-async def get_song_card_msg(
-    song: BaseSong,
-    event_type: Optional[CardSendableEventType] = None,
-) -> BaseMessage:
-    if not event_type:
-        event_type = get_card_sendable_adapter_type()
-
-    card_json = None
+async def send_song_card_msg(song: BaseSong):
     if config.ncm_card_sign_url:
-        try:
-            card_json = await sign_music_card(song)
-        except Exception:
-            logger.exception(f"Error occurred while signing music card for {song}")
-
-    if card_json:
-        transformer = {
-            "OneBot V11": json_to_ob_v11_msg,
-            "Kritor": json_to_kritor_msg,
-        }[event_type]
-        return await transformer(card_json)
-
-    transformer = {
-        "OneBot V11": song_to_ob_v11_music_msg,
-        "Kritor": song_to_kritor_music_msg,
-    }[event_type]
-    return await transformer(song)
+        return await UniMessage.hyper("json", await sign_music_card(song)).send()
+    info = await song.get_info()
+    return await UniMessage(
+        MusicShare(
+            kind=MusicShareKind.NeteaseCloudMusic,
+            title=info.display_name,
+            content=info.display_artists,
+            url=info.url,
+            thumbnail=info.cover_url,
+            audio=info.playable_url,
+            brief=info.display_artists,
+        ),
+    ).send()

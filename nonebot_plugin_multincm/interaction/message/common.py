@@ -1,13 +1,13 @@
 from typing import Union
 
 from cookit.loguru import warning_suppress
-from nonebot.matcher import current_matcher
 from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
 from ...data_source import BasePlaylist, BaseSong
+from ...utils import is_song_card_supported
 from ..cache import set_cache
-from .song_card import get_song_card_msg, is_card_sendable_adapter
+from .song_card import send_song_card_msg
 from .song_file import send_song_media
 
 SONG_TIP = "\n使用指令 `direct` 获取播放链接"
@@ -34,11 +34,9 @@ async def construct_info_msg(
 
 async def send_song(song: BaseSong):
     async def send():
-        matcher = current_matcher.get()
-
-        if config.ncm_send_as_card and is_card_sendable_adapter():
+        if config.ncm_send_as_card and is_song_card_supported():
             with warning_suppress(f"Send {song} card failed"):
-                await matcher.send(await get_song_card_msg(song))
+                await send_song_card_msg(song)
                 return
 
         receipt = ...

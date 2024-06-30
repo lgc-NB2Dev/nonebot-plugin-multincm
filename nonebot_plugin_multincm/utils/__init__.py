@@ -12,6 +12,7 @@ from .base import (
     format_time as format_time,
     get_thumb_url as get_thumb_url,
     is_debug_mode as is_debug_mode,
+    is_song_card_supported as is_song_card_supported,
     merge_alias as merge_alias,
     write_debug_file as write_debug_file,
 )

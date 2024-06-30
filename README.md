@@ -238,6 +238,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 1.1.0
+
+- 换用 alconna 构建卡片消息
+
 ### 1.0.0
 
 项目重构
@@ -259,6 +263,9 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
   - 重命名配置项 `NCM_DOWNLOAD_LOCALLY` -> `NCM_OB_V11_LOCAL_MODE`
   - 移除配置项 `NCM_MAX_NAME_LEN`、`NCM_MAX_ARTIST_LEN`、`NCM_USE_PLAYWRIGHT`  
     现始终使用 `playwright` 进行图片渲染
+
+<details>
+<summary>点击展开 / 收起 v0 版本更新日志</summary>
 
 ### 0.5.0
 
@@ -365,3 +372,5 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 - 新增了三个指令 `解析`、`歌词`、`链接`
 - 点歌指令支持直接输入音乐 ID
+
+</details>
