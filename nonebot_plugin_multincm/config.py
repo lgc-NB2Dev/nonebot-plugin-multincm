@@ -1,10 +1,16 @@
 from typing import Annotated, Optional, Tuple
 
+from cookit.pyd import get_model_with_config
 from nonebot import get_plugin_config
+from nonebot.compat import PYDANTIC_V2
 from pydantic import AnyHttpUrl, BaseModel
 
+BaseConfigModel = (
+    get_model_with_config({"coerce_numbers_to_str": True}) if PYDANTIC_V2 else BaseModel
+)
 
-class ConfigModel(BaseModel):
+
+class ConfigModel(BaseConfigModel):
     # login
     ncm_ctcode: int = 86
     ncm_phone: Optional[str] = None
