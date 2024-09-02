@@ -29,7 +29,7 @@ async def construct_info_msg(
     )
     info = await it.get_info()
     desc = await info.get_description()
-    return UniMessage.image(info.cover_url) + f"{desc}\n{info.url}{tip}"
+    return UniMessage.image(url=info.cover_url) + f"{desc}\n{info.url}{tip}"
 
 
 async def send_song(song: BaseSong):
