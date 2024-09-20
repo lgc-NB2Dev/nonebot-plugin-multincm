@@ -48,6 +48,6 @@ async def send_song_card_msg(song: BaseSong):
             url=info.url,
             thumbnail=info.cover_url,
             audio=info.playable_url,
-            brief=info.display_artists,
+            summary=info.display_artists,
         ),
     ).send(fallback=False)
