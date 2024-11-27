@@ -24,15 +24,15 @@ license = { text = "MIT" }
 [project.urls]
 homepage = "https://github.com/lgc-NB2Dev/nonebot-plugin-multincm"
 
+[dependency-groups]
+dev = ["nonebot-adapter-kritor>=0.2.2", "nonebot-adapter-onebot>=2.4.3"]
+
 [tool.pdm.version]
 source = "file"
 path = "nonebot_plugin_multincm/__init__.py"
 
 [tool.pdm.build]
 includes = []
-
-[tool.pdm.dev-dependencies]
-dev = ["nonebot-adapter-kritor>=0.2.2", "nonebot-adapter-onebot>=2.4.3"]
 
 [build-system]
 requires = ["pdm-backend"]
