@@ -94,6 +94,9 @@ def merge_lrc(
     merged: List[List[LrcLine]] = [[x] for x in main_lyric]
     for merged_line in merged:
         main_line = merged_line[0]
+        if not main_line.lrc:
+            continue
+
         main_time = main_line.time
 
         for sub_lrc in sub_lyrics:
@@ -103,7 +106,7 @@ def merge_lrc(
 
                 if (main_time - threshold) <= line.time < (main_time + threshold):
                     for _ in range(i + 1):
-                        it = sub_lrc.pop(0)
+                        it = sub_lrc.pop(0)  # noqa: B909
                         if it.lrc:
                             merged_line.append(it)
                     break
