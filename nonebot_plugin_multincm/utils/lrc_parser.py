@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from ..config import config
 
@@ -25,7 +25,7 @@ def parse_lrc(
     lrc: str,
     ignore_empty: bool = False,
     merge_empty: bool = True,
-) -> List[LrcLine]:
+) -> list[LrcLine]:
     parsed = []
     for line in re.finditer(LRC_LINE_REGEX, lrc):
         lrc = line["lrc"].strip().replace("\u3000", " ")
@@ -65,17 +65,17 @@ def parse_lrc(
     return parsed
 
 
-def strip_lrc_lines(lines: List[LrcLine]) -> List[LrcLine]:
+def strip_lrc_lines(lines: list[LrcLine]) -> list[LrcLine]:
     for lrc in lines:
         lrc.lrc = lrc.lrc.strip()
     return lines
 
 
 def merge_lrc(
-    *lyrics: List[LrcLine],
+    *lyrics: list[LrcLine],
     threshold: int = 20,
     replace_empty_line: Optional[str] = None,
-) -> List[List[LrcLine]]:
+) -> list[list[LrcLine]]:
     lyrics = tuple(x.copy() for x in lyrics)
 
     for lrc in lyrics:
@@ -91,7 +91,7 @@ def merge_lrc(
                 x.lrc = replace_empty_line
                 x.skip_merge = True
 
-    merged: List[List[LrcLine]] = [[x] for x in main_lyric]
+    merged: list[list[LrcLine]] = [[x] for x in main_lyric]
     for merged_line in merged:
         main_line = merged_line[0]
         if not main_line.lrc:
@@ -117,7 +117,7 @@ def merge_lrc(
     return merged
 
 
-def normalize_lrc(lrc: "md.LyricData") -> Optional[List[List[str]]]:
+def normalize_lrc(lrc: "md.LyricData") -> Optional[list[list[str]]]:
     def fmt_usr(usr: "md.User") -> str:
         return f"{usr.nickname} [{usr.user_id}]"
 
@@ -127,7 +127,7 @@ def normalize_lrc(lrc: "md.LyricData") -> Optional[List[List[str]]]:
 
     lyrics = [
         parse_lrc(x.lyric)
-        for x in cast(List[Optional["md.Lyric"]], [raw, lrc.roma_lrc, lrc.trans_lrc])
+        for x in cast(list[Optional["md.Lyric"]], [raw, lrc.roma_lrc, lrc.trans_lrc])
         if x
     ]
     lyrics = [x for x in lyrics if x]

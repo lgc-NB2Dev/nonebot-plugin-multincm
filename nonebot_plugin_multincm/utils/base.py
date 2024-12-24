@@ -2,8 +2,7 @@ import asyncio
 import json
 import math
 import time
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 from typing_extensions import ParamSpec
 
 from cookit import flatten
@@ -17,6 +16,8 @@ from ..config import config
 from ..const import DEBUG_DIR, DEBUG_ROOT_DIR
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from ..data_source import md
 
 P = ParamSpec("P")
@@ -29,11 +30,11 @@ def format_time(time: int) -> str:
     return f"{mm:0>2d}:{ss:0>2d}"
 
 
-def format_alias(name: str, alias: Optional[List[str]] = None) -> str:
+def format_alias(name: str, alias: Optional[list[str]] = None) -> str:
     return f'{name}（{"；".join(alias)}）' if alias else name
 
 
-def format_artists(artists: List["md.Artist"]) -> str:
+def format_artists(artists: list["md.Artist"]) -> str:
     return "、".join([x.name for x in artists])
 
 
@@ -45,7 +46,7 @@ def calc_min_index(page: int) -> int:
     return (page - 1) * config.ncm_list_limit
 
 
-def calc_min_max_index(page: int) -> Tuple[int, int]:
+def calc_min_max_index(page: int) -> tuple[int, int]:
     min_index = calc_min_index(page)
     max_index = min_index + config.ncm_list_limit
     return min_index, max_index
@@ -101,7 +102,7 @@ async def ffmpeg_exists() -> bool:
     return code == 0
 
 
-async def encode_silk(path: Path, rate: int = 24000) -> Path:
+async def encode_silk(path: "Path", rate: int = 24000) -> "Path":
     silk_path = path.with_suffix(".silk")
     if silk_path.exists():
         return silk_path
@@ -132,7 +133,7 @@ async def encode_silk(path: Path, rate: int = 24000) -> Path:
     return silk_path
 
 
-def merge_alias(song: "md.Song") -> List[str]:
+def merge_alias(song: "md.Song") -> list[str]:
     alias = song.tns.copy() if song.tns else []
     alias.extend(
         x for x in flatten(x.split("；") for x in song.alias) if x not in alias

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Optional, Tuple, Type, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 from typing_extensions import Self, TypeAlias, override
 
 from cachetools import TTLCache
@@ -30,7 +30,7 @@ class BaseCache(ABC, Generic[TC]):
 @dataclass
 class IDCache(BaseCache, Generic[TID]):
     id: int
-    original: Type[TID]
+    original: type[TID]
 
     @override
     @classmethod
@@ -59,7 +59,7 @@ async def set_cache(item: CacheableItemType, event: Optional[BaseEvent] = None):
 async def get_cache(
     event: Optional[BaseEvent] = None,
     expected_type: Optional[
-        Union[Type[ResolvableFromID], Tuple[Type[ResolvableFromID], ...]]
+        Union[type[ResolvableFromID], tuple[type[ResolvableFromID], ...]]
     ] = None,
 ) -> Optional[CacheableItemType]:
     if not event:

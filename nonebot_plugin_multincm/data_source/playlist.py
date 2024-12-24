@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from contextlib import suppress
-from typing import Generic, Iterable, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import calc_min_max_index, cut_string, get_thumb_url
@@ -38,7 +39,7 @@ class PlaylistListPage(
 
 
 @playlist
-class Playlist(BasePlaylist[md.Playlist, List[md.Song], md.Song, Song]):
+class Playlist(BasePlaylist[md.Playlist, list[md.Song], md.Song, Song]):
     calling = "歌单"
     child_calling = Song.calling
     link_types = ("playlist",)
@@ -55,15 +56,15 @@ class Playlist(BasePlaylist[md.Playlist, List[md.Song], md.Song, Song]):
         return cls(resp)
 
     @override
-    async def _extract_resp_content(self, resp: List[md.Song]) -> List[md.Song]:
+    async def _extract_resp_content(self, resp: list[md.Song]) -> list[md.Song]:
         return resp
 
     @override
-    async def _extract_total_count(self, resp: List[md.Song]) -> int:
+    async def _extract_total_count(self, resp: list[md.Song]) -> int:
         return self.info.track_count
 
     @override
-    async def _do_get_page(self, page: int) -> List[md.Song]:
+    async def _do_get_page(self, page: int) -> list[md.Song]:
         min_index, max_index = calc_min_max_index(page)
         track_ids = [x.id for x in self.info.track_ids[min_index:max_index]]
         return await get_track_info(track_ids)
@@ -81,7 +82,7 @@ class Playlist(BasePlaylist[md.Playlist, List[md.Song], md.Song, Song]):
         return self.info.name
 
     @override
-    async def get_creators(self) -> List[str]:
+    async def get_creators(self) -> list[str]:
         return [self.info.creator.nickname]
 
     @override
@@ -124,7 +125,7 @@ class PlaylistSearcher(
     async def _extract_resp_content(
         self,
         resp: md.PlaylistSearchResult,
-    ) -> Optional[List[md.BasePlaylist]]:
+    ) -> Optional[list[md.BasePlaylist]]:
         return resp.playlists
 
     @override

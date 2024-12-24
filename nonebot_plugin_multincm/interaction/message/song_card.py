@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from cookit.loguru import warning_suppress
 from httpx import AsyncClient
 from nonebot_plugin_alconna.builtins.uniseg.music_share import (
@@ -7,10 +9,12 @@ from nonebot_plugin_alconna.builtins.uniseg.music_share import (
 from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
-from ...data_source import BaseSong, SongInfo
+
+if TYPE_CHECKING:
+    from ...data_source import BaseSong, SongInfo
 
 
-async def sign_music_card(info: SongInfo) -> str:
+async def sign_music_card(info: "SongInfo") -> str:
     assert config.ncm_card_sign_url
     async with AsyncClient(
         follow_redirects=True,
@@ -31,7 +35,7 @@ async def sign_music_card(info: SongInfo) -> str:
         )
 
 
-async def send_song_card_msg(song: BaseSong):
+async def send_song_card_msg(song: "BaseSong"):
     info = await song.get_info()
     if config.ncm_card_sign_url:
         with warning_suppress(

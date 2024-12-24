@@ -1,11 +1,11 @@
-from typing import List, TypedDict
+from typing import TypedDict
 from typing_extensions import Unpack
 
 from .utils import render_html, render_template
 
 
 class LyricsRenderParams(TypedDict):
-    groups: List[List[str]]
+    groups: list[list[str]]
 
 
 async def render_lyrics(**kwargs: Unpack[LyricsRenderParams]) -> bytes:

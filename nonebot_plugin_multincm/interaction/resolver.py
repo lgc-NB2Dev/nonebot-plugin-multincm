@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
-from typing import Optional, Tuple, Type, Union
-from typing_extensions import Annotated, TypeAlias
+from typing import Annotated, Optional, Union
+from typing_extensions import TypeAlias
 
 from cachetools import TTLCache
 from cookit import flatten, queued
@@ -29,8 +29,8 @@ from ..utils import is_song_card_supported
 from .cache import get_cache
 
 ExpectedTypeType: TypeAlias = Union[
-    Type[GeneralSongOrPlaylist],
-    Tuple[Type[GeneralSongOrPlaylist], ...],
+    type[GeneralSongOrPlaylist],
+    tuple[type[GeneralSongOrPlaylist], ...],
 ]
 
 

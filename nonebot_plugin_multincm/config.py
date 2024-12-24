@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Tuple
+from typing import Annotated, Optional
 
 from cookit.pyd import get_model_with_config
 from nonebot import get_plugin_config
@@ -30,7 +30,7 @@ class ConfigModel(BaseConfigModel):
     ncm_illegal_cmd_finish: bool = False
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_msg: bool = True
-    ncm_delete_msg_delay: Tuple[float, float] = (0.5, 2.0)
+    ncm_delete_msg_delay: tuple[float, float] = (0.5, 2.0)
     ncm_send_media: bool = True
     ncm_send_as_card: bool = True
     ncm_send_as_file: bool = False

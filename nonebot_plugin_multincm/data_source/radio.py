@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from contextlib import suppress
-from typing import Generic, Iterable, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import cut_string, get_thumb_url
@@ -61,7 +62,7 @@ class Radio(BasePlaylist[md.Radio, md.RadioProgramList, md.ProgramBaseInfo, Prog
     async def _extract_resp_content(
         self,
         resp: md.RadioProgramList,
-    ) -> List[md.ProgramBaseInfo]:
+    ) -> list[md.ProgramBaseInfo]:
         return resp.programs
 
     @override
@@ -88,7 +89,7 @@ class Radio(BasePlaylist[md.Radio, md.RadioProgramList, md.ProgramBaseInfo, Prog
         return self.info.name
 
     @override
-    async def get_creators(self) -> List[str]:
+    async def get_creators(self) -> list[str]:
         return [self.info.dj.nickname]
 
     @override
@@ -132,7 +133,7 @@ class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.RadioBaseInfo, Radio])
     async def _extract_resp_content(
         self,
         resp: md.RadioSearchResult,
-    ) -> Optional[List[md.RadioBaseInfo]]:
+    ) -> Optional[list[md.RadioBaseInfo]]:
         return [x.base_info for x in resp.resources] if resp.resources else None
 
     @override

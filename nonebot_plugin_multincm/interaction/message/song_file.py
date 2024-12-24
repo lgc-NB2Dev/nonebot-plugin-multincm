@@ -1,6 +1,5 @@
 import mimetypes
 from contextlib import suppress
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from cookit.loguru import warning_suppress
@@ -11,11 +10,15 @@ from nonebot_plugin_alconna.uniseg import Receipt, UniMessage, get_exporter
 
 from ...config import config
 from ...const import SONG_CACHE_DIR
-from ...data_source import BaseSong, SongInfo
 from ...utils import encode_silk, ffmpeg_exists
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-async def download_song(info: SongInfo):
+    from ...data_source import BaseSong, SongInfo
+
+
+async def download_song(info: "SongInfo"):
     filename = info.download_filename
     file_path = SONG_CACHE_DIR / filename
     if not file_path.exists():
@@ -29,8 +32,8 @@ async def download_song(info: SongInfo):
 
 
 async def send_song_media_uni_msg(
-    path: Path,
-    info: SongInfo,
+    path: "Path",
+    info: "SongInfo",
     raw: bool = False,
     as_file: bool = False,
 ):
@@ -55,11 +58,11 @@ async def get_current_ev_receipt(msg_ids: Any):
     )
 
 
-async def send_song_media_telegram(info: SongInfo, as_file: bool = False):  # noqa: ARG001
+async def send_song_media_telegram(info: "SongInfo", as_file: bool = False):  # noqa: ARG001
     return await send_song_media_uni_msg(await download_song(info), info, as_file=False)
 
 
-async def send_song_media_onebot_v11(info: SongInfo, as_file: bool = False):
+async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
     async def send_voice():
         if not await ffmpeg_exists():
             logger.warning(
@@ -107,7 +110,7 @@ async def send_song_media_onebot_v11(info: SongInfo, as_file: bool = False):
 
 
 async def send_song_media_platform_specific(
-    info: SongInfo,
+    info: "SongInfo",
     as_file: bool = False,
 ) -> Optional[Receipt]:
     bot = current_bot.get()
@@ -121,7 +124,7 @@ async def send_song_media_platform_specific(
     return await processors[adapter_name](info, as_file=as_file)
 
 
-async def send_song_media(song: BaseSong, as_file: bool = config.ncm_send_as_file):
+async def send_song_media(song: "BaseSong", as_file: bool = config.ncm_send_as_file):
     info = await song.get_info()
 
     with warning_suppress(

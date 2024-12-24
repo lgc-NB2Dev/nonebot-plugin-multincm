@@ -1,17 +1,5 @@
 from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Literal, Optional, TypeVar, Union, cast, overload
 
 from nonebot.utils import run_sync
 from pydantic import BaseModel
@@ -43,7 +31,7 @@ from .models import (
 TModel = TypeVar("TModel", bound=BaseModel)
 
 
-async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
+async def ncm_request(api: Callable, *args, **kwargs) -> dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
     if is_debug_mode():
         write_debug_file(f"{api.__name__}_{{time}}.json", ret)
@@ -55,7 +43,7 @@ async def ncm_request(api: Callable, *args, **kwargs) -> Dict[str, Any]:
 @overload
 async def get_search_result(
     keyword: str,
-    return_model: Type[TModel],
+    return_model: type[TModel],
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
@@ -69,16 +57,16 @@ async def get_search_result(
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
-) -> Dict[str, Any]: ...
+) -> dict[str, Any]: ...
 
 
 async def get_search_result(
     keyword: str,
-    return_model: Optional[Type[TModel]] = None,
+    return_model: Optional[type[TModel]] = None,
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
-) -> Union[Dict[str, Any], TModel]:
+) -> Union[dict[str, Any], TModel]:
     offset = calc_min_index(page)
     res = await ncm_request(
         GetSearchResult,
@@ -150,15 +138,15 @@ async def search_program(keyword: str, page: int = 1):
 
 
 async def get_track_audio(
-    song_ids: List[int],
+    song_ids: list[int],
     bit_rate: int = 999999,
     **kwargs,
-) -> List[TrackAudio]:
+) -> list[TrackAudio]:
     res = await ncm_request(GetTrackAudio, song_ids, bitrate=bit_rate, **kwargs)
-    return [TrackAudio(**x) for x in cast(List[dict], res["data"])]
+    return [TrackAudio(**x) for x in cast(list[dict], res["data"])]
 
 
-async def get_track_info(ids: List[int], **kwargs) -> List[Song]:
+async def get_track_info(ids: list[int], **kwargs) -> list[Song]:
     res = await ncm_request(GetTrackDetail, ids, **kwargs)
     privileges = {y.id: y for y in [Privilege(**x) for x in res["privileges"]]}
     return [

@@ -1,15 +1,17 @@
 import asyncio
-from typing import List, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 from typing_extensions import Unpack
 
-from ..data_source import GeneralSongListPage
 from ..utils import calc_min_index
 from .utils import render_html, render_template
+
+if TYPE_CHECKING:
+    from ..data_source import GeneralSongListPage
 
 
 class CardListRenderParams(TypedDict):
     title: str
-    cards: List[str]
+    cards: list[str]
     current_page: int
     max_page: int
     total_count: int
@@ -20,8 +22,8 @@ class TrackCardRenderParams(TypedDict):
     cover: str
     title: str
     alias: str
-    extras: List[str]
-    small_extras: List[str]
+    extras: list[str]
+    small_extras: list[str]
 
 
 async def render_card_list(**kwargs: Unpack[CardListRenderParams]) -> bytes:
@@ -32,7 +34,7 @@ async def render_track_card_html(**kwargs: Unpack[TrackCardRenderParams]) -> str
     return await render_template("track_card.html.jinja", **kwargs)
 
 
-async def render_list_resp(resp: GeneralSongListPage) -> bytes:
+async def render_list_resp(resp: "GeneralSongListPage") -> bytes:
     index_offset = calc_min_index(resp.father.current_page)
     card_params = [
         {"index": i, **x.__dict__}

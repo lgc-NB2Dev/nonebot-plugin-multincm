@@ -1,21 +1,9 @@
 import asyncio
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    ClassVar,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 from typing_extensions import Self, TypeAlias, TypeGuard, override
 
 from ..config import config
@@ -48,14 +36,14 @@ _TSongOrList = TypeVar("_TSongOrList", bound=Union["BaseSong", "BaseSongList"])
 _TResolvable = TypeVar("_TResolvable", bound="BaseResolvable")
 
 
-registered_resolvable: Dict[str, Type["BaseResolvable"]] = {}
-registered_song: Set[Type["BaseSong"]] = set()
-registered_playlist: Set[Type["BasePlaylist"]] = set()
-registered_searcher: Dict[Type["BaseSearcher"], Tuple[str, ...]] = {}
+registered_resolvable: dict[str, type["BaseResolvable"]] = {}
+registered_song: set[type["BaseSong"]] = set()
+registered_playlist: set[type["BasePlaylist"]] = set()
+registered_searcher: dict[type["BaseSearcher"], tuple[str, ...]] = {}
 
 
 class ResolvableFromID(ABC):
-    link_types: ClassVar[Tuple[str, ...]]
+    link_types: ClassVar[tuple[str, ...]]
 
     @property
     @abstractmethod
@@ -71,24 +59,24 @@ class ResolvableFromID(ABC):
         return build_item_link(self.link_types[0], self.id)
 
 
-def link_resolvable(cls: Type[_TResolvable]):
+def link_resolvable(cls: type[_TResolvable]):
     if n := next((x for x in cls.link_types if x in registered_resolvable), None):
         raise ValueError(f"Duplicate link type: {n}")
     registered_resolvable.update(dict.fromkeys(cls.link_types, cls))
     return cls
 
 
-def song(cls: Type[_TSong]):
+def song(cls: type[_TSong]):
     registered_song.add(cls)
     return link_resolvable(cls)
 
 
-def playlist(cls: Type[_TPlaylist]):
+def playlist(cls: type[_TPlaylist]):
     registered_playlist.add(cls)
     return link_resolvable(cls)
 
 
-def searcher(cls: Type[_TSearcher]):
+def searcher(cls: type[_TSearcher]):
     registered_searcher[cls] = cls.commands
     return cls
 
@@ -107,8 +95,8 @@ async def resolve_from_link_params(
 class SongInfo(Generic[_TSong]):
     father: _TSong
     name: str
-    alias: Optional[List[str]]
-    artists: List[str]
+    alias: Optional[list[str]]
+    artists: list[str]
     duration: int
     url: str
     cover_url: str
@@ -176,10 +164,10 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_name(self) -> str: ...
 
     @abstractmethod
-    async def get_alias(self) -> Optional[List[str]]: ...
+    async def get_alias(self) -> Optional[list[str]]: ...
 
     @abstractmethod
-    async def get_artists(self) -> List[str]: ...
+    async def get_artists(self) -> list[str]: ...
 
     @abstractmethod
     async def get_duration(self) -> int: ...
@@ -191,7 +179,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_playable_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyrics(self) -> Optional[List[List[str]]]: ...
+    async def get_lyrics(self) -> Optional[list[list[str]]]: ...
 
     async def get_info(self) -> SongInfo:
         (
@@ -238,8 +226,8 @@ class ListPageCard:
     cover: str
     title: str
     alias: str = ""
-    extras: List[str] = field(default_factory=list)
-    small_extras: List[str] = field(default_factory=list)
+    extras: list[str] = field(default_factory=list)
+    small_extras: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -258,7 +246,7 @@ class BaseSongListPage(Generic[_TRawRespInner, _TSongList]):
         resp: _TRawRespInner,
     ) -> ListPageCard: ...
 
-    async def transform_to_list_cards(self) -> List[ListPageCard]:
+    async def transform_to_list_cards(self) -> list[ListPageCard]:
         return await asyncio.gather(
             *[self.transform_resp_to_list_card(resp) for resp in self.content],
         )
@@ -270,7 +258,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     def __init__(self) -> None:
         self.current_page: int = 1
         self._total_count: Optional[int] = None
-        self._cache: Dict[int, _TRawRespInner] = {}
+        self._cache: dict[int, _TRawRespInner] = {}
 
     def __str__(self) -> str:
         return (
@@ -303,7 +291,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     async def _extract_resp_content(
         self,
         resp: _TRawResp,
-    ) -> Optional[List[_TRawRespInner]]: ...
+    ) -> Optional[list[_TRawRespInner]]: ...
 
     @abstractmethod
     async def _extract_total_count(self, resp: _TRawResp) -> int: ...
@@ -320,7 +308,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
         resp: Iterable[_TRawRespInner],
     ) -> BaseSongListPage[_TRawRespInner, Self]: ...
 
-    def _update_cache(self, page: int, data: List[_TRawRespInner]):
+    def _update_cache(self, page: int, data: list[_TRawRespInner]):
         min_index = calc_min_index(page)
         self._cache.update({min_index + i: item for i, item in enumerate(data)})
 
@@ -378,7 +366,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
 class PlaylistInfo(Generic[_TPlaylist]):
     father: _TPlaylist
     name: str
-    creators: List[str]
+    creators: list[str]
     url: str
     cover_url: str
 
@@ -428,7 +416,7 @@ class BasePlaylist(
     async def get_name(self) -> str: ...
 
     @abstractmethod
-    async def get_creators(self) -> List[str]: ...
+    async def get_creators(self) -> list[str]: ...
 
     @abstractmethod
     async def get_cover_url(self) -> str: ...
@@ -463,7 +451,7 @@ class BasePlaylist(
 
 
 class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
-    commands: Tuple[str, ...]
+    commands: tuple[str, ...]
 
     @override
     def __init__(self, keyword: str) -> None:

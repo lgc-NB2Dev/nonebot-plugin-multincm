@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, List, Optional, TypeVar
+from collections.abc import Iterable
+from typing import Generic, Optional, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import (
@@ -58,11 +59,11 @@ class Song(BaseSong[md.Song]):
         return self.info.name
 
     @override
-    async def get_alias(self) -> List[str]:
+    async def get_alias(self) -> list[str]:
         return merge_alias(self.info)
 
     @override
-    async def get_artists(self) -> List[str]:
+    async def get_artists(self) -> list[str]:
         return [x.name for x in self.info.ar]
 
     @override
@@ -79,7 +80,7 @@ class Song(BaseSong[md.Song]):
         return info.url
 
     @override
-    async def get_lyrics(self) -> Optional[List[List[str]]]:
+    async def get_lyrics(self) -> Optional[list[list[str]]]:
         return normalize_lrc(await get_track_lrc(self.info.id))
 
 
@@ -100,7 +101,7 @@ class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
     async def _extract_resp_content(
         self,
         resp: md.SongSearchResult,
-    ) -> Optional[List[md.Song]]:
+    ) -> Optional[list[md.Song]]:
         return resp.songs
 
     @override

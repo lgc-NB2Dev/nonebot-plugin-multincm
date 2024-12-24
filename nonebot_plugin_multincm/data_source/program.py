@@ -1,4 +1,5 @@
-from typing import Generic, Iterable, List, Optional, TypeVar
+from collections.abc import Iterable
+from typing import Generic, Optional, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import cut_string, format_time, get_thumb_url
@@ -63,11 +64,11 @@ class Program(BaseSong[md.ProgramBaseInfo]):
         return self.info.name
 
     @override
-    async def get_alias(self) -> Optional[List[str]]:
+    async def get_alias(self) -> Optional[list[str]]:
         return None
 
     @override
-    async def get_artists(self) -> List[str]:
+    async def get_artists(self) -> list[str]:
         return [self.info.radio.name]
 
     @override
@@ -127,7 +128,7 @@ class ProgramSearcher(
     async def _extract_resp_content(
         self,
         resp: md.ProgramSearchResult,
-    ) -> Optional[List[md.ProgramBaseInfo]]:
+    ) -> Optional[list[md.ProgramBaseInfo]]:
         return [x.base_info for x in resp.resources] if resp.resources else None
 
     @override
