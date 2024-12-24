@@ -358,7 +358,8 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
             if resp is None:
                 raise ValueError("Empty response, index may out of range")
             self._update_cache(page_num, resp)
-            content = resp[0]
+            min_index = calc_min_index(page_num)
+            content = resp[index - min_index]
         return await self._build_selection(content)
 
 
