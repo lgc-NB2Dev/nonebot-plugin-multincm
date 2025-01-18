@@ -2,7 +2,7 @@
 name = "nonebot-plugin-multincm"
 dynamic = ["version"]
 description = "NCM Song Searcher"
-authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
+authors = [{ name = "LgCookie", email = "lgc2333@126.com" }]
 dependencies = [
     "nonebot2>=2.4.0",
     "nonebot-plugin-htmlrender>=0.5.1",
