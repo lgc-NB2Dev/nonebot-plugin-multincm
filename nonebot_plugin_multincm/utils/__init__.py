@@ -5,16 +5,15 @@ from .base import (
     calc_min_max_index as calc_min_max_index,
     calc_page_number as calc_page_number,
     cut_string as cut_string,
+    debug as debug,
     encode_silk as encode_silk,
     ffmpeg_exists as ffmpeg_exists,
     format_alias as format_alias,
     format_artists as format_artists,
     format_time as format_time,
     get_thumb_url as get_thumb_url,
-    is_debug_mode as is_debug_mode,
     is_song_card_supported as is_song_card_supported,
     merge_alias as merge_alias,
-    write_debug_file as write_debug_file,
 )
 from .lrc_parser import (
     LrcLine as LrcLine,

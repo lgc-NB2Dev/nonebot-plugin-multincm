@@ -17,6 +17,7 @@ class ConfigModel(BaseConfigModel):
     ncm_email: Optional[str] = None
     ncm_password: Optional[str] = None
     ncm_password_hash: Optional[str] = None
+    ncm_anonymous: bool = False
 
     # ui
     ncm_list_limit: int = 20

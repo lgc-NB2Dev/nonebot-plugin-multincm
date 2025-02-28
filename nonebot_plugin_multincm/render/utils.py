@@ -7,7 +7,7 @@ from cookit.jinja import make_register_jinja_filter_deco, register_all_filters
 from nonebot_plugin_htmlrender import get_new_page
 
 from ..config import config
-from ..utils import is_debug_mode, write_debug_file
+from ..utils import debug
 
 jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(Path(__file__).parent / "templates"),
@@ -51,8 +51,7 @@ async def render_html(
     selector: str = "main",
     image_type: Literal["jpeg", "png"] = "jpeg",
 ) -> bytes:
-    if is_debug_mode():
-        write_debug_file("{time}.html", html)
+    debug.write(html, "{time}.html")
     async with get_new_page() as page:
         await page.set_content(html)
         elem = await page.query_selector(selector)

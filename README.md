@@ -137,7 +137,21 @@ plugins = [
 
 如果你安装了 [nonebot-plugin-ncm](https://github.com/kitUIN/nonebot-plugin-ncm) 或者其他使用到 pyncm 的插件并且全局 Session 已登录，本插件会与它们共用全局 Session，就可以不用填下面的账号密码了
 
-下面配置中，手机号登录 和 邮箱登录、明文密码 和 MD5 密码哈希 各选其一填写即可
+登录相关配置填写说明：
+
+- **\[推荐\]** 如果想要使用 二维码 登录，则 **所有** 登录相关配置项都 **不要填写**
+- 如果想要使用 短信验证码 登录
+  - **必填** `NCM_PHONE`
+  - 选填 `NCM_CTCODE`（默认为 `86`）
+- 如果想要使用 手机号与密码 登录
+  - **必填** `NCM_PHONE`
+  - **必填** `NCM_PASSWORD` 或 `NCM_PASSWORD_HASH` 其中一个
+  - 选填 `NCM_CTCODE`（默认为 `86`）
+- 如果想要使用 邮箱与密码 登录
+  - **必填** `NCM_EMAIL`
+  - **必填** `NCM_PASSWORD` 或 `NCM_PASSWORD_HASH` 其中一个
+- 如果只想要使用 游客 登录
+  - **必填** `NCM_ANONYMOUS=True`
 
 在 nonebot2 项目的 `.env` 文件中添加下表中的必填配置
 
@@ -149,6 +163,7 @@ plugins = [
 |            `NCM_EMAIL`             |  否  |      无      |                                           邮箱登录用，登录邮箱                                            |
 |           `NCM_PASSWORD`           |  否  |      无      |                                    帐号明文密码，邮箱登录时为邮箱密码                                     |
 |        `NCM_PASSWORD_HASH`         |  否  |      无      |                                  帐号密码 MD5 哈希，邮箱登录时为邮箱密码                                  |
+|          `NCM_ANONYMOUS`           |  否  |   `False`    |                                             是否强制游客登录                                              |
 |            **UI 相关**             |      |              |                                                                                                           |
 |          `NCM_LIST_LIMIT`          |  否  |     `20`     |                                          歌曲列表每页的最大数量                                           |
 |          `NCM_LIST_FONT`           |  否  |      无      |                                          渲染歌曲列表使用的字体                                           |
@@ -246,6 +261,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 感谢大家的赞助！你们的赞助将是我继续创作的动力！
 
 ## 📝 更新日志
+
+### 1.2.0
+
+- 支持更多登录方式
 
 ### 1.1.5
 

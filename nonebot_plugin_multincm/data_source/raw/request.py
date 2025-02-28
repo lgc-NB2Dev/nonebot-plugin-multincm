@@ -1,5 +1,6 @@
 from functools import partial
 from typing import Any, Callable, Literal, Optional, TypeVar, Union, cast, overload
+from typing_extensions import ParamSpec
 
 from nonebot.utils import run_sync
 from pydantic import BaseModel
@@ -10,7 +11,7 @@ from pyncm.apis.playlist import GetPlaylistInfo
 from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from ...config import config
-from ...utils import calc_min_index, is_debug_mode, write_debug_file
+from ...utils import calc_min_index, debug
 from .models import (
     AlbumInfo,
     AlbumSearchResult,
@@ -29,14 +30,35 @@ from .models import (
 )
 
 TModel = TypeVar("TModel", bound=BaseModel)
+P = ParamSpec("P")
 
 
-async def ncm_request(api: Callable, *args, **kwargs) -> dict[str, Any]:
+class NCMResponseError(Exception):
+    def __init__(self, name: str, data: dict[str, Any]):
+        self.name = name
+        self.data = data
+
+    @property
+    def code(self) -> Optional[int]:
+        return self.data.get("code")
+
+    @property
+    def message(self) -> Optional[str]:
+        return self.data.get("message")
+
+    def __str__(self):
+        return f"{self.name} failed: [{self.code}] {self.message}"
+
+
+async def ncm_request(
+    api: Callable[P, Any],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
-    if is_debug_mode():
-        write_debug_file(f"{api.__name__}_{{time}}.json", ret)
+    debug.write(ret, f"{api.__name__}_{{time}}.json")
     if ret.get("code", 200) != 200:
-        raise RuntimeError(f"请求 {api.__name__} 失败\n{ret}")
+        raise NCMResponseError(api.__name__, ret)
     return ret
 
 
@@ -163,7 +185,7 @@ async def get_track_info(ids: list[int], **kwargs) -> list[Song]:
 
 
 async def get_track_lrc(song_id: int):
-    res = await ncm_request(GetTrackLyrics, song_id)
+    res = await ncm_request(GetTrackLyrics, str(song_id))
     return LyricData(**res)
 
 
@@ -204,5 +226,5 @@ async def get_playlist_info(playlist_id: int):
 
 
 async def get_album_info(album_id: int):
-    res = await ncm_request(GetAlbumInfo, album_id)
+    res = await ncm_request(GetAlbumInfo, str(album_id))
     return AlbumInfo(**res)
