@@ -6,6 +6,5 @@ from .card_list import (
     render_track_card_html as render_track_card_html,
 )
 from .lyrics import (
-    LyricsRenderParams as LyricsRenderParams,
     render_lyrics as render_lyrics,
 )

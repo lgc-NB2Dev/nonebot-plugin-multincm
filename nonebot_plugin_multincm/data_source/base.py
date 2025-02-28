@@ -8,6 +8,7 @@ from typing_extensions import Self, TypeAlias, TypeGuard, override
 
 from ..config import config
 from ..utils import (
+    NCMLrcGroupLine,
     build_item_link,
     calc_max_page,
     calc_min_index,
@@ -179,7 +180,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_playable_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyrics(self) -> Optional[list[list[str]]]: ...
+    async def get_lyrics(self) -> Optional[list[NCMLrcGroupLine]]: ...
 
     async def get_info(self) -> SongInfo:
         (

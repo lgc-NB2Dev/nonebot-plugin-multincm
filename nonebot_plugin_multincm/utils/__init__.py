@@ -16,7 +16,11 @@ from .base import (
     merge_alias as merge_alias,
 )
 from .lrc_parser import (
+    NCM_MAIN_LRC_GROUP as NCM_MAIN_LRC_GROUP,
+    LrcGroupLine as LrcGroupLine,
     LrcLine as LrcLine,
+    NCMLrcGroupLine as NCMLrcGroupLine,
+    NCMLrcGroupNameType as NCMLrcGroupNameType,
     merge_lrc as merge_lrc,
     normalize_lrc as normalize_lrc,
     parse_lrc as parse_lrc,

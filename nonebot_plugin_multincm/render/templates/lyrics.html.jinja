@@ -19,15 +19,18 @@
     font-size: 20px;
     font-weight: bold;
   }
+
+  .lyric-group .roma {
+    font-size: 14px;
+  }
 </style>
 {%- endblock %}
 
 {% block main -%}
 {% for group in groups -%}
 <div class="lyric-group">
-  {% for it in group -%}
-  {% if it %}<div {% if loop.first %}class="main" {% endif %}>{{ it }}</div>{% endif %}
-  {%- endfor %}
+  {% for n, r in group %}<div class="{{ n }}">{{ r }}</div>
+  {% endfor -%}
 </div>
 {%- endfor %}
 <div class="footer text-center">
