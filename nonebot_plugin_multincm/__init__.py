@@ -5,6 +5,7 @@ from nonebot.plugin import PluginMetadata, inherit_supported_adapters, require
 
 require("nonebot_plugin_alconna")
 require("nonebot_plugin_waiter")
+require("nonebot_plugin_localstore")
 require("nonebot_plugin_htmlrender")
 
 from . import interaction as interaction
@@ -29,7 +30,7 @@ auto_resolve_tip = (
     "▶ Bot 会自动解析你发送的网易云链接\n" if config.ncm_auto_resolve else ""
 )
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",

@@ -217,7 +217,8 @@ async def do_login(anonymous: bool = False):
     if anonymous:
         logger.success("游客登录成功")
     else:
-        SESSION_FILE.write_text(DumpSessionAsString(session_exists), "u8")
+        if not using_cached_session:
+            SESSION_FILE.write_text(DumpSessionAsString(session_exists), "u8")
         logger.success(
             f"登录成功，欢迎您，{session_exists.nickname} [{session_exists.uid}]",
         )

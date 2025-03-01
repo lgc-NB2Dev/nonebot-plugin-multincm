@@ -1,9 +1,10 @@
-from pathlib import Path
+from cookit.nonebot.localstore import ensure_localstore_path_config
+from nonebot_plugin_localstore import get_data_dir
 
-DATA_DIR = Path.cwd() / "data" / "multincm"
+ensure_localstore_path_config()
+
+DATA_DIR = get_data_dir("multincm")
 SONG_CACHE_DIR = DATA_DIR / "song_cache"
-for _p in (DATA_DIR, SONG_CACHE_DIR):
-    _p.mkdir(parents=True, exist_ok=True)
 
 URL_REGEX = r"music\.163\.com/(.*?)(?P<type>[a-zA-Z]+)(/?\?id=|/)(?P<id>[0-9]+)&?"
 SHORT_URL_BASE = "https://163cn.tv"

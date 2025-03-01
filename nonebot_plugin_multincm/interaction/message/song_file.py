@@ -21,13 +21,15 @@ if TYPE_CHECKING:
 async def download_song(info: "SongInfo"):
     filename = info.download_filename
     file_path = SONG_CACHE_DIR / filename
-    if not file_path.exists():
-        async with AsyncClient(follow_redirects=True) as cli:
-            async with cli.stream("GET", info.playable_url) as resp:
-                resp.raise_for_status()
-                with file_path.open("wb") as f:
-                    async for chunk in resp.aiter_bytes():
-                        f.write(chunk)
+    if file_path.exists():
+        return file_path
+
+    async with AsyncClient(follow_redirects=True) as cli, cli.stream("GET", info.playable_url) as resp:  # fmt: skip
+        resp.raise_for_status()
+        SONG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        with file_path.open("wb") as f:
+            async for chunk in resp.aiter_bytes():
+                f.write(chunk)
     return file_path
 
 
