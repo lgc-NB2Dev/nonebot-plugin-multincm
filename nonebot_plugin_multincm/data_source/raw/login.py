@@ -27,10 +27,8 @@ from pyncm.apis.login import (
 )
 
 from ...config import config
-from ...const import DATA_DIR
+from ...const import SESSION_FILE_PATH
 from .request import NCMResponseError, ncm_request
-
-SESSION_FILE = DATA_DIR / "session.cache"
 
 
 async def sms_login(phone: str, country_code: int = 86):
@@ -171,11 +169,11 @@ async def do_login(anonymous: bool = False):
         logger.info("使用游客身份登录")
         await anonymous_login()
 
-    elif using_cached_session := SESSION_FILE.exists():
-        logger.info(f"使用缓存登录态 ({SESSION_FILE})")
+    elif using_cached_session := SESSION_FILE_PATH.exists():
+        logger.info(f"使用缓存登录态 ({SESSION_FILE_PATH})")
         SetCurrentSession(
             LoadSessionFromString(
-                (await anyio.Path(SESSION_FILE).read_text(encoding="u8")),
+                (await anyio.Path(SESSION_FILE_PATH).read_text(encoding="u8")),
             ),
         )
 
@@ -208,7 +206,7 @@ async def do_login(anonymous: bool = False):
         await qrcode_login()
 
     if not (await validate_login()) and using_cached_session:
-        SESSION_FILE.unlink()
+        SESSION_FILE_PATH.unlink()
         logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
         await do_login()
         return
@@ -218,7 +216,10 @@ async def do_login(anonymous: bool = False):
         logger.success("游客登录成功")
     else:
         if not using_cached_session:
-            SESSION_FILE.write_text(DumpSessionAsString(session_exists), "u8")
+            SESSION_FILE_PATH.write_text(
+                DumpSessionAsString(session_exists),
+                "u8",
+            )
         logger.success(
             f"登录成功，欢迎您，{session_exists.nickname} [{session_exists.uid}]",
         )
