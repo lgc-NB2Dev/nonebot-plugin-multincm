@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
 from typing_extensions import Self, TypeAlias, TypeGuard, override
 
+from yarl import URL
+
 from ..config import config
 from ..utils import (
     NCMLrcGroupLine,
@@ -121,9 +123,7 @@ class SongInfo(Generic[_TSong]):
 
     @property
     def file_suffix(self) -> Optional[str]:
-        with suppress(Exception):
-            return self.playable_url.rsplit("/", 1)[-1].rsplit(".", 1)[-1]
-        return None
+        return URL(self.playable_url).suffix.removeprefix(".") or None
 
     @property
     def display_filename(self) -> str:
