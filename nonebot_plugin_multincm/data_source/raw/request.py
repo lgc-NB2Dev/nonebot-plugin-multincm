@@ -165,7 +165,7 @@ async def get_track_audio(
     **kwargs,
 ) -> list[TrackAudio]:
     res = await ncm_request(GetTrackAudio, song_ids, bitrate=bit_rate, **kwargs)
-    return [TrackAudio(**x) for x in cast(list[dict], res["data"])]
+    return [TrackAudio(**x) for x in cast("list[dict]", res["data"])]
 
 
 async def get_track_info(ids: list[int], **kwargs) -> list[Song]:

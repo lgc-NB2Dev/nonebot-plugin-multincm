@@ -114,6 +114,8 @@ async def qrcode_login():
                     return False  # 二维码过期
                 if code == 803:
                     return True  # 授权成功
+                if code and (code >= 1000):
+                    raise
 
     while True:
         uni_key: str = (await ncm_request(LoginQrcodeUnikey))["unikey"]
