@@ -56,7 +56,8 @@ async def ncm_request(
     **kwargs: P.kwargs,
 ) -> dict[str, Any]:
     ret = await run_sync(api)(*args, **kwargs)
-    debug.write(ret, f"{api.__name__}_{{time}}.json")
+    if debug.enabled:
+        debug.write(ret, f"{api.__name__}_{{time}}.json")
     if ret.get("code", 200) != 200:
         raise NCMResponseError(api.__name__, ret)
     return ret

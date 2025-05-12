@@ -202,7 +202,7 @@ async def do_login(anonymous: bool = False):
         )
 
     else:
-        if not has_password:
+        if config.ncm_email and (not has_password):
             logger.warning("配置文件中提供了邮箱，但是通过邮箱登录需要提供密码")
         logger.info("使用二维码登录")
         await qrcode_login()

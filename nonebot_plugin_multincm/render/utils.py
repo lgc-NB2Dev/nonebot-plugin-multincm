@@ -51,7 +51,8 @@ async def render_html(
     selector: str = "main",
     image_type: Literal["jpeg", "png"] = "jpeg",
 ) -> bytes:
-    debug.write(html, "{time}.html")
+    if debug.enabled:
+        debug.write(html, "{time}.html")
     async with get_new_page() as page:
         await page.set_content(html)
         elem = await page.query_selector(selector)
