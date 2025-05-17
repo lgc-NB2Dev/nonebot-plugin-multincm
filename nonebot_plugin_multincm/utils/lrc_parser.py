@@ -138,7 +138,7 @@ def merge_lrc(
 
         merged.append(line_group)
 
-    rest_lrc_len = max(len(x[1]) for x in sub_lines)
+    rest_lrc_len = max(len(x[1]) for x in sub_lines) if sub_lines else 0
     if rest_lrc_len:
         extra_lines = [
             LrcGroupLine(time=merged[-1].time + 1000, lrc={})
