@@ -8,7 +8,7 @@ from cookit import DebugFileWriter, flatten
 from nonebot.adapters import Bot as BaseBot, Event as BaseEvent
 from nonebot.matcher import current_bot
 from nonebot.utils import run_sync
-from nonebot_plugin_alconna.uniseg import SupportScope, UniMessage
+from nonebot_plugin_alconna.uniseg import SupportScope, get_target
 from yarl import URL
 
 from ..config import config
@@ -125,5 +125,5 @@ def is_song_card_supported(
 ) -> bool:
     if bot is None:
         bot = current_bot.get()
-    s = UniMessage.get_target(event, bot).scope
+    s = get_target(event, bot).scope
     return bool(s and s == SupportScope.qq_client.value)

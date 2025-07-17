@@ -262,6 +262,10 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 
 ## 📝 更新日志
 
+### 1.2.7
+
+- 兼容 alconna 0.59
+
 ### 1.2.6
 
 - [#43](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/pull/43)
