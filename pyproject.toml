@@ -4,22 +4,22 @@ dynamic = ["version"]
 description = "NCM Song Searcher"
 authors = [{ name = "LgCookie", email = "lgc2333@126.com" }]
 dependencies = [
-    "nonebot2>=2.4.1",
-    "nonebot-plugin-htmlrender>=0.5.1",
-    "nonebot-plugin-alconna>=0.59.0",
+    "nonebot2>=2.4.3",
+    "nonebot-plugin-htmlrender>=0.6.6",
+    "nonebot-plugin-alconna>=0.59.4",
     "nonebot-plugin-localstore>=0.7.4",
     "pyncm>=1.7.1",
-    "typing-extensions>=4.12.2",
-    "httpx>=0.27.2",
+    "typing-extensions>=4.14.1",
+    "httpx>=0.28.1",
     "jinja2>=3.1.5",
-    "cookit[jinja,loguru,nonebot-alconna,nonebot-localstore,pydantic]>=0.11.0.post1",
+    "cookit[jinja,loguru,nonebot-alconna,nonebot-localstore,pydantic]>=0.13.0",
     "nonebot-plugin-waiter>=0.8.1",
-    "cachetools>=5.5.1",
-    "yarl>=1.20.0",
-    "silk-python>=0.2.6",
-    "qrcode>=8.0",
+    "cachetools>=6.1.0",
+    "yarl>=1.20.1",
+    "silk-python>=0.2.7",
+    "qrcode>=8.2",
 ]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
 
