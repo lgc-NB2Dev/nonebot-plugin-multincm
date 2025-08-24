@@ -177,7 +177,7 @@ plugins = [
 |          `NCM_DELETE_MSG`          |  否  |    `True`    |                            是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                             |
 |       `NCM_DELETE_MSG_DELAY`       |  否  | `[0.5, 2.0]` |                                      自动撤回消息间隔时间（单位秒）                                       |
 |          `NCM_SEND_MEDIA`          |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
-|         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                     在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11` 与 `Kritor`）                     |
+|         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                           在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11`）                           |
 |         `NCM_SEND_AS_FILE`         |  否  |   `False`    |       当无法发送卡片或卡片发送失败时，会回退到使用语音发送，启用此配置项将会换成回退到发送歌曲文件        |
 |            **其他配置**            |      |              |                                                                                                           |
 |        `NCM_MSG_CACHE_TIME`        |  否  |   `43200`    |                                    缓存 用户最近一次操作 的时长（秒）                                     |
