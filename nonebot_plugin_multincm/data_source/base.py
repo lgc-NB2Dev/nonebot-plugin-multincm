@@ -36,7 +36,7 @@ _TRawInfo = TypeVar("_TRawInfo")
 _TRawResp = TypeVar("_TRawResp")
 _TRawRespInner = TypeVar("_TRawRespInner", bound=SongListInnerResp)
 _TSong = TypeVar("_TSong", bound="BaseSong")
-_TSongList = TypeVar("_TSongList", bound="BaseSongList")
+_TSongList_co = TypeVar("_TSongList_co", bound="BaseSongList", covariant=True)
 _TPlaylist = TypeVar("_TPlaylist", bound="BasePlaylist")
 _TSearcher = TypeVar("_TSearcher", bound="BaseSearcher")
 _TSongOrList = TypeVar("_TSongOrList", bound=Union["BaseSong", "BaseSongList"])
@@ -236,9 +236,9 @@ class ListPageCard:
 
 
 @dataclass
-class BaseSongListPage(Generic[_TRawRespInner, _TSongList]):
+class BaseSongListPage(Generic[_TRawRespInner, _TSongList_co]):
     content: Iterable[_TRawRespInner]
-    father: _TSongList
+    father: _TSongList_co
 
     @override
     def __str__(self) -> str:

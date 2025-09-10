@@ -33,9 +33,10 @@ from .request import NCMResponseError, ncm_request
 
 
 async def cookie_login(music_u: str):
-    await run_sync(LoginViaCookie)(
-        music_u=music_u,
-    )
+    ret = await run_sync(LoginViaCookie)(music_u)
+    if not (c := ret["result"]["content"])["profile"]:
+        raise LoginFailedException(c)
+    return ret
 
 
 async def sms_login(phone: str, country_code: int = 86):
@@ -223,18 +224,13 @@ async def do_login(anonymous: bool = False):
         logger.info("使用二维码登录")
         await qrcode_login()
 
-    session_exists = GetCurrentSession()
     if anonymous:
         logger.success("游客登录成功")
     else:
+        session = GetCurrentSession()
         if not using_cached_session:
-            SESSION_FILE_PATH.write_text(
-                DumpSessionAsString(session_exists),
-                "u8",
-            )
-        logger.success(
-            f"登录成功，欢迎您，{session_exists.nickname} [{session_exists.uid}]",
-        )
+            SESSION_FILE_PATH.write_text(DumpSessionAsString(session), "u8")
+        logger.success(f"登录成功，欢迎您，{session.nickname} [{session.uid}]")
 
 
 async def login():

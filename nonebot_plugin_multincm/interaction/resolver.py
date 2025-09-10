@@ -5,14 +5,14 @@ from typing import Annotated, TypeAlias
 from cachetools import TTLCache
 from cookit import flatten, queued
 from cookit.loguru import warning_suppress
+from cookit.nonebot.alconna import extract_reply_msg
 from httpx import AsyncClient
-from nonebot.adapters import Bot as BaseBot, Message as BaseMessage
+from nonebot.adapters import Bot as BaseBot
 from nonebot.consts import REGEX_MATCHED
-from nonebot.matcher import Matcher
 from nonebot.params import Depends
 from nonebot.typing import T_State
-from nonebot_plugin_alconna import UniMsg
-from nonebot_plugin_alconna.uniseg import Hyper, Reply, UniMessage
+from nonebot_plugin_alconna import OriginalUniMsg
+from nonebot_plugin_alconna.uniseg import Hyper, UniMessage
 
 from ..config import config
 from ..const import SHORT_URL_BASE, SHORT_URL_REGEX, URL_REGEX
@@ -193,9 +193,8 @@ async def resolve_from_ev_msg(
     msg: UniMessage,
     state: T_State,
     bot: BaseBot,
-    matcher: Matcher,
     expected_type: ExpectedTypeType | None = None,
-) -> GeneralSongOrPlaylist:
+) -> GeneralSongOrPlaylist | None:
     regex_matched: re.Match[str] | None = state.get(REGEX_MATCHED)
     if regex_matched:  # auto resolve
         if h := extract_song_card_hyper(msg, bot):
@@ -216,9 +215,7 @@ async def resolve_from_ev_msg(
 
     elif (  # common command trigger
         (
-            Reply in msg
-            and isinstance((reply_raw := msg[Reply, 0].msg), BaseMessage)
-            and (reply_msg := await UniMessage.generate(message=reply_raw))
+            (reply_msg := extract_reply_msg(msg))
             and (it := await resolve_from_msg(reply_msg, expected_type=expected_type))
         )
         or (it := await resolve_from_msg(msg, expected_type=expected_type))
@@ -226,45 +223,39 @@ async def resolve_from_ev_msg(
     ):
         return it
 
-    await matcher.finish()
     return None
 
 
 async def dependency_resolve_from_ev(
-    msg: UniMsg,
+    msg: OriginalUniMsg,
     state: T_State,
     bot: BaseBot,
-    matcher: Matcher,
 ):
-    return await resolve_from_ev_msg(msg, state, bot, matcher)
+    return await resolve_from_ev_msg(msg, state, bot)
 
 
 async def dependency_resolve_song_from_ev(
-    msg: UniMsg,
+    msg: OriginalUniMsg,
     state: T_State,
     bot: BaseBot,
-    matcher: Matcher,
 ):
     return await resolve_from_ev_msg(
         msg,
         state,
         bot,
-        matcher,
         expected_type=tuple(registered_song),
     )
 
 
 async def dependency_resolve_playlist_from_ev(
-    msg: UniMsg,
+    msg: OriginalUniMsg,
     state: T_State,
     bot: BaseBot,
-    matcher: Matcher,
 ):
     return await resolve_from_ev_msg(
         msg,
         state,
         bot,
-        matcher,
         expected_type=tuple(registered_playlist),
     )
 
@@ -274,15 +265,15 @@ async def dependency_is_auto_resolve(state: T_State) -> bool:
 
 
 ResolvedItem = Annotated[
-    GeneralSongOrPlaylist,
+    GeneralSongOrPlaylist | None,
     Depends(dependency_resolve_from_ev, use_cache=False),
 ]
 ResolvedSong = Annotated[
-    GeneralSong,
+    GeneralSong | None,
     Depends(dependency_resolve_song_from_ev, use_cache=False),
 ]
 ResolvedPlaylist = Annotated[
-    GeneralPlaylist,
+    GeneralPlaylist | None,
     Depends(dependency_resolve_playlist_from_ev, use_cache=False),
 ]
 IsAutoResolve = Annotated[bool, Depends(dependency_is_auto_resolve)]

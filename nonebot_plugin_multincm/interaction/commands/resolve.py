@@ -17,6 +17,8 @@ async def resolve_handler(
     result: ResolvedItem,
     is_auto_resolve: IsAutoResolve,
 ):
+    if not result:
+        await matcher.finish("未能从您的消息中解析到有效信息")
     result_it: Any = cast("Any", result)  # fuck that annoying weak type annotation
     if is_auto_resolve and isinstance(result, BaseSongList):
         await (await construct_info_msg(result_it, tip_command=True)).send()

@@ -8,6 +8,8 @@ matcher_direct = on_command("直链", aliases={"direct"})
 
 @matcher_direct.handle()
 async def _(matcher: Matcher, song: ResolvedSong):
+    if not song:
+        await matcher.finish("未能从您的消息中解析到有效歌曲信息")
     try:
         url = await song.get_playable_url()
     except Exception:

@@ -10,6 +10,9 @@ matcher_lyric = on_command("歌词", aliases={"lrc", "lyric", "lyrics"})
 
 @matcher_lyric.handle()
 async def _(matcher: Matcher, song: ResolvedSong):
+    if not song:
+        await matcher.finish("未能从您的消息中解析到有效歌曲信息")
+
     try:
         lrc = await song.get_lyrics()
     except Exception:

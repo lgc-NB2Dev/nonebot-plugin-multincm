@@ -6,6 +6,9 @@ from ..resolver import ResolvedSong
 
 
 async def upload_handler_0(matcher: Matcher, song: ResolvedSong):
+    if not song:
+        await matcher.finish("未能从您的消息中解析到有效歌曲信息")
+
     try:
         await send_song_media(song, as_file=True)
     except Exception:

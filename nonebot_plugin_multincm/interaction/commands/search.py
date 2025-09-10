@@ -8,7 +8,7 @@ from nonebot.adapters import Message as BaseMessage
 from nonebot.matcher import Matcher, current_matcher
 from nonebot.params import ArgPlainText, CommandArg, EventMessage
 from nonebot.typing import T_State
-from nonebot_plugin_alconna.uniseg import Reply, UniMessage, UniMsg
+from nonebot_plugin_alconna.uniseg import OriginalUniMsg, Reply, UniMessage
 from nonebot_plugin_waiter import prompt
 
 from ...config import config
@@ -172,7 +172,7 @@ async def handle_song_or_list(
 
 async def search_handler_0(
     matcher: Matcher,
-    uni_msg: UniMsg,
+    uni_msg: OriginalUniMsg,
     arg: BaseMessage = CommandArg(),
 ):
     arg_ok = arg.extract_plain_text().strip()
