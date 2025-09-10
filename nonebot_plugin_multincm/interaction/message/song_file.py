@@ -1,6 +1,6 @@
 import mimetypes
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cookit.loguru import warning_suppress
 from httpx import AsyncClient
@@ -83,16 +83,16 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
             PrivateMessageEvent,
         )
 
-        bot = cast(OB11Bot, current_bot.get())
+        bot = cast("OB11Bot", current_bot.get())
         event = current_event.get()
 
-        if not isinstance(event, (GroupMessageEvent, PrivateMessageEvent)):
+        if not isinstance(event, GroupMessageEvent | PrivateMessageEvent):
             raise TypeError("Event not supported")
 
         file = (
             (await download_song(info))
             if config.ncm_ob_v11_local_mode
-            else cast(str, (await bot.download_file(url=info.playable_url))["file"])
+            else cast("str", (await bot.download_file(url=info.playable_url))["file"])
         )
 
         if isinstance(event, PrivateMessageEvent):
@@ -114,7 +114,7 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
 async def send_song_media_platform_specific(
     info: "SongInfo",
     as_file: bool = False,
-) -> Optional[Receipt]:
+) -> Receipt | None:
     bot = current_bot.get()
     adapter_name = bot.adapter.get_name()
     processors = {

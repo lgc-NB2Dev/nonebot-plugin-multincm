@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, Optional, TypeVar, Union
-from typing_extensions import Self, TypeAlias, override
+from typing import Generic, TypeAlias, TypeVar
+from typing_extensions import Self, override
 
 from cachetools import TTLCache
 from cookit.loguru import logged_suppress
@@ -11,7 +11,7 @@ from nonebot.matcher import current_event
 from ..config import config
 from ..data_source import BasePlaylist, BaseSong, ResolvableFromID
 
-CacheableItemType: TypeAlias = Union[BaseSong, BasePlaylist]
+CacheableItemType: TypeAlias = BaseSong | BasePlaylist
 CacheItemType: TypeAlias = "IDCache"
 
 TC = TypeVar("TC", bound=CacheableItemType)
@@ -48,7 +48,7 @@ cache: TTLCache[str, CacheItemType] = TTLCache(
 )
 
 
-async def set_cache(item: CacheableItemType, event: Optional[BaseEvent] = None):
+async def set_cache(item: CacheableItemType, event: BaseEvent | None = None):
     if not event:
         event = current_event.get()
     session = event.get_session_id()
@@ -57,11 +57,11 @@ async def set_cache(item: CacheableItemType, event: Optional[BaseEvent] = None):
 
 
 async def get_cache(
-    event: Optional[BaseEvent] = None,
-    expected_type: Optional[
-        Union[type[ResolvableFromID], tuple[type[ResolvableFromID], ...]]
-    ] = None,
-) -> Optional[CacheableItemType]:
+    event: BaseEvent | None = None,
+    expected_type: type[ResolvableFromID]
+    | tuple[type[ResolvableFromID], ...]
+    | None = None,
+) -> CacheableItemType | None:
     if not event:
         event = current_event.get()
 

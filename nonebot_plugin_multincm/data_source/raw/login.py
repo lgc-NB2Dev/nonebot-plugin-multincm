@@ -1,7 +1,7 @@
 import asyncio
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import anyio
 import qrcode
@@ -97,7 +97,7 @@ async def email_login(
 
 async def qrcode_login():
     async def wait_scan(uni_key: str) -> bool:
-        last_status: Optional[int] = None
+        last_status: int | None = None
         while True:
             await asyncio.sleep(2)
             try:

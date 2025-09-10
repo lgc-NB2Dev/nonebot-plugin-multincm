@@ -17,7 +17,7 @@ async def resolve_handler(
     result: ResolvedItem,
     is_auto_resolve: IsAutoResolve,
 ):
-    result_it: Any = cast(Any, result)  # fuck that annoying weak type annotation
+    result_it: Any = cast("Any", result)  # fuck that annoying weak type annotation
     if is_auto_resolve and isinstance(result, BaseSongList):
         await (await construct_info_msg(result_it, tip_command=True)).send()
     else:

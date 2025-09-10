@@ -1,5 +1,4 @@
-from typing import Literal, Optional
-from typing_extensions import TypeAlias
+from typing import Literal, TypeAlias
 
 from cookit.pyd import CamelAliasModel
 from pydantic import Field
@@ -17,8 +16,8 @@ BrLevelType: TypeAlias = Literal[
 class Artist(CamelAliasModel):
     id: int
     name: str
-    tns: Optional[list[str]] = None
-    alias: Optional[list[str]] = None
+    tns: list[str] | None = None
+    alias: list[str] | None = None
 
 
 class BaseAlbum(CamelAliasModel):
@@ -47,8 +46,8 @@ class Song(CamelAliasModel):
     al: BaseAlbum
     dt: int
     """歌曲时长，单位 ms"""
-    tns: Optional[list[str]] = None
-    privilege: Optional[Privilege] = None
+    tns: list[str] | None = None
+    privilege: Privilege | None = None
 
 
 class QcReminder(CamelAliasModel):
@@ -64,10 +63,10 @@ class SearchQcReminder(CamelAliasModel):
 
 
 class SongSearchResult(CamelAliasModel):
-    search_qc_reminder: Optional[SearchQcReminder] = None
+    search_qc_reminder: SearchQcReminder | None = None
     """搜索纠正"""
     song_count: int
-    songs: Optional[list[Song]] = None
+    songs: list[Song] | None = None
 
 
 class TrackAudio(CamelAliasModel):
@@ -76,8 +75,8 @@ class TrackAudio(CamelAliasModel):
     br: int
     size: int
     md5: str
-    level: Optional[str] = None
-    encode_type: Optional[str] = None
+    level: str | None = None
+    encode_type: str | None = None
     time: int
 
 
@@ -93,11 +92,11 @@ class Lyric(CamelAliasModel):
 
 
 class LyricData(CamelAliasModel):
-    trans_user: Optional[User] = None
-    lyric_user: Optional[User] = None
-    lrc: Optional[Lyric] = None
-    trans_lrc: Optional[Lyric] = Field(None, alias="tlyric")
-    roma_lrc: Optional[Lyric] = Field(None, alias="romalrc")
+    trans_user: User | None = None
+    lyric_user: User | None = None
+    lrc: Lyric | None = None
+    trans_lrc: Lyric | None = Field(None, alias="tlyric")
+    roma_lrc: Lyric | None = Field(None, alias="romalrc")
 
 
 class DJ(CamelAliasModel):
@@ -118,9 +117,9 @@ class BaseRadio(CamelAliasModel):
     program_count: int
     play_count: int
     category_id: int
-    second_category_id: Optional[int] = None
+    second_category_id: int | None = None
     category: str
-    second_category: Optional[str] = None
+    second_category: str | None = None
     last_program_id: int
 
 
@@ -155,9 +154,9 @@ class ProgramResource(CamelAliasModel):
 
 
 class ProgramSearchResult(CamelAliasModel):
-    resources: Optional[list[ProgramResource]] = None
+    resources: list[ProgramResource] | None = None
     total_count: int
-    search_qc_reminder: Optional[SearchQcReminder] = None
+    search_qc_reminder: SearchQcReminder | None = None
 
 
 class TrackId(CamelAliasModel):
@@ -177,7 +176,7 @@ class BasePlaylist(CamelAliasModel):
     track_count: int
     play_count: int
     book_count: int
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class Playlist(BasePlaylist):
@@ -189,9 +188,9 @@ class Playlist(BasePlaylist):
 
 
 class PlaylistSearchResult(CamelAliasModel):
-    playlists: Optional[list[BasePlaylist]] = None
+    playlists: list[BasePlaylist] | None = None
     playlist_count: int
-    search_qc_reminder: Optional[SearchQcReminder] = None
+    search_qc_reminder: SearchQcReminder | None = None
 
 
 class RadioResource(CamelAliasModel):
@@ -199,9 +198,9 @@ class RadioResource(CamelAliasModel):
 
 
 class RadioSearchResult(CamelAliasModel):
-    resources: Optional[list[RadioResource]] = None
+    resources: list[RadioResource] | None = None
     total_count: int
-    search_qc_reminder: Optional[SearchQcReminder] = None
+    search_qc_reminder: SearchQcReminder | None = None
 
 
 class RadioProgramList(CamelAliasModel):
@@ -210,7 +209,7 @@ class RadioProgramList(CamelAliasModel):
 
 
 class AlbumSearchResult(CamelAliasModel):
-    albums: Optional[list[Album]] = None
+    albums: list[Album] | None = None
     album_count: int
 
 

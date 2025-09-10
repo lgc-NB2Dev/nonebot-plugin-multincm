@@ -1,7 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, Literal, Optional, TypeVar
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Generic, Literal, TypeAlias, TypeVar
 
 from ..config import config
 
@@ -83,10 +82,10 @@ def strip_lrc_lines(lines: list[LrcLine]) -> list[LrcLine]:
 
 def merge_lrc(
     lyric_groups: dict[SK, list[LrcLine]],
-    main_group: Optional[SK] = None,
+    main_group: SK | None = None,
     threshold: int = 20,
-    replace_empty_line: Optional[str] = None,
-    skip_merge_group_name: Optional[SK] = None,
+    replace_empty_line: str | None = None,
+    skip_merge_group_name: SK | None = None,
 ) -> list[LrcGroupLine[SK]]:
     lyric_groups = {k: v.copy() for k, v in lyric_groups.items()}
     for v in lyric_groups.values():
@@ -157,7 +156,7 @@ NCM_MAIN_LRC_GROUP: NCMLrcGroupNameType = "main"
 NCMLrcGroupLine: TypeAlias = LrcGroupLine[NCMLrcGroupNameType]
 
 
-def normalize_lrc(lrc: "md.LyricData") -> Optional[list[NCMLrcGroupLine]]:
+def normalize_lrc(lrc: "md.LyricData") -> list[NCMLrcGroupLine] | None:
     def fmt_usr(usr: "md.User") -> str:
         return f"{usr.nickname} [{usr.user_id}]"
 
@@ -165,7 +164,7 @@ def normalize_lrc(lrc: "md.LyricData") -> Optional[list[NCMLrcGroupLine]]:
     if (not raw) or (not (raw_lrc := raw.lyric)):
         return None
 
-    raw_lyric_groups: dict[NCMLrcGroupNameType, Optional[md.Lyric]] = {
+    raw_lyric_groups: dict[NCMLrcGroupNameType, md.Lyric | None] = {
         "main": raw,
         "roma": lrc.roma_lrc,
         "trans": lrc.trans_lrc,

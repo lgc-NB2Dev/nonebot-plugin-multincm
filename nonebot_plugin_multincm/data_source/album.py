@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from contextlib import suppress
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import calc_min_max_index, format_artists, get_thumb_url
@@ -99,7 +99,7 @@ class AlbumSearcher(BaseSearcher[md.AlbumSearchResult, md.Album, Album]):
 
     @override
     @staticmethod
-    async def search_from_id(arg_id: int) -> Optional[Album]:
+    async def search_from_id(arg_id: int) -> Album | None:
         with suppress(Exception):
             return await Album.from_id(arg_id)
         return None
@@ -108,7 +108,7 @@ class AlbumSearcher(BaseSearcher[md.AlbumSearchResult, md.Album, Album]):
     async def _extract_resp_content(
         self,
         resp: md.AlbumSearchResult,
-    ) -> Optional[list[md.Album]]:
+    ) -> list[md.Album] | None:
         return resp.albums
 
     @override

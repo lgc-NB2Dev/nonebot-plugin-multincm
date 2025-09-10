@@ -1,7 +1,7 @@
 import asyncio
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 from typing_extensions import ParamSpec
 
 from cookit import DebugFileWriter, flatten
@@ -28,7 +28,7 @@ def format_time(time: int) -> str:
     return f"{mm:0>2d}:{ss:0>2d}"
 
 
-def format_alias(name: str, alias: Optional[list[str]] = None) -> str:
+def format_alias(name: str, alias: list[str] | None = None) -> str:
     return f"{name}（{'；'.join(alias)}）" if alias else name
 
 
@@ -120,8 +120,8 @@ def merge_alias(song: "md.Song") -> list[str]:
 
 
 def is_song_card_supported(
-    bot: Optional[BaseBot] = None,
-    event: Optional[BaseEvent] = None,
+    bot: BaseBot | None = None,
+    event: BaseEvent | None = None,
 ) -> bool:
     if bot is None:
         bot = current_bot.get()

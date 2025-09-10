@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from contextlib import suppress
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import calc_min_max_index, cut_string, get_thumb_url
@@ -116,7 +116,7 @@ class PlaylistSearcher(
 
     @override
     @staticmethod
-    async def search_from_id(arg_id: int) -> Optional[Playlist]:
+    async def search_from_id(arg_id: int) -> Playlist | None:
         with suppress(Exception):
             return await Playlist.from_id(arg_id)
         return None
@@ -125,7 +125,7 @@ class PlaylistSearcher(
     async def _extract_resp_content(
         self,
         resp: md.PlaylistSearchResult,
-    ) -> Optional[list[md.BasePlaylist]]:
+    ) -> list[md.BasePlaylist] | None:
         return resp.playlists
 
     @override

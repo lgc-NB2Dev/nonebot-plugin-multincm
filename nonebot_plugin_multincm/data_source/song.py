@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import (
@@ -80,7 +80,7 @@ class Song(BaseSong[md.Song]):
         return info.url
 
     @override
-    async def get_lyrics(self) -> Optional[list[list[str]]]:
+    async def get_lyrics(self) -> list[list[str]] | None:
         return normalize_lrc(await get_track_lrc(self.info.id))
 
 
@@ -91,7 +91,7 @@ class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
 
     @staticmethod
     @override
-    async def search_from_id(arg_id: int) -> Optional[Song]:
+    async def search_from_id(arg_id: int) -> Song | None:
         try:
             return await Song.from_id(arg_id)
         except ValueError:
@@ -101,7 +101,7 @@ class SongSearcher(BaseSearcher[md.SongSearchResult, md.Song, Song]):
     async def _extract_resp_content(
         self,
         resp: md.SongSearchResult,
-    ) -> Optional[list[md.Song]]:
+    ) -> list[md.Song] | None:
         return resp.songs
 
     @override

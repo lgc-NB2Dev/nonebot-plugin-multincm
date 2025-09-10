@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from contextlib import suppress
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import cut_string, get_thumb_url
@@ -124,7 +124,7 @@ class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.RadioBaseInfo, Radio])
 
     @override
     @staticmethod
-    async def search_from_id(arg_id: int) -> Optional[Radio]:
+    async def search_from_id(arg_id: int) -> Radio | None:
         with suppress(Exception):
             return await Radio.from_id(arg_id)
         return None
@@ -133,7 +133,7 @@ class RadioSearcher(BaseSearcher[md.RadioSearchResult, md.RadioBaseInfo, Radio])
     async def _extract_resp_content(
         self,
         resp: md.RadioSearchResult,
-    ) -> Optional[list[md.RadioBaseInfo]]:
+    ) -> list[md.RadioBaseInfo] | None:
         return [x.base_info for x in resp.resources] if resp.resources else None
 
     @override

@@ -1,5 +1,3 @@
-from typing import Union
-
 from cookit.loguru import warning_suppress
 from nonebot_plugin_alconna.uniseg import UniMessage
 
@@ -15,7 +13,7 @@ PLAYLIST_TIP = "\n使用指令 `resolve` 选择内容播放"
 
 
 async def construct_info_msg(
-    it: Union[BaseSong, BasePlaylist],
+    it: BaseSong | BasePlaylist,
     tip_command: bool = True,
 ) -> UniMessage:
     tip = (

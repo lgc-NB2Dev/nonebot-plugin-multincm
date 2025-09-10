@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal, Optional, TypedDict
+from typing import Literal, TypedDict
 from urllib.parse import quote
 
 import jinja2
@@ -20,11 +20,11 @@ register_filter = make_register_jinja_filter_deco(jinja_env)
 
 
 class RenderConfig(TypedDict):
-    font_family: Optional[str]
+    font_family: str | None
     plugin_version: str
 
 
-def format_font_url(url: str) -> Optional[str]:
+def format_font_url(url: str) -> str | None:
     return quote(p.as_uri()) if url and (p := Path(url)).exists() else url
 
 

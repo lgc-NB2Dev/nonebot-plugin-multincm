@@ -3,8 +3,16 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Generic, Optional, TypeVar, Union
-from typing_extensions import Self, TypeAlias, TypeGuard, override
+from typing import (
+    Any,
+    ClassVar,
+    Generic,
+    TypeAlias,
+    TypeGuard,
+    TypeVar,
+    Union,
+)
+from typing_extensions import Self, override
 
 from yarl import URL
 
@@ -20,13 +28,9 @@ from ..utils import (
 )
 from .raw import md
 
-SongListInnerResp: TypeAlias = Union[
-    md.Song,
-    md.ProgramBaseInfo,
-    md.BasePlaylist,
-    md.RadioBaseInfo,
-    md.Album,
-]
+SongListInnerResp: TypeAlias = (
+    md.Song | md.ProgramBaseInfo | md.BasePlaylist | md.RadioBaseInfo | md.Album
+)
 
 _TRawInfo = TypeVar("_TRawInfo")
 _TRawResp = TypeVar("_TRawResp")
@@ -98,7 +102,7 @@ async def resolve_from_link_params(
 class SongInfo(Generic[_TSong]):
     father: _TSong
     name: str
-    alias: Optional[list[str]]
+    alias: list[str] | None
     artists: list[str]
     duration: int
     url: str
@@ -122,7 +126,7 @@ class SongInfo(Generic[_TSong]):
         return format_time(self.duration)
 
     @property
-    def file_suffix(self) -> Optional[str]:
+    def file_suffix(self) -> str | None:
         return URL(self.playable_url).suffix.removeprefix(".") or None
 
     @property
@@ -165,7 +169,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_name(self) -> str: ...
 
     @abstractmethod
-    async def get_alias(self) -> Optional[list[str]]: ...
+    async def get_alias(self) -> list[str] | None: ...
 
     @abstractmethod
     async def get_artists(self) -> list[str]: ...
@@ -180,7 +184,7 @@ class BaseSong(ResolvableFromID, ABC, Generic[_TRawResp]):
     async def get_playable_url(self) -> str: ...
 
     @abstractmethod
-    async def get_lyrics(self) -> Optional[list[NCMLrcGroupLine]]: ...
+    async def get_lyrics(self) -> list[NCMLrcGroupLine] | None: ...
 
     async def get_info(self) -> SongInfo:
         (
@@ -258,7 +262,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
 
     def __init__(self) -> None:
         self.current_page: int = 1
-        self._total_count: Optional[int] = None
+        self._total_count: int | None = None
         self._cache: dict[int, _TRawRespInner] = {}
 
     def __str__(self) -> str:
@@ -292,7 +296,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
     async def _extract_resp_content(
         self,
         resp: _TRawResp,
-    ) -> Optional[list[_TRawRespInner]]: ...
+    ) -> list[_TRawRespInner] | None: ...
 
     @abstractmethod
     async def _extract_total_count(self, resp: _TRawResp) -> int: ...
@@ -321,8 +325,8 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
 
     async def get_page(
         self,
-        page: Optional[int] = None,
-    ) -> Union[BaseSongListPage[_TRawRespInner, Self], _TSongOrList, None]:
+        page: int | None = None,
+    ) -> BaseSongListPage[_TRawRespInner, Self] | _TSongOrList | None:
         if page is None:
             page = self.current_page
         if not ((not self._total_count) or self.page_valid(page)):
@@ -470,13 +474,13 @@ class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
 
     @staticmethod
     @abstractmethod
-    async def search_from_id(arg_id: int) -> Optional[_TSongOrList]: ...
+    async def search_from_id(arg_id: int) -> _TSongOrList | None: ...
 
     @override
     async def get_page(
         self,
-        page: Optional[int] = None,
-    ) -> Union[BaseSongListPage[_TRawRespInner, Self], _TSongOrList, None]:
+        page: int | None = None,
+    ) -> BaseSongListPage[_TRawRespInner, Self] | _TSongOrList | None:
         if self.keyword.isdigit():
             with suppress(Exception):
                 if song := await self.search_from_id(int(self.keyword)):
@@ -484,24 +488,21 @@ class BaseSearcher(BaseSongList[_TRawResp, _TRawRespInner, _TSongOrList]):
         return await super().get_page(page)
 
 
-BaseResolvable: TypeAlias = Union[BaseSong, BasePlaylist]
+BaseResolvable: TypeAlias = BaseSong | BasePlaylist
 
 GeneralSong: TypeAlias = BaseSong[Any]
-GeneralSongOrList: TypeAlias = Union[
-    GeneralSong,
-    BaseSongList[Any, SongListInnerResp, "GeneralSongOrList"],
-]
+GeneralSongOrList: TypeAlias = (
+    GeneralSong | BaseSongList[Any, SongListInnerResp, "GeneralSongOrList"]
+)
 GeneralSongList: TypeAlias = BaseSongList[Any, SongListInnerResp, GeneralSongOrList]
 GeneralPlaylist: TypeAlias = BasePlaylist[Any, Any, SongListInnerResp, GeneralSong]
 GeneralSearcher: TypeAlias = BaseSearcher[Any, SongListInnerResp, GeneralSongOrList]
 GeneralSongListPage: TypeAlias = BaseSongListPage[SongListInnerResp, GeneralSongList]
-GeneralSongOrPlaylist: TypeAlias = Union[GeneralSong, GeneralPlaylist]
+GeneralSongOrPlaylist: TypeAlias = GeneralSong | GeneralPlaylist
 # GeneralResolvable: TypeAlias = GeneralSongOrPlaylist
 
-GeneralGetPageReturn: TypeAlias = Union[
-    BaseSongListPage[SongListInnerResp, GeneralSongList],
-    GeneralSongOrList,
-    None,
-]
+GeneralGetPageReturn: TypeAlias = (
+    BaseSongListPage[SongListInnerResp, GeneralSongList] | GeneralSongOrList | None
+)
 GeneralSongInfo: TypeAlias = SongInfo[GeneralSong]
 GeneralPlaylistInfo: TypeAlias = PlaylistInfo[GeneralPlaylist]

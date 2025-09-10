@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, Literal, Optional, TypeVar, Union, cast, overload
+from typing import Any, Literal, TypeVar, cast, overload
 from typing_extensions import ParamSpec
 
 from nonebot.utils import run_sync
@@ -39,11 +40,11 @@ class NCMResponseError(Exception):
         self.data = data
 
     @property
-    def code(self) -> Optional[int]:
+    def code(self) -> int | None:
         return self.data.get("code")
 
     @property
-    def message(self) -> Optional[str]:
+    def message(self) -> str | None:
         return self.data.get("message")
 
     def __str__(self):
@@ -85,11 +86,11 @@ async def get_search_result(
 
 async def get_search_result(
     keyword: str,
-    return_model: Optional[type[TModel]] = None,
+    return_model: type[TModel] | None = None,
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
-) -> Union[dict[str, Any], TModel]:
+) -> dict[str, Any] | TModel:
     offset = calc_min_index(page)
     res = await ncm_request(
         GetSearchResult,
