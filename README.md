@@ -135,11 +135,18 @@ plugins = [
 
 ## ⚙️ 配置
 
-如果你安装了 [nonebot-plugin-ncm](https://github.com/kitUIN/nonebot-plugin-ncm) 或者其他使用到 pyncm 的插件并且全局 Session 已登录，本插件会与它们共用全局 Session，就可以不用填下面的账号密码了
+### 登录相关配置填写说明
 
-登录相关配置填写说明：
+如果你安装了 [nonebot-plugin-ncm](https://github.com/kitUIN/nonebot-plugin-ncm) 或者其他使用到 pyncm 的插件并且全局 Session 已登录，本插件会与它们共用全局 Session，就可以不用管这一节
 
-- **\[推荐\]** 如果想要使用 二维码 登录，则 **所有** 登录相关配置项都 **不要填写**
+- 如果想要使用 Cookie 登录
+  - **必填** `NCM_COOKIE_MUSIC_U`，获取方式见下文
+- 如果只想要使用 游客 登录
+  - **必填** `NCM_ANONYMOUS=True`
+
+以下登录方式可能已经无法使用，仅供参考
+
+- 如果想要使用 二维码 登录，则 **所有** 登录相关配置项都 **不要填写**
 - 如果想要使用 短信验证码 登录
   - **必填** `NCM_PHONE`
   - 选填 `NCM_CTCODE`（默认为 `86`）
@@ -150,14 +157,22 @@ plugins = [
 - 如果想要使用 邮箱与密码 登录
   - **必填** `NCM_EMAIL`
   - **必填** `NCM_PASSWORD` 或 `NCM_PASSWORD_HASH` 其中一个
-- 如果只想要使用 游客 登录
-  - **必填** `NCM_ANONYMOUS=True`
+
+### `MUSIC_U` 获取方式
+
+**先登录网页版网易云音乐**，之后打开浏览器开发者工具（按 F12），按下图步骤操作  
+复制第五步中框内的所有内容，填入配置项
+
+![pic](https://raw.githubusercontent.com/lgc-NB2Dev/readme/main/multincm/cookie_music_u.png)
+
+### 所有配置项定义
 
 在 nonebot2 项目的 `.env` 文件中添加下表中的必填配置
 
 |               配置项               | 必填 |    默认值    |                                                   说明                                                    |
 | :--------------------------------: | :--: | :----------: | :-------------------------------------------------------------------------------------------------------: |
 |            **登录相关**            |      |              |                                                                                                           |
+|        `NCM_COOKIE_MUSIC_U`        |  否  |    `None`    |                                   Cookie 登录用，Cookie 中的 MUSIC_U 值                                   |
 |            `NCM_CTCODE`            |  否  |     `86`     |                                        手机号登录用，登录手机区号                                         |
 |            `NCM_PHONE`             |  否  |      无      |                                         手机号登录用，登录手机号                                          |
 |            `NCM_EMAIL`             |  否  |      无      |                                           邮箱登录用，登录邮箱                                            |

@@ -21,6 +21,7 @@ from pyncm.apis.login import (
     LoginQrcodeUnikey,
     LoginViaAnonymousAccount,
     LoginViaCellphone,
+    LoginViaCookie,
     LoginViaEmail,
     SetSendRegisterVerifcationCodeViaCellphone,
     WriteLoginInfo,
@@ -29,6 +30,12 @@ from pyncm.apis.login import (
 from ...config import config
 from ...const import SESSION_FILE_PATH
 from .request import NCMResponseError, ncm_request
+
+
+async def cookie_login(music_u: str):
+    await run_sync(LoginViaCookie)(
+        music_u=music_u,
+    )
 
 
 async def sms_login(phone: str, country_code: int = 86):
@@ -178,6 +185,15 @@ async def do_login(anonymous: bool = False):
                 (await anyio.Path(SESSION_FILE_PATH).read_text(encoding="u8")),
             ),
         )
+        if not (await validate_login()):
+            SESSION_FILE_PATH.unlink()
+            logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
+            await do_login()
+            return
+
+    elif config.ncm_cookie_music_u:
+        logger.info("使用 Cookie 登录")
+        await cookie_login(config.ncm_cookie_music_u)
 
     elif config.ncm_phone:
         if config.ncm_password or config.ncm_password_hash:
@@ -206,12 +222,6 @@ async def do_login(anonymous: bool = False):
             logger.warning("配置文件中提供了邮箱，但是通过邮箱登录需要提供密码")
         logger.info("使用二维码登录")
         await qrcode_login()
-
-    if not (await validate_login()) and using_cached_session:
-        SESSION_FILE_PATH.unlink()
-        logger.warning("恢复缓存会话失败，尝试使用正常流程登录")
-        await do_login()
-        return
 
     session_exists = GetCurrentSession()
     if anonymous:

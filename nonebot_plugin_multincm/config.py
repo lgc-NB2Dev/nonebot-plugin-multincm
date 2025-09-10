@@ -12,6 +12,7 @@ BaseConfigModel = (
 
 class ConfigModel(BaseConfigModel):
     # login
+    ncm_cookie_music_u: str | None = None
     ncm_ctcode: int = 86
     ncm_phone: str | None = None
     ncm_email: str | None = None
