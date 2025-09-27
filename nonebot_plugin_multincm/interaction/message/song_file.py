@@ -111,6 +111,21 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
     return (await send_file()) if as_file else (await send_voice())
 
 
+async def send_song_media_qq(info: "SongInfo", as_file: bool = False):
+    if not await ffmpeg_exists():
+        logger.warning(
+            "FFmpeg 无法使用，插件将不会把音乐文件转为 silk 格式提交给协议端",
+        )
+        raise TypeError("FFmpeg unavailable, fallback to UniMessage")
+
+    if as_file:
+        logger.warning("QQ开放平台暂未支持文件上传，默认使用语音发送")
+
+    return await UniMessage.voice(
+        raw=(await encode_silk(await download_song(info))).read_bytes(),
+    ).send()
+
+
 async def send_song_media_platform_specific(
     info: "SongInfo",
     as_file: bool = False,
@@ -120,7 +135,9 @@ async def send_song_media_platform_specific(
     processors = {
         "Telegram": send_song_media_telegram,
         "OneBot V11": send_song_media_onebot_v11,
+        "QQ": send_song_media_qq,
     }
+    logger.debug(f"当前适配器 >{adapter_name}<")
     if adapter_name not in processors:
         raise TypeError("This adapter is not supported")
     return await processors[adapter_name](info, as_file=as_file)

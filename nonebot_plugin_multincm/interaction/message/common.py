@@ -1,5 +1,8 @@
+import asyncio
 from cookit.loguru import warning_suppress
 from nonebot_plugin_alconna.uniseg import UniMessage
+from cookit.nonebot.alconna import RecallContext
+from nonebot.matcher import current_bot
 
 from ...config import config
 from ...data_source import BasePlaylist, BaseSong
@@ -27,10 +30,17 @@ async def construct_info_msg(
     )
     info = await it.get_info()
     desc = await info.get_description()
+    bot = current_bot.get()
+    adapter_name = bot.adapter.get_name()
+    if adapter_name in ["QQ"]:
+        return UniMessage.image(url=info.cover_url) + f"\n{desc}\n{tip}"
     return UniMessage.image(url=info.cover_url) + f"{desc}\n{info.url}{tip}"
 
 
 async def send_song(song: BaseSong):
+    recall = RecallContext(delay=config.ncm_delete_msg_delay)
+    await recall.send(UniMessage.text("处理中，请稍等哦～"))
+
     async def send():
         if config.ncm_send_as_card and is_song_card_supported():
             with warning_suppress(f"Send {song} card failed"):
@@ -46,4 +56,5 @@ async def send_song(song: BaseSong):
         )
 
     await send()
+    asyncio.create_task(recall.recall())
     await set_cache(song)
