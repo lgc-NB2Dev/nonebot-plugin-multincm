@@ -33,7 +33,9 @@ class ConfigModel(BaseConfigModel):
     ncm_illegal_cmd_limit: int = 3
     ncm_delete_msg: bool = True
     ncm_delete_msg_delay: tuple[float, float] = (0.5, 2.0)
+    ncm_info_contains_url: bool = True
     ncm_send_media: bool = True
+    ncm_send_media_tip: bool = False
     ncm_send_as_card: bool = True
     ncm_send_as_file: bool = False
 
@@ -46,6 +48,7 @@ class ConfigModel(BaseConfigModel):
     ncm_ob_v11_local_mode: bool = False
     ncm_ffmpeg_executable: str = "ffmpeg"
     ncm_safe_filename: bool = True
+    ncm_clean_cache_on_startup: bool = True
 
 
 config = get_plugin_config(ConfigModel)

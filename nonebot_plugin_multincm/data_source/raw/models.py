@@ -1,7 +1,8 @@
 from typing import Literal, TypeAlias
 
-from cookit.pyd import CamelAliasModel
-from pydantic import Field
+from cookit import camel_case
+from cookit.pyd import model_with_alias_generator
+from pydantic import BaseModel, Field
 
 BrLevelType: TypeAlias = Literal[
     "hires",
@@ -13,14 +14,16 @@ BrLevelType: TypeAlias = Literal[
 ]
 
 
-class Artist(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class Artist(BaseModel):
     id: int
     name: str
     tns: list[str] | None = None
     alias: list[str] | None = None
 
 
-class BaseAlbum(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class BaseAlbum(BaseModel):
     id: int
     name: str
     pic_url: str
@@ -31,13 +34,15 @@ class Album(BaseAlbum):
     artists: list[Artist]
 
 
-class Privilege(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class Privilege(BaseModel):
     id: int
     pl: int
     # plLevel: BrLevel
 
 
-class Song(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class Song(BaseModel):
     name: str
     id: int
     ar: list[Artist]
@@ -50,26 +55,30 @@ class Song(CamelAliasModel):
     privilege: Privilege | None = None
 
 
-class QcReminder(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class QcReminder(BaseModel):
     qc_reminder_part: str
     """纠正内容部分"""
     high_light: bool
     """部分是否高亮（可点击纠正）"""
 
 
-class SearchQcReminder(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class SearchQcReminder(BaseModel):
     qc_reminders: list[QcReminder]
     qc_reminder_channel: str
 
 
-class SongSearchResult(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class SongSearchResult(BaseModel):
     search_qc_reminder: SearchQcReminder | None = None
     """搜索纠正"""
     song_count: int
     songs: list[Song] | None = None
 
 
-class TrackAudio(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class TrackAudio(BaseModel):
     id: int
     url: str
     br: int
@@ -80,18 +89,21 @@ class TrackAudio(CamelAliasModel):
     time: int
 
 
-class User(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class User(BaseModel):
     id: int
     user_id: int = Field(..., alias="userid")
     nickname: str
 
 
-class Lyric(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class Lyric(BaseModel):
     version: int
     lyric: str
 
 
-class LyricData(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class LyricData(BaseModel):
     trans_user: User | None = None
     lyric_user: User | None = None
     lrc: Lyric | None = None
@@ -99,7 +111,8 @@ class LyricData(CamelAliasModel):
     roma_lrc: Lyric | None = Field(None, alias="romalrc")
 
 
-class DJ(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class DJ(BaseModel):
     user_id: int
     nickname: str
     avatar_url: str
@@ -108,7 +121,8 @@ class DJ(CamelAliasModel):
     background_url: str
 
 
-class BaseRadio(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class BaseRadio(BaseModel):
     id: int
     name: str
     pic_url: str
@@ -133,7 +147,8 @@ class Radio(RadioBaseInfo):
     comment_count: int
 
 
-class ProgramBaseInfo(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class ProgramBaseInfo(BaseModel):
     id: int
     main_track_id: int
     name: str
@@ -149,26 +164,31 @@ class ProgramBaseInfo(CamelAliasModel):
     comment_thread_id: str
 
 
-class ProgramResource(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class ProgramResource(BaseModel):
     base_info: ProgramBaseInfo
 
 
-class ProgramSearchResult(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class ProgramSearchResult(BaseModel):
     resources: list[ProgramResource] | None = None
     total_count: int
     search_qc_reminder: SearchQcReminder | None = None
 
 
-class TrackId(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class TrackId(BaseModel):
     id: int
 
 
-class PlaylistCreator(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class PlaylistCreator(BaseModel):
     user_id: int
     nickname: str
 
 
-class BasePlaylist(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class BasePlaylist(BaseModel):
     id: int
     name: str
     cover_img_url: str
@@ -187,32 +207,38 @@ class Playlist(BasePlaylist):
     comment_count: int
 
 
-class PlaylistSearchResult(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class PlaylistSearchResult(BaseModel):
     playlists: list[BasePlaylist] | None = None
     playlist_count: int
     search_qc_reminder: SearchQcReminder | None = None
 
 
-class RadioResource(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class RadioResource(BaseModel):
     base_info: RadioBaseInfo
 
 
-class RadioSearchResult(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class RadioSearchResult(BaseModel):
     resources: list[RadioResource] | None = None
     total_count: int
     search_qc_reminder: SearchQcReminder | None = None
 
 
-class RadioProgramList(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class RadioProgramList(BaseModel):
     count: int
     programs: list[ProgramBaseInfo]
 
 
-class AlbumSearchResult(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class AlbumSearchResult(BaseModel):
     albums: list[Album] | None = None
     album_count: int
 
 
-class AlbumInfo(CamelAliasModel):
+@model_with_alias_generator(camel_case)
+class AlbumInfo(BaseModel):
     album: Album
     songs: list[Song]

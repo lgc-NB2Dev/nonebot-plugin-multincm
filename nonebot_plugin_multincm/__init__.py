@@ -12,8 +12,14 @@ require("nonebot_plugin_htmlrender")
 
 from . import interaction as interaction
 from .config import ConfigModel, config
+from .const import SONG_CACHE_DIR
 from .data_source import login, registered_searcher
 from .interaction import load_commands
+
+if config.ncm_clean_cache_on_startup:
+    import shutil
+
+    shutil.rmtree(SONG_CACHE_DIR)
 
 driver = get_driver()
 
@@ -37,7 +43,7 @@ auto_resolve_tip = (
     "▶ Bot 会自动解析你发送的网易云链接\n" if config.ncm_auto_resolve else ""
 )
 
-__version__ = "1.2.8"
+__version__ = "1.3.0"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",

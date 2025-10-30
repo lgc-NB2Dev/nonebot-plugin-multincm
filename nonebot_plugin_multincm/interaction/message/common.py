@@ -1,5 +1,5 @@
 from cookit.loguru import warning_suppress
-from nonebot.matcher import current_bot
+from cookit.nonebot.alconna import RecallContext
 from nonebot_plugin_alconna.uniseg import UniMessage
 
 from ...config import config
@@ -28,11 +28,11 @@ async def construct_info_msg(
     )
     info = await it.get_info()
     desc = await info.get_description()
-    bot = current_bot.get()
-    adapter_name = bot.adapter.get_name()
-    if adapter_name in ["QQ"]:
-        return UniMessage.image(url=info.cover_url) + f"\n{desc}\n{tip}"
-    return UniMessage.image(url=info.cover_url) + f"{desc}\n{info.url}{tip}"
+    msg = UniMessage.image(url=info.cover_url) + desc
+    if config.ncm_info_contains_url:
+        msg += f"\n{info.url}"
+    msg += f"\n{tip}"
+    return msg
 
 
 async def send_song(song: BaseSong):
@@ -45,8 +45,10 @@ async def send_song(song: BaseSong):
 
     else:
         receipt = None
-        with warning_suppress(f"Send {song} file failed"):
-            receipt = await send_song_media(song)
+        async with RecallContext() as recall:
+            await recall.send(UniMessage.text("处理中，请稍等哦~"))
+            with warning_suppress(f"Send {song} file failed"):
+                receipt = await send_song_media(song)
 
         await (await construct_info_msg(song, tip_command=False)).send(
             reply_to=(

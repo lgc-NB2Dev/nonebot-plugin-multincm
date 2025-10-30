@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from functools import partial
-from typing import Any, Literal, TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 from typing_extensions import ParamSpec
 
 from nonebot.utils import run_sync
@@ -77,7 +77,7 @@ async def get_search_result(
 @overload
 async def get_search_result(
     keyword: str,
-    return_model: Literal[None] = None,
+    return_model: None = None,
     page: int = 1,
     search_type: int = search.SONG,
     **kwargs,
