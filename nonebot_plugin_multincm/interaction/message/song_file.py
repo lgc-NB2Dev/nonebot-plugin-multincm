@@ -1,12 +1,11 @@
 import mimetypes
-from contextlib import suppress
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cookit.loguru import warning_suppress
 from httpx import AsyncClient
 from nonebot import logger
 from nonebot.matcher import current_bot, current_event
-from nonebot_plugin_alconna.uniseg import Receipt, UniMessage, get_exporter
+from nonebot_plugin_alconna.uniseg import Receipt, UniMessage
 
 from ...config import config
 from ...const import SONG_CACHE_DIR
@@ -44,20 +43,6 @@ async def send_song_media_uni_msg(
     kw: Any = {**kw_f, "name": info.display_filename, "mimetype": mime}
     msg = UniMessage.file(**kw) if as_file else UniMessage.audio(**kw)
     return await msg.send(fallback=False)
-
-
-async def get_current_ev_receipt(msg_ids: Any):
-    bot = current_bot.get()
-    ev = current_event.get()
-    exporter = get_exporter(bot)
-    if not exporter:
-        raise TypeError("This adapter is not supported")
-    return Receipt(
-        bot=bot,
-        context=ev,
-        exporter=exporter,
-        msg_ids=msg_ids if isinstance(msg_ids, list) else [msg_ids],
-    )
 
 
 async def send_song_media_telegram(info: "SongInfo", as_file: bool = False):  # noqa: ARG001
@@ -114,7 +99,7 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
 async def send_song_media_platform_specific(
     info: "SongInfo",
     as_file: bool = False,
-) -> Receipt | None:
+) -> Receipt | None | Literal[False]:
     bot = current_bot.get()
     adapter_name = bot.adapter.get_name()
     processors = {
@@ -122,7 +107,7 @@ async def send_song_media_platform_specific(
         "OneBot V11": send_song_media_onebot_v11,
     }
     if adapter_name not in processors:
-        raise TypeError("This adapter is not supported")
+        return False
     return await processors[adapter_name](info, as_file=as_file)
 
 
@@ -132,13 +117,13 @@ async def send_song_media(song: "BaseSong", as_file: bool = config.ncm_send_as_f
     with warning_suppress(
         f"Failed to send {song} using platform specific method, fallback to UniMessage",
     ):
-        with suppress(TypeError):
-            return await send_song_media_platform_specific(info, as_file=as_file)
+        r = await send_song_media_platform_specific(info, as_file=as_file)
+        if r is not False:
+            return r
 
     path = await download_song(info)
     with warning_suppress(
         f"Failed to send {song} using file path, fallback using raw bytes",
     ):
-        if not TYPE_CHECKING:
-            return await send_song_media_uni_msg(path, info, raw=False, as_file=as_file)
+        return await send_song_media_uni_msg(path, info, raw=False, as_file=as_file)
     return await send_song_media_uni_msg(path, info, raw=True, as_file=as_file)

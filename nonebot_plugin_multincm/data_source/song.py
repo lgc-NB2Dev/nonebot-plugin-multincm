@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 from typing_extensions import Self, override
 
 from ..utils import (
+    NCMLrcGroupLine,
     format_artists,
     format_time,
     get_thumb_url,
@@ -80,7 +81,7 @@ class Song(BaseSong[md.Song]):
         return info.url
 
     @override
-    async def get_lyrics(self) -> list[list[str]] | None:
+    async def get_lyrics(self) -> list[NCMLrcGroupLine] | None:
         return normalize_lrc(await get_track_lrc(self.info.id))
 
 

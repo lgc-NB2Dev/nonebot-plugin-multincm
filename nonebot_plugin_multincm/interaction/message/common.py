@@ -31,19 +31,22 @@ async def construct_info_msg(
 
 
 async def send_song(song: BaseSong):
-    async def send():
-        if config.ncm_send_as_card and is_song_card_supported():
-            with warning_suppress(f"Send {song} card failed"):
-                await send_song_card_msg(song)
-                return
+    if config.ncm_send_as_card and is_song_card_supported():
+        with warning_suppress(f"Send {song} card failed"):
+            await send_song_card_msg(song)
 
-        receipt = ...
-        if config.ncm_send_media:
-            with warning_suppress(f"Send {song} file failed"):
-                receipt = await send_song_media(song)
-        await (await construct_info_msg(song, tip_command=(receipt is ...))).send(
-            reply_to=receipt.get_reply() if receipt and (receipt is not ...) else None,
+    elif not config.ncm_send_media:
+        await (await construct_info_msg(song, tip_command=True)).send()
+
+    else:
+        receipt = None
+        with warning_suppress(f"Send {song} file failed"):
+            receipt = await send_song_media(song)
+
+        await (await construct_info_msg(song, tip_command=False)).send(
+            reply_to=(
+                (r[0] if (r := receipt.get_reply()) else None) if receipt else None
+            ),
         )
 
-    await send()
     await set_cache(song)

@@ -167,19 +167,17 @@ async def validate_login():
         ret = await ncm_request(GetCurrentLoginStatus)
         ok = bool(ret.get("account"))
         if ok:
-            WriteLoginInfo(ret, GetCurrentSession())
+            WriteLoginInfo(ret)
         return ok
     return False
 
 
 async def do_login(anonymous: bool = False):
-    using_cached_session = False
-
     if anonymous:
         logger.info("使用游客身份登录")
         await anonymous_login()
 
-    elif using_cached_session := SESSION_FILE_PATH.exists():
+    elif SESSION_FILE_PATH.exists():
         logger.info(f"使用缓存登录态 ({SESSION_FILE_PATH})")
         SetCurrentSession(
             LoadSessionFromString(
@@ -228,8 +226,7 @@ async def do_login(anonymous: bool = False):
         logger.success("游客登录成功")
     else:
         session = GetCurrentSession()
-        if not using_cached_session:
-            SESSION_FILE_PATH.write_text(DumpSessionAsString(session), "u8")
+        SESSION_FILE_PATH.write_text(DumpSessionAsString(session), "u8")
         logger.success(f"登录成功，欢迎您，{session.nickname} [{session.uid}]")
 
 

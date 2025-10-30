@@ -19,7 +19,26 @@ if TYPE_CHECKING:
 P = ParamSpec("P")
 TR = TypeVar("TR")
 
+FILESYSTEM_DISALLOWED_CHARS = '\\/:*?"<>|'
+
 debug = DebugFileWriter(Path.cwd() / "debug", "multincm")
+
+
+def half_to_full(string: str):
+    s: list[str] = []
+    for x in string:
+        cp = ord(x)
+        if cp == 32:  # space
+            cp = 12288
+        elif 33 <= cp <= 126:
+            cp += 65248
+        s.append(chr(cp))
+    return "".join(s)
+
+
+FILESYSTEM_CHAR_REPLACEMENTS = dict(
+    zip(FILESYSTEM_DISALLOWED_CHARS, half_to_full(FILESYSTEM_DISALLOWED_CHARS)),
+)
 
 
 def format_time(time: int) -> str:
