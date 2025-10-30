@@ -18,6 +18,7 @@ from yarl import URL
 
 from ..config import config
 from ..utils import (
+    FILESYSTEM_CHAR_REPLACEMENTS,
     NCMLrcGroupLine,
     build_item_link,
     calc_max_page,
@@ -131,9 +132,11 @@ class SongInfo(Generic[_TSong]):
 
     @property
     def display_filename(self) -> str:
-        return (
-            f"{self.display_name} - {self.display_artists}.{self.file_suffix or 'mp3'}"
-        )
+        x = f"{self.display_name} - {self.display_artists}.{self.file_suffix or 'mp3'}"
+        if config.ncm_safe_filename:
+            for k, v in FILESYSTEM_CHAR_REPLACEMENTS.items():
+                x = x.replace(k, v)
+        return x
 
     @property
     def download_filename(self) -> str:

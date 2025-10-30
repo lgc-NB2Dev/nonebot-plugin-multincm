@@ -202,6 +202,7 @@ plugins = [
 |      `NCM_CARD_SIGN_TIMEOUT`       |  否  |     `5`      |                                        请求音卡签名地址的超时时间                                         |
 |      `NCM_OB_V11_LOCAL_MODE`       |  否  |   `False`    |                      在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                       |
 |      `NCM_FFMPEG_EXECUTABLE`       |  否  |   `ffmpeg`   |        FFmpeg 可执行文件路径，已经加进环境变量可以不用配置，在 OneBot V11 适配器下发送语音需要使用        |
+|        `NCM_SAFE_FILENAME`         |  否  |   `False`    |                                    是否将歌曲文件名中的非法字符替换掉                                     |
 
 ## 🎉 使用
 
