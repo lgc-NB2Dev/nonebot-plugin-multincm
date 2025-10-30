@@ -45,7 +45,7 @@ class ConfigModel(BaseConfigModel):
     ncm_card_sign_timeout: int = 5
     ncm_ob_v11_local_mode: bool = False
     ncm_ffmpeg_executable: str = "ffmpeg"
-    ncm_safe_filename: bool = False
+    ncm_safe_filename: bool = True
 
 
 config = get_plugin_config(ConfigModel)
