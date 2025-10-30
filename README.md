@@ -191,7 +191,9 @@ plugins = [
 |      `NCM_ILLEGAL_CMD_LIMIT`       |  否  |     `3`      | 当未启用 `NCM_ILLEGAL_CMD_FINISH` 时，用户在点歌时输入了多少次非法指令后直接退出点歌，填 `0` 以禁用此功能 |
 |          `NCM_DELETE_MSG`          |  否  |    `True`    |                            是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                             |
 |       `NCM_DELETE_MSG_DELAY`       |  否  | `[0.5, 2.0]` |                                      自动撤回消息间隔时间（单位秒）                                       |
+|      `NCM_INFO_CONTAINS_URL`       |  否  |    `True`    |                                        发送歌曲信息时一并发送 URL                                         |
 |          `NCM_SEND_MEDIA`          |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
+|        `NCM_SEND_MEDIA_TIP`        |  否  |   `False`    |                                       发送歌曲文件前，是否提醒用户                                        |
 |         `NCM_SEND_AS_CARD`         |  否  |    `True`    |                           在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11`）                           |
 |         `NCM_SEND_AS_FILE`         |  否  |   `False`    |       当无法发送卡片或卡片发送失败时，会回退到使用语音发送，启用此配置项将会换成回退到发送歌曲文件        |
 |            **其他配置**            |      |              |                                                                                                           |
@@ -203,6 +205,7 @@ plugins = [
 |      `NCM_OB_V11_LOCAL_MODE`       |  否  |   `False`    |                      在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                       |
 |      `NCM_FFMPEG_EXECUTABLE`       |  否  |   `ffmpeg`   |        FFmpeg 可执行文件路径，已经加进环境变量可以不用配置，在 OneBot V11 适配器下发送语音需要使用        |
 |        `NCM_SAFE_FILENAME`         |  否  |   `False`    |                                    是否将歌曲文件名中的非法字符替换掉                                     |
+|    `NCM_CLEAN_CACHE_ON_STARTUP`    |  否  |    `True`    |                                      是否在启动时清空歌曲缓存文件夹                                       |
 
 ## 🎉 使用
 
@@ -251,7 +254,7 @@ plugins = [
 
 ### Q: 我可以把插件变成单选点歌吗？
 
-A: 可以，把配置项 `NCM_LIST_LIMIT` 设置为 `1` 即可。因为插件在检测到搜索结果仅有一个时，会将它直接发送出来。我们在这里利用了这个特性。
+A: 可以，把配置项 `NCM_LIST_LIMIT` 设置为 `1` 即可。因为插件在检测到搜索结果仅有一个时，会将它直接发送出来。
 
 ## 📞 联系
 
@@ -277,6 +280,15 @@ Telegram：[@lgc2333](https://t.me/lgc2333)
 感谢大家的赞助！你们的赞助将是我继续创作的动力！
 
 ## 📝 更新日志
+
+### 1.3.0
+
+- 单独适配 `QQ` 平台歌曲的发送（[#45](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/pull/45)）  
+  从该 PR 中解构出以下配置项：
+  - `NCM_INFO_CONTAINS_URL`
+  - `NCM_SEND_MEDIA_TIP`
+- 加入 `NCM_SAFE_FILENAME` 配置以修复 [#46](https://github.com/lgc-NB2Dev/nonebot-plugin-multincm/pull/46)
+- 支持在启动时清空缓存文件夹（配置 `NCM_CLEAN_CACHE_ON_STARTUP`）
 
 ### 1.2.8
 
