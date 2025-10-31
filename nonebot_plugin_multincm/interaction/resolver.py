@@ -33,8 +33,8 @@ ExpectedTypeType: TypeAlias = (
 
 
 resolved_cache: TTLCache[int, "ResolveCache"] = TTLCache(
-    config.ncm_resolve_cool_down_cache_size,
-    config.ncm_resolve_cool_down,
+    config.resolve_cool_down_cache_size,
+    config.resolve_cool_down,
 )
 
 
@@ -200,7 +200,7 @@ async def resolve_from_ev_msg(
         if h := extract_song_card_hyper(msg, bot):
             if it := await resolve_from_card(
                 h,
-                resolve_playable=config.ncm_resolve_playable_card,
+                resolve_playable=config.resolve_playable_card,
                 expected_type=expected_type,
                 use_cool_down=True,
             ):

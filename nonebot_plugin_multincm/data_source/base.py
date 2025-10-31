@@ -133,7 +133,7 @@ class SongInfo(Generic[_TSong]):
     @property
     def display_filename(self) -> str:
         x = f"{self.display_name} - {self.display_artists}.{self.file_suffix or 'mp3'}"
-        if config.ncm_safe_filename:
+        if config.safe_filename:
             for k, v in FILESYSTEM_CHAR_REPLACEMENTS.items():
                 x = x.replace(k, v)
         return x
@@ -336,7 +336,7 @@ class BaseSongList(ABC, Generic[_TRawResp, _TRawRespInner, _TSongOrList]):
             raise ValueError("Page out of range")
 
         min_index = calc_min_index(page)
-        max_index = min_index + config.ncm_list_limit
+        max_index = min_index + config.list_limit
         index_range = range(min_index, max_index + 1)
         if all(page in self._cache for page in index_range):
             return await self._build_list_page(

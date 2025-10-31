@@ -16,10 +16,11 @@ from .const import SONG_CACHE_DIR
 from .data_source import login, registered_searcher
 from .interaction import load_commands
 
-if config.ncm_clean_cache_on_startup:
+if config.clean_cache_on_startup:
     import shutil
 
-    shutil.rmtree(SONG_CACHE_DIR)
+    if SONG_CACHE_DIR.exists():
+        shutil.rmtree(SONG_CACHE_DIR)
 
 driver = get_driver()
 
@@ -39,11 +40,9 @@ search_commands_help = "\n".join(
         for s, cmds in registered_searcher.items()
     ],
 )
-auto_resolve_tip = (
-    "▶ Bot 会自动解析你发送的网易云链接\n" if config.ncm_auto_resolve else ""
-)
+auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n" if config.auto_resolve else ""
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",

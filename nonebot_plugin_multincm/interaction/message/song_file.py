@@ -1,9 +1,10 @@
 import mimetypes
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from cookit.loguru import warning_suppress
+from cookit.loguru import log_exception_warning, warning_suppress
 from httpx import AsyncClient
 from nonebot import logger
+from nonebot.exception import NetworkError
 from nonebot.matcher import current_bot, current_event
 from nonebot_plugin_alconna.uniseg import Receipt, UniMessage
 
@@ -24,9 +25,12 @@ async def ensure_ffmpeg():
     raise TypeError("FFmpeg unavailable, fallback to UniMessage")
 
 
+def get_download_path(info: "SongInfo"):
+    return SONG_CACHE_DIR / info.download_filename
+
+
 async def download_song(info: "SongInfo"):
-    filename = info.download_filename
-    file_path = SONG_CACHE_DIR / filename
+    file_path = get_download_path(info)
     if file_path.exists():
         return file_path
 
@@ -44,7 +48,7 @@ async def send_song_media_uni_msg(
     raw: bool = False,
     as_file: bool = False,
 ):
-    path = await download_song(info)
+    path = get_download_path(info)
     mime = t[0] if (t := mimetypes.guess_type(path.name)) else None
     kw_f = {"raw": path.read_bytes()} if raw else {"path": path}
     kw: Any = {**kw_f, "name": info.display_filename, "mimetype": mime}
@@ -52,10 +56,10 @@ async def send_song_media_uni_msg(
     return await msg.send(fallback=False)
 
 
-async def send_song_voice_uni_msg(info: "SongInfo"):
+async def send_song_voice_silk_uni_msg(info: "SongInfo"):
     await ensure_ffmpeg()
     return await UniMessage.voice(
-        raw=(await encode_silk(await download_song(info))).read_bytes(),
+        raw=(await encode_silk(get_download_path(info))).read_bytes(),
     ).send()
 
 
@@ -63,10 +67,7 @@ async def send_song_media_telegram(info: "SongInfo", as_file: bool = False):  # 
     return await send_song_media_uni_msg(info, as_file=False)
 
 
-async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
-    if as_file:
-        return await send_song_voice_uni_msg(info)
-
+async def _send_song_file_onebot_v11(info: "SongInfo"):
     from nonebot.adapters.onebot.v11 import (
         Bot as OB11Bot,
         GroupMessageEvent,
@@ -80,8 +81,8 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
         raise TypeError("Event not supported")
 
     file = (
-        (await download_song(info))
-        if config.ncm_ob_v11_local_mode
+        get_download_path(info)
+        if config.ob_v11_local_mode
         else cast("str", (await bot.download_file(url=info.playable_url))["file"])
     )
 
@@ -97,11 +98,27 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
             file=file,
             name=info.display_filename,
         )
-    return None
+
+
+async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
+    if as_file:
+        try:
+            return await _send_song_file_onebot_v11(info)
+        except NetworkError as e:
+            # maybe just upload timeout, we ignore it
+            logger.info(f"Ignored NetworkError: {e}")
+            return None
+        except Exception as e:
+            log_exception_warning(e, f"Send {info} as file failed")
+            if config.ob_v11_ignore_send_file_failure:
+                return None
+            logger.warning("Falling back to voice message")
+
+    return await send_song_voice_silk_uni_msg(info)
 
 
 async def send_song_media_qq(info: "SongInfo", as_file: bool = False):  # noqa: ARG001
-    return await send_song_voice_uni_msg(info)
+    return await send_song_voice_silk_uni_msg(info)
 
 
 async def send_song_media_platform_specific(
@@ -120,15 +137,22 @@ async def send_song_media_platform_specific(
     return await processors[adapter_name](info, as_file=as_file)
 
 
-async def send_song_media(song: "BaseSong", as_file: bool = config.ncm_send_as_file):
-    info = await song.get_info()
+async def send_song_media(song: "BaseSong", as_file: bool | None = None):
+    if as_file is None:
+        as_file = config.send_as_file
 
-    with warning_suppress(
-        f"Failed to send {song} using platform specific method, fallback to UniMessage",
-    ):
+    info = await song.get_info()
+    try:
+        await download_song(info)
+    except Exception as e:
+        log_exception_warning(e, f"Failed to download song {song}")
+        return None
+
+    with warning_suppress(f"Failed to send {song} using platform specific method"):
         r = await send_song_media_platform_specific(info, as_file=as_file)
-        if r is not False:
-            return r
+        if (r is not False) or config.send_media_no_unimsg_fallback:
+            return r or None
+        logger.warning("Falling back to UniMessage")
 
     with warning_suppress(
         f"Failed to send {song} using file path, fallback using raw bytes",

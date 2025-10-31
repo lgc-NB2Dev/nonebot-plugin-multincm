@@ -29,18 +29,21 @@ async def construct_info_msg(
     info = await it.get_info()
     desc = await info.get_description()
     msg = UniMessage.image(url=info.cover_url) + desc
-    if config.ncm_info_contains_url:
+    if config.info_contains_url:
         msg += f"\n{info.url}"
     msg += f"\n{tip}"
     return msg
 
 
-async def send_song(song: BaseSong):
-    if config.ncm_send_as_card and is_song_card_supported():
+async def _send_song_without_cache(song: BaseSong):
+    if config.send_as_card and is_song_card_supported():
         with warning_suppress(f"Send {song} card failed"):
             await send_song_card_msg(song)
+            return
+        if config.ignore_send_card_failure:
+            return
 
-    elif not config.ncm_send_media:
+    if not config.send_media:
         await (await construct_info_msg(song, tip_command=True)).send()
 
     else:
@@ -56,4 +59,7 @@ async def send_song(song: BaseSong):
             ),
         )
 
+
+async def send_song(song: BaseSong):
+    await _send_song_without_cache(song)
     await set_cache(song)

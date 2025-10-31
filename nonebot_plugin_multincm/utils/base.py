@@ -56,21 +56,21 @@ def format_artists(artists: list["md.Artist"]) -> str:
 
 
 def calc_page_number(index: int) -> int:
-    return (index // config.ncm_list_limit) + 1
+    return (index // config.list_limit) + 1
 
 
 def calc_min_index(page: int) -> int:
-    return (page - 1) * config.ncm_list_limit
+    return (page - 1) * config.list_limit
 
 
 def calc_min_max_index(page: int) -> tuple[int, int]:
     min_index = calc_min_index(page)
-    max_index = min_index + config.ncm_list_limit
+    max_index = min_index + config.list_limit
     return min_index, max_index
 
 
 def calc_max_page(total: int) -> int:
-    return math.ceil(total / config.ncm_list_limit)
+    return math.ceil(total / config.list_limit)
 
 
 def get_thumb_url(url: str, size: int = 64) -> str:
@@ -89,7 +89,7 @@ def cut_string(text: str, length: int = 50) -> str:
 
 async def ffmpeg_exists() -> bool:
     proc = await asyncio.create_subprocess_exec(
-        config.ncm_ffmpeg_executable,
+        config.ffmpeg_executable,
         "-version",
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
@@ -106,7 +106,7 @@ async def encode_silk(path: "Path", rate: int = 24000) -> "Path":
 
     pcm_path = path.with_suffix(".pcm")
     proc = await asyncio.create_subprocess_exec(
-        config.ncm_ffmpeg_executable,
+        config.ffmpeg_executable,
         "-y",
         "-i", str(path),
         "-f", "s16le", "-ar", f"{rate}", "-ac", "1", str(pcm_path),

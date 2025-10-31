@@ -172,7 +172,7 @@ def normalize_lrc(lrc: "md.LyricData") -> list[NCMLrcGroupLine] | None:
     lyrics: dict[NCMLrcGroupNameType, list[LrcLine]] = {
         k: x for k, v in raw_lyric_groups.items() if v and (x := parse_lrc(v.lyric))
     }
-    empty_line = config.ncm_lrc_empty_line
+    empty_line = config.lrc_empty_line
 
     if not lyrics:
         lines = [

@@ -46,7 +46,7 @@ async def handle_song_or_list(
     if not matcher:
         matcher = current_matcher.get()
 
-    recall = RecallContext(delay=config.ncm_delete_msg_delay)
+    recall = RecallContext(delay=config.delete_msg_delay)
 
     async def handle(result: GeneralSongOrList) -> GeneralSongList:
         if isinstance(result, BaseSong):
@@ -69,8 +69,8 @@ async def handle_song_or_list(
         async def tip_illegal(message: str):
             nonlocal illegal_counter
             illegal_counter += 1
-            if config.ncm_illegal_cmd_limit and (
-                illegal_counter >= config.ncm_illegal_cmd_limit
+            if config.illegal_cmd_limit and (
+                illegal_counter >= config.illegal_cmd_limit
             ):
                 await matcher.finish("非法指令次数过多，已自动退出选择")
             await recall.send(message)
@@ -119,7 +119,7 @@ async def handle_song_or_list(
                     await matcher.finish("搜索出错，请检查后台输出")
                 return await handle(resp)
 
-            if config.ncm_illegal_cmd_finish:
+            if config.illegal_cmd_finish:
                 await matcher.finish("非正确指令，已退出选择")
             await tip_illegal(
                 "非正确指令，请重新输入\nTip: 你可以发送 `退出` 来退出点歌模式",
@@ -166,7 +166,7 @@ async def handle_song_or_list(
     try:
         await main()
     finally:
-        if config.ncm_delete_msg:
+        if config.delete_msg:
             asyncio.create_task(recall.recall())
 
 

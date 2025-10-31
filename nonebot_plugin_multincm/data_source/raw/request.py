@@ -95,7 +95,7 @@ async def get_search_result(
     res = await ncm_request(
         GetSearchResult,
         keyword=keyword,
-        limit=config.ncm_list_limit,
+        limit=config.list_limit,
         offset=offset,
         stype=search_type,
         **kwargs,
@@ -133,7 +133,7 @@ async def search_radio(keyword: str, page: int = 1):
             {
                 "keyword": keyword,
                 "scene": "normal",
-                "limit": config.ncm_list_limit,
+                "limit": config.list_limit,
                 "offset": offset or 0,
             },
         )
@@ -152,7 +152,7 @@ async def search_program(keyword: str, page: int = 1):
             {
                 "keyword": keyword,
                 "scene": "normal",
-                "limit": config.ncm_list_limit,
+                "limit": config.list_limit,
                 "offset": offset or 0,
             },
         )
@@ -206,7 +206,7 @@ async def get_radio_programs(radio_id: int, page: int = 1):
         offset = calc_min_index(page)
         return (
             "/weapi/dj/program/byradio",
-            {"radioId": radio_id, "limit": config.ncm_list_limit, "offset": offset},
+            {"radioId": radio_id, "limit": config.list_limit, "offset": offset},
         )
 
     res = await ncm_request(GetRadioPrograms)

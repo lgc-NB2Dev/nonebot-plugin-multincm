@@ -43,8 +43,8 @@ class IDCache(BaseCache, Generic[TID]):
 
 
 cache: TTLCache[str, CacheItemType] = TTLCache(
-    config.ncm_msg_cache_size,
-    config.ncm_msg_cache_time,
+    config.msg_cache_size,
+    config.msg_cache_time,
 )
 
 

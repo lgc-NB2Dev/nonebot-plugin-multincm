@@ -33,7 +33,7 @@ def get_config() -> RenderConfig:
 
     return {
         "font_family": (
-            format_font_url(config.ncm_list_font) if config.ncm_list_font else None
+            format_font_url(config.list_font) if config.list_font else None
         ),
         "plugin_version": plugin_version,
     }

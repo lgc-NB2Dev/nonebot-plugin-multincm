@@ -190,34 +190,34 @@ async def do_login(anonymous: bool = False):
             await do_login()
             return
 
-    elif config.ncm_cookie_music_u:
+    elif config.cookie_music_u:
         logger.info("使用 Cookie 登录")
-        await cookie_login(config.ncm_cookie_music_u)
+        await cookie_login(config.cookie_music_u)
 
-    elif config.ncm_phone:
-        if config.ncm_password or config.ncm_password_hash:
+    elif config.phone:
+        if config.password or config.password_hash:
             logger.info("使用手机号与密码登录")
             await phone_login(
-                config.ncm_phone,
-                config.ncm_password or "",
-                config.ncm_password_hash or "",
+                config.phone,
+                config.password or "",
+                config.password_hash or "",
             )
         else:
             logger.info("使用短信验证登录")
-            await sms_login(config.ncm_phone)
+            await sms_login(config.phone)
 
-    elif (has_password := bool(config.ncm_password or config.ncm_password_hash)) and (
-        config.ncm_email
+    elif (has_password := bool(config.password or config.password_hash)) and (
+        config.email
     ):
         logger.info("使用邮箱与密码登录")
         await email_login(
-            config.ncm_email,
-            config.ncm_password or "",
-            config.ncm_password_hash or "",
+            config.email,
+            config.password or "",
+            config.password_hash or "",
         )
 
     else:
-        if config.ncm_email and (not has_password):
+        if config.email and (not has_password):
             logger.warning("配置文件中提供了邮箱，但是通过邮箱登录需要提供密码")
         logger.info("使用二维码登录")
         await qrcode_login()
@@ -240,7 +240,7 @@ async def login():
         logger.info("检测到当前全局 Session 已登录，插件将跳过登录步骤")
         return
 
-    if not config.ncm_anonymous:
+    if not config.anonymous:
         with warning_suppress("登录失败，回落到游客登录"):
             await do_login()
             return
