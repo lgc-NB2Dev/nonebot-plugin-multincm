@@ -31,7 +31,7 @@ class ConfigModel(BaseModel):
     list_font: str | None = None
     lrc_empty_line: str | None = "-"
 
-    # behavior
+    # interaction
     auto_resolve: bool = False
     resolve_cool_down: int = 30
     resolve_playable_card: bool = False
@@ -40,8 +40,10 @@ class ConfigModel(BaseModel):
     delete_msg: bool = True
     delete_msg_delay: tuple[float, float] = (0.5, 2.0)
     info_contains_url: bool = True
-    send_media: bool = True
     send_media_tip: bool = False
+
+    # behavior
+    send_media: bool = True
     send_media_no_unimsg_fallback: bool = True
     send_as_card: bool = True
     ignore_send_card_failure: bool = True

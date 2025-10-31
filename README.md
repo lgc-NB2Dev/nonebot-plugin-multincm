@@ -183,7 +183,7 @@ plugins = [
 |           `NCM_LIST_LIMIT`            |  否  |     `20`     |                                          歌曲列表每页的最大数量                                           |
 |            `NCM_LIST_FONT`            |  否  |      无      |                                          渲染歌曲列表使用的字体                                           |
 |         `NCM_LRC_EMPTY_LINE`          |  否  |     `-`      |                                            填充歌词空行的字符                                             |
-|             **行为相关**              |      |              |                                                                                                           |
+|             **交互相关**              |      |              |                                                                                                           |
 |          `NCM_AUTO_RESOLVE`           |  否  |   `False`    |                             当用户发送音乐链接时，是否自动解析并发送音乐卡片                              |
 |        `NCM_RESOLVE_COOL_DOWN`        |  否  |     `30`     |                                   自动解析同一链接的冷却时间（单位秒）                                    |
 |      `NCM_RESOLVE_PLAYABLE_CARD`      |  否  |   `False`    |                                   开启自动解析时，是否解析可播放的卡片                                    |
@@ -192,8 +192,9 @@ plugins = [
 |           `NCM_DELETE_MSG`            |  否  |    `True`    |                            是否在退出点歌模式后自动撤回歌曲列表与操作提示信息                             |
 |        `NCM_DELETE_MSG_DELAY`         |  否  | `[0.5, 2.0]` |                                      自动撤回消息间隔时间（单位秒）                                       |
 |        `NCM_INFO_CONTAINS_URL`        |  否  |    `True`    |                                        发送歌曲信息时一并发送 URL                                         |
-|           `NCM_SEND_MEDIA`            |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
 |         `NCM_SEND_MEDIA_TIP`          |  否  |   `False`    |                                       发送歌曲文件前，是否提醒用户                                        |
+|             **行为相关**              |      |              |                                                                                                           |
+|           `NCM_SEND_MEDIA`            |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
 |  `NCM_SEND_MEDIA_NO_UNIMSG_FALLBACK`  |  否  |    `True`    |                  如存在平台特定的歌曲发送逻辑，是否禁止回落到通用的 UniMessage 发送方式                   |
 |          `NCM_SEND_AS_CARD`           |  否  |    `True`    |                           在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11`）                           |
 |    `NCM_IGNORE_SEND_CARD_FAILURE`     |  否  |    `True`    |                            当卡片发送出错后，是否忽略出错后的回落歌曲发送流程                             |
