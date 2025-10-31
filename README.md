@@ -194,11 +194,11 @@ plugins = [
 |        `NCM_INFO_CONTAINS_URL`        |  否  |    `True`    |                                        发送歌曲信息时一并发送 URL                                         |
 |         `NCM_SEND_MEDIA_TIP`          |  否  |   `False`    |                                       发送歌曲文件前，是否提醒用户                                        |
 |             **行为相关**              |      |              |                                                                                                           |
-|           `NCM_SEND_MEDIA`            |  否  |    `True`    |                            是否发送歌曲，如关闭将始终提示使用命令获取播放链接                             |
-|  `NCM_SEND_MEDIA_NO_UNIMSG_FALLBACK`  |  否  |    `True`    |                  如存在平台特定的歌曲发送逻辑，是否禁止回落到通用的 UniMessage 发送方式                   |
-|          `NCM_SEND_AS_CARD`           |  否  |    `True`    |                           在支持的平台下，发送歌曲卡片（目前支持 `OneBot V11`）                           |
-|    `NCM_IGNORE_SEND_CARD_FAILURE`     |  否  |    `True`    |                            当卡片发送出错后，是否忽略出错后的回落歌曲发送流程                             |
-|          `NCM_SEND_AS_FILE`           |  否  |   `False`    |       当无法发送卡片或卡片发送失败时，会回落到使用语音发送，启用此配置项将会换成回落到发送歌曲文件        |
+|          `NCM_SEND_AS_CARD`           |  否  |    `True`    |                      在支持的平台下，发送歌曲卡片，此行为不受 `NCM_SEND_MEDIA` 控制                       |
+|    `NCM_IGNORE_SEND_CARD_FAILURE`     |  否  |    `True`    |                          当卡片发送出错后，是否忽略出错后发送歌曲文件的回落流程                           |
+|           `NCM_SEND_MEDIA`            |  否  |    `True`    |                          是否发送歌曲文件，如关闭将始终提示使用命令获取播放链接                           |
+|  `NCM_SEND_MEDIA_NO_UNIMSG_FALLBACK`  |  否  |    `True`    |                  如存在平台特定的文件发送逻辑，是否禁止回落到通用的 UniMessage 发送方式                   |
+|          `NCM_SEND_AS_FILE`           |  否  |   `False`    |                      默认发送歌曲文件的方式是发送语音，启动此项则修改行为为上传文件                       |
 |        `NCM_OB_V11_LOCAL_MODE`        |  否  |    `True`    |                      在 OneBot V11 适配器下，是否下载歌曲后使用本地文件路径上传歌曲                       |
 | `NCM_OB_V11_IGNORE_SEND_FILE_FAILURE` |  否  |   `False`    |         在 OneBot V11 适配器下且在用以文件形式发送歌曲时，是否禁用出错时回落到使用语音发送的行为          |
 |             **其他配置**              |      |              |                                                                                                           |
