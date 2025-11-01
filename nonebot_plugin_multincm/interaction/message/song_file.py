@@ -13,7 +13,7 @@ from ...const import SONG_CACHE_DIR
 from ...utils import encode_silk, ffmpeg_exists
 
 if TYPE_CHECKING:
-    from ...data_source import BaseSong, SongInfo
+    from ...data_source import BaseSong, GeneralSongInfo
 
 
 async def ensure_ffmpeg():
@@ -25,11 +25,11 @@ async def ensure_ffmpeg():
     raise TypeError("FFmpeg unavailable, fallback to UniMessage")
 
 
-def get_download_path(info: "SongInfo"):
+def get_download_path(info: "GeneralSongInfo"):
     return SONG_CACHE_DIR / info.download_filename
 
 
-async def download_song(info: "SongInfo"):
+async def download_song(info: "GeneralSongInfo"):
     file_path = get_download_path(info)
     if file_path.exists():
         return file_path
@@ -44,7 +44,7 @@ async def download_song(info: "SongInfo"):
 
 
 async def send_song_media_uni_msg(
-    info: "SongInfo",
+    info: "GeneralSongInfo",
     raw: bool = False,
     as_file: bool = False,
 ):
@@ -56,18 +56,18 @@ async def send_song_media_uni_msg(
     return await msg.send(fallback=False)
 
 
-async def send_song_voice_silk_uni_msg(info: "SongInfo"):
+async def send_song_voice_silk_uni_msg(info: "GeneralSongInfo"):
     await ensure_ffmpeg()
     return await UniMessage.voice(
         raw=(await encode_silk(get_download_path(info))).read_bytes(),
     ).send()
 
 
-async def send_song_media_telegram(info: "SongInfo", as_file: bool = False):  # noqa: ARG001
+async def send_song_media_telegram(info: "GeneralSongInfo", as_file: bool = False):  # noqa: ARG001
     return await send_song_media_uni_msg(info, as_file=False)
 
 
-async def _send_song_file_onebot_v11(info: "SongInfo"):
+async def _send_song_file_onebot_v11(info: "GeneralSongInfo"):
     from nonebot.adapters.onebot.v11 import (
         Bot as OB11Bot,
         GroupMessageEvent,
@@ -103,7 +103,7 @@ async def _send_song_file_onebot_v11(info: "SongInfo"):
         )
 
 
-async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
+async def send_song_media_onebot_v11(info: "GeneralSongInfo", as_file: bool = False):
     if as_file:
         try:
             return await _send_song_file_onebot_v11(info)
@@ -112,7 +112,7 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
             logger.info(f"Ignored NetworkError: {e}")
             return None
         except Exception as e:
-            log_exception_warning(e, f"Send {info} as file failed")
+            log_exception_warning(e, f"Send {info.father} as file failed")
             if config.ob_v11_ignore_send_file_failure:
                 return None
             logger.warning("Falling back to voice message")
@@ -120,12 +120,12 @@ async def send_song_media_onebot_v11(info: "SongInfo", as_file: bool = False):
     return await send_song_voice_silk_uni_msg(info)
 
 
-async def send_song_media_qq(info: "SongInfo", as_file: bool = False):  # noqa: ARG001
+async def send_song_media_qq(info: "GeneralSongInfo", as_file: bool = False):  # noqa: ARG001
     return await send_song_voice_silk_uni_msg(info)
 
 
 async def send_song_media_platform_specific(
-    info: "SongInfo",
+    info: "GeneralSongInfo",
     as_file: bool = False,
 ) -> Receipt | None | Literal[False]:
     bot = current_bot.get()
