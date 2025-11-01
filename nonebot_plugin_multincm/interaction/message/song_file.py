@@ -81,9 +81,12 @@ async def _send_song_file_onebot_v11(info: "SongInfo"):
         raise TypeError("Event not supported")
 
     file = (
-        get_download_path(info)
+        str(get_download_path(info).resolve())
         if config.ob_v11_local_mode
-        else cast("str", (await bot.download_file(url=info.playable_url))["file"])
+        else cast(
+            "str",
+            (await bot.download_file(url=info.playable_url))["file"],
+        )
     )
 
     if isinstance(event, PrivateMessageEvent):

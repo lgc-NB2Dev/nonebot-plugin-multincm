@@ -42,7 +42,7 @@ search_commands_help = "\n".join(
 )
 auto_resolve_tip = "▶ Bot 会自动解析你发送的网易云链接\n" if config.auto_resolve else ""
 
-__version__ = "1.3.1"
+__version__ = "1.3.1.post1"
 __plugin_meta__ = PluginMetadata(
     name="MultiNCM",
     description="网易云多选点歌",
